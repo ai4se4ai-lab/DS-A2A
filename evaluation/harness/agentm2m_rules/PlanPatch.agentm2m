@@ -1,0 +1,20 @@
+-- Evaluation-harness hand-off T2 (Plan -> Patch), the "agentm2m"
+-- configuration's Architect -> Developer step. `plan <- p` is a structural
+-- binding, not a stochastic one: it resolves through the source pattern
+-- directly (like examples/01_devteam's Arch2Code `operation <- op`), so
+-- the produced Patch is *linked* to the plan it came from -- exactly the
+-- pairwise relation a single shared schema (shared_schema_config.py)
+-- leaves implicit (docs/DS-A2A.tex Sec IV, "Why not one shared schema?").
+module PlanPatch;
+create OUT : Patch from IN : Plan;
+uses 'helpers.py';
+
+rule Plan2Patch {
+  from p : Plan!PatchPlan
+  to  d : Patch!PatchDoc (
+    id   <- p.id,
+    plan <- p,
+    diff <- @llm('Write a unified-diff-shaped patch implementing this plan. Output only the patch text.',
+                 p.rationale),
+    @check diff.looks_like_patch() )
+}

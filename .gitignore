@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+.env
+
+# generated model instances / traces from example & evaluation runs
+examples/**/out/
+evaluation/results/csv/*.csv
+evaluation/results/figures/*.png
+evaluation/benchmarks/cache/
+evaluation/harness/logs/
+!evaluation/results/csv/.gitkeep
+!evaluation/results/figures/.gitkeep
+
+.ruff_cache/
