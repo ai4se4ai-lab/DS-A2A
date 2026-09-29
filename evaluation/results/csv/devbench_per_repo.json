@@ -1,0 +1,187 @@
+{
+  "repos": [
+    "chakin",
+    "geotext",
+    "readtime",
+    "particle-swarm-optimization",
+    "Hybrid_Images",
+    "stocktrends"
+  ],
+  "models": [
+    "qwen2.5-coder:7b",
+    "devstral:24b",
+    "qwen3-coder:30b"
+  ],
+  "by_repo": {
+    "chakin": {
+      "per_model": {
+        "qwen2.5-coder:7b": {
+          "rq1": {
+            "canary_retention_pct": 0.0,
+            "p1_count": 0,
+            "acceptance_pct": 0.0,
+            "tokens_k": 25.962
+          },
+          "rq2": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "tokens_k": 35.859,
+            "n": 3
+          },
+          "rq3": {
+            "retroactive_coverage_pct": 100.0
+          }
+        },
+        "devstral:24b": {
+          "rq1": {
+            "canary_retention_pct": 0.0,
+            "p1_count": 3,
+            "acceptance_pct": 0.0,
+            "tokens_k": 22.946
+          },
+          "rq2": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "tokens_k": 30.26233333333333,
+            "n": 3
+          },
+          "rq3": {
+            "retroactive_coverage_pct": 100.0
+          }
+        },
+        "qwen3-coder:30b": {
+          "rq1": {
+            "canary_retention_pct": 0.0,
+            "p1_count": 0,
+            "acceptance_pct": 0.0,
+            "tokens_k": 27.571
+          },
+          "rq2": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "tokens_k": 35.921,
+            "n": 3
+          },
+          "rq3": {
+            "retroactive_coverage_pct": 100.0
+          }
+        }
+      },
+      "pooled": {
+        "canary_retention_pct": 0.0,
+        "p1_count": 1,
+        "acceptance_pct": 0.0,
+        "tokens_k": 25.493000000000002,
+        "rq2_precision": 1.0,
+        "rq2_recall": 1.0,
+        "retroactive_coverage_pct": 100.0
+      },
+      "n_models_present": 3
+    },
+    "geotext": {
+      "per_model": {
+        "qwen2.5-coder:7b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "devstral:24b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "qwen3-coder:30b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        }
+      },
+      "pooled": null,
+      "n_models_present": 0
+    },
+    "readtime": {
+      "per_model": {
+        "qwen2.5-coder:7b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "devstral:24b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "qwen3-coder:30b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        }
+      },
+      "pooled": null,
+      "n_models_present": 0
+    },
+    "particle-swarm-optimization": {
+      "per_model": {
+        "qwen2.5-coder:7b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "devstral:24b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "qwen3-coder:30b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        }
+      },
+      "pooled": null,
+      "n_models_present": 0
+    },
+    "Hybrid_Images": {
+      "per_model": {
+        "qwen2.5-coder:7b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "devstral:24b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "qwen3-coder:30b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        }
+      },
+      "pooled": null,
+      "n_models_present": 0
+    },
+    "stocktrends": {
+      "per_model": {
+        "qwen2.5-coder:7b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "devstral:24b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        },
+        "qwen3-coder:30b": {
+          "rq1": null,
+          "rq2": null,
+          "rq3": null
+        }
+      },
+      "pooled": null,
+      "n_models_present": 0
+    }
+  }
+}

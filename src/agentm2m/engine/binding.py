@@ -81,11 +81,23 @@ def apply_structural_bindings(
 
 
 def _footprint_to_text(value: Any) -> str:
-    if isinstance(value, list):
-        return "\n".join(f"- {_footprint_to_text(v)}" for v in value)
     if hasattr(value, "eClass"):
         feats = {f.name: getattr(value, f.name) for f in value.eClass.eAllStructuralFeatures()}
         return f"{value.eClass.name}({feats})"
+    if isinstance(value, (str, bytes)):
+        return str(value)
+    if isinstance(value, (list, tuple)) or hasattr(value, "__iter__"):
+        # Covers plain lists/tuples *and* pyecore's own collection types for
+        # many-valued references (e.g. EOrderedSet from `s.criteria`, many=True)
+        # -- these are not `list` instances, so an `isinstance(value, list)`-only
+        # check silently falls through to `str(value)` below and renders as an
+        # opaque "EOrderedSet([<pyecore.ecore.Criterion object at 0x...>])"
+        # instead of the element's actual content, starving every stochastic
+        # binding whose footprint is a many-valued reference of real
+        # information (this footprint-rendering path is the *only* thing the
+        # LLM ever sees of the source model -- Sec III-C's footprint-bounded
+        # prompting -- so this silently defeated it for every such binding).
+        return "\n".join(f"- {_footprint_to_text(v)}" for v in value)
     return str(value)
 
 

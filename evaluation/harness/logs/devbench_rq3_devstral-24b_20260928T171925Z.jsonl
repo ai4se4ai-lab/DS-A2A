@@ -1,0 +1,1 @@
+{"repo": "chakin", "model": "devstral:24b", "n_ops_before": 9, "n_reviews_after": 9, "retroactive_coverage": 1.0, "tokens": 43421}

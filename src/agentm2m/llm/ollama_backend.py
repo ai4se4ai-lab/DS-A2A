@@ -16,10 +16,28 @@ from .base import LLMBackend, LLMError
 class OllamaBackend(LLMBackend):
     name = "ollama"
 
-    def __init__(self, base_url: str, model: str, *, auto_pull: bool = True, timeout: float = 120.0) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        *,
+        auto_pull: bool = True,
+        timeout: float = 120.0,
+        max_tokens: int = 800,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout
+        # Every `@llm` binding in this codebase expects a short, specific
+        # answer (a signature line, a short function body, a brief prose
+        # summary); with no cap, a smaller/repetition-prone model can run
+        # away generating thousands of tokens of degenerate output for a
+        # single call, which both wastes wall-clock time and can exceed
+        # `timeout` outright (observed in practice: a single call passing
+        # 2700+ generated tokens and still climbing). Capping bounds worst-
+        # case cost without changing what's being measured (coordination
+        # structure, not raw generation length).
+        self.max_tokens = max_tokens
         if auto_pull:
             self._ensure_model_available()
 
@@ -69,7 +87,7 @@ class OllamaBackend(LLMBackend):
                     "model": self.model,
                     "prompt": prompt,
                     "stream": False,
-                    "options": {"temperature": temperature},
+                    "options": {"temperature": temperature, "num_predict": self.max_tokens},
                 },
                 timeout=self.timeout,
             )

@@ -1,0 +1,10 @@
+repo,config,model,seed,mast_p1_count,mast_p2_count,mast_modes,unit_pass,acceptance_pass,task_success,canary_pass,canary_total,input_tokens,output_tokens,total_tokens,llm_calls,elapsed_s,error
+chakin,free_text,devstral:24b,0,2,0,1.4;2.1,False,False,False,0,5,11158,2670,13828,5,197.5,
+chakin,shared_schema,devstral:24b,0,1,0,1.4,False,False,False,0,5,3401,1029,4430,4,74.4,
+chakin,agentm2m,devstral:24b,0,3,1,1.4;2.1;2.5;3.2,False,False,False,0,5,8291,14655,22946,55,999.4,
+chakin,free_text,qwen2.5-coder:7b,0,0,0,,False,False,False,0,5,11550,3055,14605,5,68.7,
+chakin,shared_schema,qwen2.5-coder:7b,0,0,0,,False,False,False,0,5,3023,881,3904,4,18.8,
+chakin,agentm2m,qwen2.5-coder:7b,0,0,0,,False,False,False,0,5,7897,18065,25962,55,381.9,
+chakin,free_text,qwen3-coder:30b,0,2,0,1.4;2.1,False,False,False,0,5,12783,3501,16284,5,53.6,
+chakin,shared_schema,qwen3-coder:30b,0,0,2,1.1;2.3;3.2,False,False,False,0,5,4697,1288,5985,4,17.3,
+chakin,agentm2m,qwen3-coder:30b,0,0,2,1.1;2.3;3.2,False,False,False,0,5,8563,19008,27571,55,232.8,

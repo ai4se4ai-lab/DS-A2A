@@ -1,0 +1,4 @@
+repo,config,model,seed,mast_p1_count,mast_p2_count,mast_modes,unit_pass,acceptance_pass,task_success,canary_pass,canary_total,input_tokens,output_tokens,total_tokens,llm_calls,elapsed_s,error
+chakin,free_text,qwen3-coder:30b,0,2,0,1.4;2.1,False,False,False,0,5,12783,3501,16284,5,53.6,
+chakin,shared_schema,qwen3-coder:30b,0,0,2,1.1;2.3;3.2,False,False,False,0,5,4697,1288,5985,4,17.3,
+chakin,agentm2m,qwen3-coder:30b,0,0,2,1.1;2.3;3.2,False,False,False,0,5,8563,19008,27571,55,232.8,

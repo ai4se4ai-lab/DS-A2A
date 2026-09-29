@@ -1,0 +1,24 @@
+-- T1 (Analyst -> Architect), DevBench variant of the paper's running
+-- example (Sec III-B). Operation *name* is structural (preserves the real
+-- symbol DevBench's tests import); only the *signature* is stochastic,
+-- footprint-bounded to the criterion text carrying the ground-truth hint.
+module Req2Arch;
+create OUT : Arch from IN : Req;
+uses 'helpers.py';
+
+rule Epic2Component {
+  from e : Req!Epic
+  to  c : Arch!Component ( name <- e.name )
+}
+
+rule Story2Operation {
+  from s : Req!UserStory
+           (s.status = #accepted)
+  to  op : Arch!Operation (
+    id        <- s.id,                     -- structural: qualified, globally-unique trace key
+    name      <- s.id.realName(),          -- structural: exact real symbol name
+    component <- s.epic,                   -- resolved via trace
+    signature <- @llm('Derive a precise Python signature (parameter list and return type, e.g. name(param1, param2) -> ReturnType) for this operation from its acceptance criteria. Respond with ONLY the signature on one line, no markdown code fences, no explanation.',
+                       s.criteria),         -- footprint
+    @check signature.parses() )
+}

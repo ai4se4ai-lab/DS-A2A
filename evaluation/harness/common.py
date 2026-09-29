@@ -33,6 +33,8 @@ class ConfigRunResult:
     patch_text: str
     turns: list[Turn] = field(default_factory=list)
     extra: dict[str, Any] = field(default_factory=dict)  # config-specific detail (validation errors, obligations, ...)
+    model: str = ""  # which LLM produced this run (absent from earlier SWE-bench-Lite logs)
+    seed: int = 0
 
     def transcript_text(self) -> str:
         """Flattened transcript handed to the MAST annotator / manual relabelling."""
