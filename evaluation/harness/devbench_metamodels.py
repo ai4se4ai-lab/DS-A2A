@@ -29,9 +29,18 @@ def build_req_mm() -> MetamodelBuilder:
     b.reference(story, "epic", "Epic", many=False, containment=False)
     b.reference(story, "criteria", "Criterion", many=True, containment=True)
 
+    # Module-wide acceptance criteria, held once. Deliberately a separate
+    # class, not a Criterion: no rule matches it, so it never enters a
+    # per-operation footprint, and Req2Test does not try to write an
+    # executable oracle for, e.g., "95% code coverage".
+    module_criterion = b.eclass("ModuleCriterion")
+    b.attribute(module_criterion, "id")
+    b.attribute(module_criterion, "text")
+
     root = b.eclass("ReqModel")
     b.add_root_slot(root, "epics", "Epic")
     b.add_root_slot(root, "stories", "UserStory")
+    b.add_root_slot(root, "module_criteria", "ModuleCriterion")
     return b
 
 
@@ -119,9 +128,12 @@ def build_seed_req_model(req_mm: MetamodelBuilder, task: DevBenchTask, *, canary
         qid = f"{op.component}::{op.name}"
         story = req_mm.new("UserStory", id=qid, status="accepted", epic=_epic_for(op.component))
         story.criteria.append(
-            req_mm.new("Criterion", id=f"{qid}.C1", text=criterion_text_for(task, op))
+            req_mm.new("Criterion", id=f"{qid}.C1", text=criterion_text_for(task, op, include_module_criteria=False))
         )
         root.stories.append(story)
+
+    for i, text in enumerate(task.acceptance_criteria, start=1):
+        root.module_criteria.append(req_mm.new("ModuleCriterion", id=f"module.MC{i}", text=text))
 
     for op, text in canary_stories or []:
         qid = f"{op.component}::{op.name}"

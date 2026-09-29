@@ -24,6 +24,25 @@ from .expr import Helpers, eval_expr
 from .lift import LIFT_BINDING_NAME, LiftRejected, lift_json_into_element
 from .matcher import Match
 from .trace import TraceLink, TraceModel, digest, element_key
+from .validators import Rejected
+
+_FEEDBACK_SNIPPET_CHARS = 400
+
+
+def _retry_prompt(prompt: str, rejected: str, reason: str) -> str:
+    """Prompt for a resample after a *content* rejection. Re-sending the
+    identical prompt at low temperature mostly reproduces the identical
+    rejected answer (observed: devstral returning the same class-qualified
+    signature twice), wasting the resample budget; telling the model what was
+    rejected is what makes the next sample differ. It adds only the model's
+    own previous output -- never source data outside the footprint."""
+    snippet = (rejected or "").strip()
+    if len(snippet) > _FEEDBACK_SNIPPET_CHARS:
+        snippet = snippet[:_FEEDBACK_SNIPPET_CHARS] + " ..."
+    return (
+        f"{prompt}\n\nYour previous answer was rejected ({reason}):\n{snippet or '(empty answer)'}\n"
+        "Answer again, following the requested output format exactly."
+    )
 
 
 @dataclass
@@ -138,9 +157,10 @@ def apply_stochastic_binding(
 
     last_reason = "no attempts made"
     any_sample_rejected = False
+    attempt_prompt = prompt
     for _attempt in range(max_resamples):
         try:
-            raw = llm.generate(prompt, temperature=temperature)
+            raw = llm.generate(attempt_prompt, temperature=temperature)
         except LLMError as exc:
             last_reason = str(exc)
             continue
@@ -168,11 +188,16 @@ def apply_stochastic_binding(
         if ok and binding.check_expr is not None:
             check_scope = {**match.bindings, target_var: target_obj, binding.name: raw}
             try:
-                ok = bool(eval_expr(binding.check_expr, check_scope, helpers))
+                verdict = eval_expr(binding.check_expr, check_scope, helpers)
+                ok = bool(verdict)
+                if not ok:
+                    last_reason = (
+                        verdict.reason
+                        if isinstance(verdict, Rejected)
+                        else "it failed the validator: wrong format, or not what was asked"
+                    )
             except Exception as exc:  # noqa: BLE001 - a failing @check is a rejection, not a crash
                 ok, last_reason = False, f"@check raised: {exc}"
-            if not ok:
-                last_reason = "@check rejected the sampled value"
 
         if ok:
             if binding.name != LIFT_BINDING_NAME:
@@ -182,6 +207,7 @@ def apply_stochastic_binding(
             trace_link.failed_stamps.pop(binding.name, None)
             return (True, None)
         any_sample_rejected = True
+        attempt_prompt = _retry_prompt(prompt, raw, last_reason)
 
     # Only a *content* rejection is cached: if every attempt was a transport
     # failure (LLMError: timeout, connection), the footprint was never

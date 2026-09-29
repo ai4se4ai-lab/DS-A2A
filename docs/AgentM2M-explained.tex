@@ -1032,6 +1032,7 @@ Version stamps & A binding whose footprint is unchanged since acceptance is not 
 Failed stamps & A binding escalated on a footprint is not re-sampled on later passes while that footprint is unchanged; its escalation is re-reported, so $\varphi$ stays false. & \file{binding.py}, \file{trace.py} \\
 Bounded resampling & At most $k$ samples, counted only on content rejection; a transport error does not consume the escalation. & \file{binding.py} \\
 Extract, then validate & A correct value wrapped in prose or fences is not rejected (and re-sampled) for its wrapping. & \file{devbench_rules/helpers.py} \\
+Minimal per-call preamble & A fixed per-call overhead (the model's default system prompt) is multiplied by the number of calls. The backend sends one short system line instead, identically for every configuration. & \file{ollama_backend.py} \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -1058,6 +1059,17 @@ not part of any configuration, and is metered separately
 what a change affects; zero for \tool{}, which reads it off the run report)
 and its \emph{propagation} cost (bringing every artifact up to date; for the
 baselines, re-running their pipeline on the changed requirements).
+
+\paragraph{Per-call overhead matters for a many-call design.} \tool{} makes
+many short calls where the baselines make a few long ones, so any fixed cost
+per call weighs on it disproportionately. The first post-fix run with
+\texttt{devstral:24b} showed this: its Ollama model ships a 5.6k-character
+agent system prompt (about 1.2k tokens) that Ollama prepends to every call,
+which accounted for about 34k of the 38k input tokens of \tool{}'s 28 calls on
+\texttt{geotext}, against about 5k for the 4 free-text calls. The prompt is
+also the wrong instruction for filling in one value. The Ollama backend now
+sends a one-line system prompt for every configuration alike, which reduced
+a probe call's input from 1{,}227 to 38 tokens. \todo{post-fix devstral numbers.}
 
 \begin{table}[h]
 \centering\small

@@ -81,6 +81,7 @@
 \newcommand{\step}[1]{\textcircled{\scriptsize #1}}
 \newcommand{\fp}{\mathit{fp}}
 \newcommand{\Obl}{\mathit{Obl}}
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
 \DeclareRobustCommand{\tracemark}{\tikz[baseline=-0.6ex]\node[draw,diamond,fill=black!70,inner sep=1.1pt]{};}
 
 \begin{document}
@@ -101,14 +102,17 @@ model conforming to its own metamodel; the \emph{structure} of a
 hand-off---matching, element creation, reference resolution, trace
 links---is executed by a deterministic engine, while the LLM is confined to
 \emph{stochastic bindings} that fill attribute values from a bounded source
-footprint and are accepted only after validation. Persisted trace models
-drive change propagation, and evolving the team at runtime is a
-higher-order transformation. We relate this design to
+footprint and are accepted only after validation. The LLM is invoked only
+for bindings whose footprint changed, so the calls a change costs are bounded
+by the obligations it creates, not by the size of the team's artifacts.
+Persisted trace models drive change propagation, and evolving the team at
+runtime is a higher-order transformation. We relate this design to
 11 of the 14 MAST failure modes (5 directly, 6 partially) and report a
 pilot with an open-source prototype: change impact was exact
-(precision and recall 1.00) where baselines over-regenerated, and a new
-agent was added at runtime with 7 lines of glue, while effects on
-hand-off fidelity remain inconclusive.
+(precision and recall 1.00) where baselines over-regenerated, and
+propagating a change cost about $12\times$ fewer tokens than re-running
+free-text hand-offs; a new agent was added at runtime with 7 lines of glue.
+\todo{re-check abstract numbers against the pooled runs.}
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -378,8 +382,10 @@ in plain OCL. A stochastic binding $b\in B_r^{\sem}$ has the form
 source data the LLM may see. \code{@check} names the validator
 $\mathit{chk}_b$ (a type/OCL constraint, a parser, or an executable oracle).
 Stochastic bindings target primitive-typed attributes (strings, code
-bodies), never references. Listing~\ref{lst:rules} shows $T_1$ and $T_4$
-for \devteam{}.
+bodies), never references. Anything an OCL expression can compute,
+including source text carried forward unchanged, is a structural binding:
+the LLM is reserved for values no expression can produce.
+Listing~\ref{lst:rules} shows $T_1$ and $T_4$ for \devteam{}.
 
 \begin{lstlisting}[language=ATL, float=t,
   caption={Hybrid hand-offs $T_1$ and $T_4$ (\code{@llm}, \code{@check}).},
@@ -424,8 +430,14 @@ LLM writes only its signature, from \code{S2}'s title and criteria alone.
       \label{alg:struct}
     \ForAll{stochastic binding $(t,b)$ with a stale stamp}
       \label{alg:obl}
-      \State \textsc{Bind}: sample $\le k$ values from $\fp_b$ until
-        $\mathit{chk}_b$, else $E\gets E\cup\{(t,b)\}$ \label{alg:bind}
+      \If{$\#\fp_b$ equals the failed stamp of $(t,b)$}
+        \State $E\gets E\cup\{(t,b)\}$ \label{alg:memo}
+          \Comment{no LLM call}
+      \Else
+        \State \textsc{Bind}: sample $\le k$ values from $\fp_b$ until
+          $\mathit{chk}_b$, else $E\gets E\cup\{(t,b)\}$, failed stamp
+          $\gets\#\fp_b$ \label{alg:bind}
+      \EndIf
     \EndFor
     \State \textbf{if} $M_j$ changed \textbf{then} $D\gets D\cup\mathit{readers}(M_j)$
   \EndWhile
@@ -447,7 +459,22 @@ targets and trace links for new matches, deletes those of vanished matches,
 and evaluates structural bindings. Lines~\ref{alg:obl}--\ref{alg:bind}
 re-bind every stochastic binding whose \emph{version stamp}---a digest of its
 footprint at acceptance---is missing or stale, prompting with the footprint
-only and escalating after $k$ rejections. Bindings are then checked
+only and escalating after $k$ rejections.
+
+\emph{Controlled LLM usage.} A binding is sampled only when its footprint
+digest differs from both its stamp and its \emph{failed stamp}, the digest at
+which it last escalated (line~\ref{alg:memo}); an escalated binding is thus
+re-reported, not re-sampled, until its footprint changes, and it keeps
+$\varphi$ false. Only a sample that fails $\mathit{chk}_b$ counts against
+$k$ (a transport error does not), and validators extract the value from its
+wrapping (prose, markdown fences) before judging it, so a correct value is
+never re-sampled for its formatting. A run therefore makes at most $k\cdot|S|$
+calls, where $S$ is the set of bindings whose digest differs from both stamps
+when it starts; quiescent passes cost nothing, and input tokens per call are
+bounded by prompt and footprint, not by conversation length. Because the
+design makes many short calls, fixed per-call overhead must also stay small:
+the runtime replaces model-default system prompts, which can exceed 1k
+tokens, with a one-line instruction. Bindings are then checked
 jointly against $\MM_j$'s OCL constraints (e.g., signatures agree on
 \code{TaskId}); a violation escalates the bindings involved. On $T_1$, \code{S3} fails the
 guard; $\mathit{comp}_{E1}$, $\mathit{op}_{S1}$, $\mathit{op}_{S2}$ and
@@ -472,10 +499,12 @@ function of its source models alone.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{devbench_rq1_rq2_per_model.pdf}
-\caption{Pilot on \texttt{chakin} per model: (a) MAST P1 modes per trace,
-(b) RQ2 impact precision (recall $=1.00$ everywhere), (c) LLM tokens per
-RQ1 task.}
+% \includegraphics[width=\textwidth]{devbench_rq1_rq2_per_model.pdf}
+\fbox{\parbox[c][2.2cm][c]{0.95\textwidth}{\centering\todo{regenerate
+\texttt{devbench\_rq1\_rq2\_per\_model.pdf} from the post-fix runs; the
+pre-fix figure was removed.}}}
+\caption{Pilot per model: (a) MAST P1 modes per trace, (b) RQ2 impact
+precision (recall $=1.00$), (c) LLM tokens to build once and per change.}
 \label{fig:rq1rq2}
 \end{figure*}
 
@@ -491,7 +520,8 @@ yields the \emph{obligations}
   &\fp_b(m)\cap \mathit{foot}(\Delta)\neq\emptyset\},
 \end{align*}
 i.e., the stale stamps of line~\ref{alg:obl}, each addressed to the owner
-of $\MM_j$. When the Analyst tightens \code{S2.1},
+of $\MM_j$. For a change, $S=\Obl(\Delta)$: it costs at most
+$k\cdot|\Obl(\Delta)|$ LLM calls, however large the models are. When the Analyst tightens \code{S2.1},
 $\Obl=\{(\mathit{op}_{S2},\code{signature}),
 (\mathit{tc}_{S2.1},\code{oracle}), (\mathit{ed}_{S2},\code{body})\}$:
 $T_2$'s \code{body} binding reads $\mathit{op}.\code{signature}$ and
@@ -536,35 +566,50 @@ $\mathit{op}_{S1}$ and $\mathit{op}_{S2}$ on arrival---no hand-written glue
 \noindent\textbf{Setup.} Our prototype (C2) instantiates \devteam{}'s four
 views and four hand-offs. We compare it with \emph{free-text} hand-offs and
 a PatchBoard-style \emph{shared schema}~\cite{zhang2026patchboard} under
-identical roles, prompts, and LLM, on three open-weight models (\texttt{qwen2.5-coder:7b},
-\texttt{devstral:24b}, \texttt{qwen3-coder:30b}). We pilot on one Python
-repository (\texttt{chakin}) of DevBench~\cite{li2024devbench}.
+identical roles, prompts, and LLM, on open-weight models (\texttt{qwen2.5-coder:7b},
+\texttt{devstral:24b}, \texttt{qwen3-coder:30b}) and Python repositories of
+DevBench~\cite{li2024devbench}. \todo{final model and repository set.}
+The prototype's $T_2$ is single-source: $T_1$ copies each story's criteria
+structurally into the operation, which $T_2$'s footprint reads. Token counts
+are the provider's own; the MAST judge is metered separately and excluded.
 \textbf{RQ1 (fidelity):} does \tool{} reduce P1 failure modes?
-\textbf{RQ2 (change):} how precise and complete is change impact under
-three injected PRD changes (tighten, add, remove a criterion)?
+\textbf{RQ2 (change):} how precise, complete, and costly is change
+propagation under three injected PRD changes (tighten, add, remove a
+criterion)? Baselines, lacking an impact set, propagate by re-running
+their pipeline on the changed PRD.
 \textbf{RQ3 (evolution):} can a HOT alone add an agent mid-run?
 
 
-\smallskip\noindent\textbf{Results.} \emph{RQ1 is inconclusive.} No
-configuration retained a canary or passed the acceptance test
-(a scripted backend passes 5/5, so the harness works). P1 modes per trace averaged 1.33 (free text), 0.33 (shared schema),
-and 1.00 (\tool{}), and the ranking flips by model (Fig.~\ref{fig:rq1rq2}a).
+\smallskip\noindent\textbf{Results.} Numbers below are from
+\texttt{geotext} with \texttt{qwen2.5-coder:7b}. \todo{pooled results
+over all repositories and models.}
+\emph{RQ1:} \tool{} retained 5/5 canaries through
+Req$\to$Arch$\to$Code; free text and shared schema retained 0/5. No
+configuration passed DevBench's acceptance tests (a scripted backend
+passes them, so the harness works). \todo{MAST P1 modes per trace.}
 \emph{RQ2 is the strongest result.} \tool{} reached recall and precision
-1.00 on all 9 trials (3 models $\times$ 3 changes), as the obligation
-operator predicts by construction. Shared schema had recall 1.00 but
-precision 0.23 (it regenerates everything); free-text precision was 1.00,
-0.75, and 0.23, non-monotonic in model size (Fig.~\ref{fig:rq1rq2}b).
-\emph{RQ3:} identically across models, the added reviewer covered all 9
-existing operations with 7 glue lines versus an estimated 22 manually. \emph{The price is tokens:} 25.5k per RQ1 task
-versus 14.9k (free text) and 4.8k (shared schema) (Fig.~\ref{fig:rq1rq2}c),
-and 34.0k per RQ2 change versus 0.23k and 0k.
+1.00 on all three changes, as the obligation operator predicts by
+construction; shared schema had recall 1.00 but precision 0.20--0.25 (it
+regenerates everything). Propagating a change cost \tool{} 0.58k tokens on
+average (1.30k to tighten, 0.43k to add, 0 to remove, which is purely
+structural), versus 6.94k for free text and 3.00k for shared schema.
+\emph{RQ3:} the added reviewer covered all existing operations with 7 glue
+lines versus an estimated 22 manually. \todo{re-confirm on post-fix runs.}
+\emph{Building once is not cheaper:} 8.3k tokens versus 5.8k (free text)
+and 2.8k (shared schema), since \tool{} prompts once per binding and also
+produces executable oracles; the difference is recovered after one change
+relative to free text and after three relative to shared schema. An early
+version of the prototype re-sampled escalated bindings on every pass and
+rejected correct oracles for their markdown wrapping, which tripled its
+build cost; the rules of Step~4 remove both.
 
 \smallskip\noindent\textbf{Discussion and threats.} Results on one
 repository are a feasibility signal, not a powered comparison: a null RQ1
 cannot separate ``no effect'' from ``underpowered.'' RQ2 and RQ3 follow
 from structure, not generation quality, hence their stability across
-models; \tool{}'s case rests on exact impact and runtime evolution, not
-cheaper generation. Our MAST annotator
+models; \tool{}'s token advantage likewise comes from propagating changes,
+not from cheaper one-shot generation, so it grows with the number of changes
+a team absorbs. Our MAST annotator
 approximates an unreleased tool with an LLM of the same class it evaluates
 and may be miscalibrated for \tool{}'s per-operation transcripts. Modes rooted
 in one agent's reasoning (FM-1.1, 2.2, 2.6; Table~\ref{tab:mast}) are

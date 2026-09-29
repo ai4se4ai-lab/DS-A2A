@@ -109,9 +109,99 @@ PROSE_AND_FENCE = (
     ],
 )
 def test_fails_on_stub(src: str, expected: bool):
-    assert devbench_helpers.failsOnStub(src) is expected
+    assert bool(devbench_helpers.failsOnStub(src)) is expected
 
 
 def test_compiles_and_parses_accept_prose_wrapped_code():
     assert devbench_helpers.compiles("Sure:\n```python\ndef f():\n    return 1\n```\nDone.")
     assert devbench_helpers.parses("Signature:\n```\nfoo(a, b) -> int\n```")
+
+
+class _RecordingBackend(MockBackend):
+    def __init__(self, script):
+        super().__init__(script=script)
+        self.prompts: list[str] = []
+
+    def generate(self, prompt, *, temperature=0.2):
+        self.prompts.append(prompt)
+        return super().generate(prompt, temperature=temperature)
+
+
+def test_resample_prompt_carries_rejection_feedback(rule_dir: Path):
+    req_root, arch_root, arch_mm, _story = _seed()
+    module = parse_module_file(rule_dir / "Req2Arch.agentm2m")
+    trace = TraceModel(handoff="Req2Arch")
+    llm = _RecordingBackend(["The op takes an id.", "handleThing(id: string) -> Result"])
+
+    report = _run(module, req_root, arch_root, arch_mm, trace, llm, rule_dir)
+    assert not report.escalations
+    first, second = llm.prompts
+    assert "previous answer was rejected" not in first
+    assert "previous answer was rejected" in second and "The op takes an id." in second
+    # Feedback extends the footprint-bounded prompt; it never replaces it.
+    assert second.startswith(first)
+
+
+def test_parses_accepts_class_qualified_signature():
+    assert devbench_helpers.parses("GeoText.__init__(self, text: str, country: str) -> None")
+    assert not devbench_helpers.parses("GeoText takes a text and a country")
+
+
+def test_defines_name_rejects_misnamed_body():
+    fenced = "```python\ndef process_text(self, text):\n    self.text = text\n```"
+    assert not devbench_helpers.definesName(fenced, "__init__")
+    assert devbench_helpers.definesName("import os\n\ndef __init__(self, text):\n    pass\n", "__init__")
+
+
+def test_validators_explain_rejections():
+    verdict = devbench_helpers.failsOnStub("def test_oracle():\n    r = Result(1)\n    assert r.x == 1\n")
+    assert not verdict and "implementation(...)" in verdict.reason
+    assert "def __init__" in devbench_helpers.definesName("def process_text(self):\n    pass\n", "__init__").reason
+
+
+def test_resample_prompt_carries_validator_reason(tmp_path: Path):
+    helpers_text = HELPERS_TEXT + (
+        "\nfrom agentm2m.engine.validators import Rejected\n"
+        "def strict(sig):\n"
+        "    return True if parses(sig) else Rejected('use name(args) -> Type')\n"
+    )
+    (tmp_path / "helpers.py").write_text(helpers_text)
+    (tmp_path / "Req2Arch.agentm2m").write_text(
+        RULE_TEXT.replace("@check signature.parses()\n          and signature.params->notEmpty()",
+                          "@check signature.strict() and signature.params->notEmpty()")
+    )
+    req_root, arch_root, arch_mm, _story = _seed()
+    module = parse_module_file(tmp_path / "Req2Arch.agentm2m")
+    llm = _RecordingBackend(["nope", "handleThing(id: string) -> Result"])
+    report = _run(module, req_root, arch_root, arch_mm, TraceModel(handoff="Req2Arch"), llm, tmp_path)
+    assert not report.escalations
+    assert "use name(args) -> Type" in llm.prompts[1]
+
+
+def test_parses_accepts_inline_backticked_signature():
+    assert devbench_helpers.parses("`__init__(self, seconds: int, wpm: int) -> None`")
+
+
+def test_truncated_oracle_is_salvaged():
+    truncated = (
+        "def test_oracle():\n"
+        "    assert implementation('agentm2m') == 'CANARY_OK'\n"
+        "    assert implementation('x') == 'CANARY_MISS'\n"
+        "    assert implementation('AGENTM2M is in the middle"
+    )
+    assert devbench_helpers.failsOnStub(truncated)
+
+
+def test_assembled_module_tolerates_annotations_on_body_imports():
+    from evaluation.harness.devbench_common import GeneratedSymbol, assemble_module
+
+    body = "def get_ohlc(df: DataFrame) -> DataFrame:\n    from pandas import DataFrame\n    return df\n"
+    src = assemble_module([GeneratedSymbol(component="Renko", name="get_ohlc", body=body)])
+    exec(compile(src, "m", "exec"), {})
+
+
+def test_loads_rejects_body_with_broken_import():
+    bad = "from typing import Context\n\ndef generate_license(template, context: Context) -> None:\n    pass\n"
+    verdict = devbench_helpers.loads(bad)
+    assert not verdict and "ImportError" in verdict.reason
+    assert devbench_helpers.loads("import os\n\ndef get_suffix(name: str) -> str:\n    return os.path.splitext(name)[1]\n")

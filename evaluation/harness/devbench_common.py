@@ -17,6 +17,7 @@ LLM, only cross-file placement is not modeled.
 """
 from __future__ import annotations
 
+import os
 import re
 import shlex
 import shutil
@@ -52,7 +53,12 @@ def assemble_module(symbols: list[GeneratedSymbol]) -> str:
         else:
             body = "\n\n".join(textwrap.indent(b, "    ") for b in blocks)
             parts.append(f"class {component}:\n{body}")
-    return "\n\n\n".join(parts) + "\n"
+    # Bodies import their libraries *inside* the function (Arch2Code's
+    # prompt), but annotations are evaluated when the `def` runs, so e.g.
+    # `def f(df: DataFrame)` raised NameError at import time and took the
+    # whole module -- every canary and real test -- down with it (observed:
+    # stocktrends, lice). Lazy annotations make that ordering irrelevant.
+    return "from __future__ import annotations\n\n\n" + "\n\n\n".join(parts) + "\n"
 
 
 _FENCE_RE = re.compile(r"```(?:python)?\s*\n(.*?)```", re.DOTALL)
@@ -83,11 +89,18 @@ def extract_code_blob(text: str) -> str:
     return (m.group(1) if m else (text or "")).strip() + "\n"
 
 
+_COV_GATE_RE = re.compile(r"\s--cov-fail-under=\S+")
+
+
 def _normalize_cmd(cmd: str) -> str:
     """Route `pytest ...` / `python ...` test commands through this
     process's own interpreter (`sys.executable`) instead of relying on
     `$PATH`, so the project's venv (with DevBench's deps installed) is
-    always what actually runs the tests."""
+    always what actually runs the tests. Also drops `--cov-fail-under`:
+    a coverage threshold grades the *tests'* coverage, not whether the
+    implementation is correct (lice's reference implementation passes
+    every test but fails its 100% coverage gate)."""
+    cmd = _COV_GATE_RE.sub("", cmd)
     if cmd.startswith("pytest "):
         return f"{sys.executable} -m pytest " + cmd[len("pytest ") :]
     if cmd.startswith("python "):
@@ -107,12 +120,22 @@ class DevBenchTestResult:
     timed_out: bool = False
 
 
+def _test_env() -> dict[str, str]:
+    """Tests that shell out to a bare `python` (TextCNN, ArXiv_digest
+    acceptance tests) must find the venv's interpreter, not fail with
+    `sh: python: not found` on hosts that only ship `python3`."""
+    env = dict(os.environ)
+    env["PATH"] = str(Path(sys.executable).parent) + os.pathsep + env.get("PATH", "")
+    return env
+
+
 def _run(cmd: str, *, cwd: Path, timeout: float) -> tuple[bool, str]:
     try:
         proc = subprocess.run(
             shlex.split(_normalize_cmd(cmd)),
             shell=False,
             cwd=cwd,
+            env=_test_env(),
             capture_output=True,
             text=True,
             timeout=timeout,

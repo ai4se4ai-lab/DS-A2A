@@ -105,6 +105,19 @@ def load_repo_config(repo_dir: Path) -> dict:
     return json.loads(_read(repo_dir / "repo_config.json"))
 
 
+# Upstream repo_config.json test commands that do not match the repo's own
+# layout (hone's point at a `test/` dir and a top-level `test_acceptance.py`
+# that do not exist; its tests live in unit_tests/ and acceptance_tests/).
+# Without these, even the reference implementation fails to grade.
+_TEST_CMD_OVERRIDES: dict[str, dict[str, str]] = {
+    "hone": {
+        "unit_test_script": "pytest --cov=hone --cov-report=term-missing --json-report "
+        "--json-report-file=unit_test_report.json unit_tests",
+        "acceptance_test_script": "python -m unittest acceptance_tests/test_acceptance.py",
+    },
+}
+
+
 def load_devbench_task(repo_name: str, *, cache_root: Path | None = None) -> DevBenchTask:
     root = cache_root or CACHE_ROOT
     repo_dir = root / repo_name
@@ -131,8 +144,10 @@ def load_devbench_task(repo_name: str, *, cache_root: Path | None = None) -> Dev
         acceptance_criteria=criteria,
         operations=operations,
         target_files=target_files,
-        unit_test_cmd=cfg["unit_test_script"],
-        acceptance_test_cmd=cfg["acceptance_test_script"],
+        unit_test_cmd=_TEST_CMD_OVERRIDES.get(repo_name, {}).get("unit_test_script", cfg["unit_test_script"]),
+        acceptance_test_cmd=_TEST_CMD_OVERRIDES.get(repo_name, {}).get(
+            "acceptance_test_script", cfg["acceptance_test_script"]
+        ),
         unit_tests_dir=cfg["unit_tests"],
         acceptance_tests_dir=cfg["acceptance_tests"],
         dependencies_file=cfg.get("dependencies"),
@@ -144,19 +159,25 @@ def load_all_tasks(*, cache_root: Path | None = None) -> list[DevBenchTask]:
     return [load_devbench_task(name, cache_root=cache_root) for name in ALL_REPOS]
 
 
-def criterion_text_for(task: DevBenchTask, op: OperationSpec) -> str:
+def criterion_text_for(task: DevBenchTask, op: OperationSpec, *, include_module_criteria: bool = True) -> str:
     """Builds the footprint text a Req!Criterion carries for one operation.
     Ground-truth symbol name/params are embedded so a coordination failure
     shows up as the hand-off *losing* this information, not as the LLM
-    guessing a different API surface than the real tests expect."""
+    guessing a different API surface than the real tests expect.
+
+    `include_module_criteria=False` omits the module-wide acceptance bullets
+    (they are the same for every operation). AgentM2M's Req model holds them
+    once, as ModuleCriterion elements, instead of repeating them in every
+    per-operation footprint, where they were 65-86% of each prompt's source
+    text. The baselines keep the default."""
     is_method = op.component != "Global_functions"
     role_hint = (
         f"This is an instance method of class `{op.component}`; include `self` as the first parameter."
         if is_method
         else "This is a free function (not a class method)."
     )
+    head = f"Implement `{op.name}({op.params_hint})` on component `{op.component}`. {role_hint}"
+    if not include_module_criteria:
+        return head
     bullets = "\n".join(f"- {c}" for c in task.acceptance_criteria)
-    return (
-        f"Implement `{op.name}({op.params_hint})` on component `{op.component}`. {role_hint}\n"
-        f"Module-level acceptance criteria this operation must help satisfy:\n{bullets}"
-    )
+    return f"{head}\nModule-level acceptance criteria this operation must help satisfy:\n{bullets}"

@@ -12,6 +12,17 @@ import requests
 
 from .base import LLMBackend, LLMError
 
+# Sent as the `system` field of every request, replacing the model's
+# Modelfile SYSTEM prompt. Some tags ship a very long one (devstral:24b:
+# a ~5.6k-char OpenHands agent prompt, ~1.2k tokens) that Ollama prepends
+# to *every* /api/generate call -- a fixed per-call tax that dominated the
+# measured cost of many-small-call configurations and is also the wrong
+# instruction for a fill-in-one-value prompt. Applied identically to every
+# configuration; pass `system=None` to keep the model's own default.
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a precise software engineering assistant. Follow the requested output format exactly."
+)
+
 
 class OllamaBackend(LLMBackend):
     name = "ollama"
@@ -24,6 +35,7 @@ class OllamaBackend(LLMBackend):
         auto_pull: bool = True,
         timeout: float = 120.0,
         max_tokens: int = 800,
+        system: str | None = DEFAULT_SYSTEM_PROMPT,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
@@ -38,6 +50,7 @@ class OllamaBackend(LLMBackend):
         # case cost without changing what's being measured (coordination
         # structure, not raw generation length).
         self.max_tokens = max_tokens
+        self.system = system
         if auto_pull:
             self._ensure_model_available()
 
@@ -81,15 +94,18 @@ class OllamaBackend(LLMBackend):
 
     def generate(self, prompt: str, *, temperature: float = 0.2) -> str:
         self.last_usage = None
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": temperature, "num_predict": self.max_tokens},
+        }
+        if self.system is not None:
+            payload["system"] = self.system
         try:
             resp = requests.post(
                 f"{self.base_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {"temperature": temperature, "num_predict": self.max_tokens},
-                },
+                json=payload,
                 timeout=self.timeout,
             )
             resp.raise_for_status()

@@ -13,5 +13,5 @@ rule Operation2CodeEdit {
     operation <- op,
     body      <- @llm('Implement this operation as a complete Python function or method (a full "def name(...):" block matching this exact signature) that satisfies the specification. If you need a library, import it inside the function body. Output ONLY the raw def block: no markdown code fences, no surrounding class/imports/explanation.',
                        op.codeContext()),
-    @check body.compiles() )
+    @check body.compiles() and body.definesName(op.name) and body.loads() )
 }

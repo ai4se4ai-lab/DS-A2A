@@ -12,7 +12,7 @@ rule Criterion2TestCase {
   to  tc : Test!TestCase (
     name      <- c.text,
     criterion <- c,
-    oracle    <- @llm('Write a test oracle for this acceptance criterion. The operation under test is available as a function named implementation (already defined; do NOT define or import it). Define def test_oracle(): that calls implementation(...) with concrete arguments and asserts the criterion holds. Output ONLY the raw Python def block: no markdown code fences, no explanation.',
+    oracle    <- @llm('Write a test oracle for this acceptance criterion. The operation under test is available as a function named implementation (already defined; do NOT define or import it). Define def test_oracle(): that calls implementation(...) with concrete arguments and asserts the criterion holds with at most 3 assert statements. If the operation is a method, implementation is already bound to an instance: pass only the arguments after self, and never construct the class. Output ONLY the raw Python def block: no markdown code fences, no explanation.',
                        c.text),
     @check oracle.failsOnStub() )
 }
