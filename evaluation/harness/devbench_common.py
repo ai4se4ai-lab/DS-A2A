@@ -66,6 +66,11 @@ def _strip_wrapping_fence(text: str) -> str:
     otherwise-valid body must be unwrapped again here or the assembled
     module won't parse."""
     m = _WRAPPING_FENCE_RE.match(text or "")
+    if m:
+        return m.group(1)
+    # "prose + fenced block" replies: devbench_rules/helpers.py's compiles()
+    # validates the first fenced block, so assemble exactly that block too.
+    m = _FENCE_RE.search(text or "")
     return m.group(1) if m else (text or "")
 
 

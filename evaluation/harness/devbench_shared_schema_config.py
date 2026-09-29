@@ -46,8 +46,18 @@ def _all_criteria_text(task: DevBenchTask) -> str:
     return "\n\n".join(lines)
 
 
-def run_shared_schema(task: DevBenchTask, llm: LLMBackend, *, temperature: float = 0.2) -> ConfigRunResult:
-    criteria_text = _all_criteria_text(task)
+def run_shared_schema(
+    task: DevBenchTask,
+    llm: LLMBackend,
+    *,
+    temperature: float = 0.2,
+    criteria_text: str | None = None,
+    grade: bool = True,
+) -> ConfigRunResult:
+    """`criteria_text` overrides the task's own (RQ2 re-runs the pipeline on
+    an edited requirement set); `grade=False` skips the DevBench test run."""
+    if criteria_text is None:
+        criteria_text = _all_criteria_text(task)
     state: dict[str, Any] = {"requirements": {"prd": task.prd_text, "criteria": criteria_text}}
     validation_errors: dict[str, list[str]] = {"requirements": validate_write(state, "requirements")}
     turns: list[Turn] = []
@@ -84,7 +94,9 @@ def run_shared_schema(task: DevBenchTask, llm: LLMBackend, *, temperature: float
     turns.append(Turn("Tester", tester_prompt, tester_out))
 
     module_text = extract_code_blob(state["implementation"]["code"])
-    test_result = run_devbench_tests(task, module_text, canary_test_sources=canary_test_files())
+    test_result = (
+        run_devbench_tests(task, module_text, canary_test_sources=canary_test_files()) if grade else None
+    )
 
     all_errors = [e for errs in validation_errors.values() for e in errs]
     return ConfigRunResult(
@@ -95,6 +107,6 @@ def run_shared_schema(task: DevBenchTask, llm: LLMBackend, *, temperature: float
         extra={
             "validation_errors": validation_errors,
             "schema_valid": not all_errors,
-            "test_result": vars(test_result),
+            "test_result": vars(test_result) if test_result else {},
         },
     )

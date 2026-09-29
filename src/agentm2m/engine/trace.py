@@ -76,6 +76,10 @@ class TraceLink:
     target_key: str  # element_key of the created target element
     stamps: dict[str, str] = field(default_factory=dict)  # attr -> footprint digest
     footprints: dict[str, Any] = field(default_factory=dict)  # attr -> last raw footprint (debug/report)
+    # attr -> footprint digest at which the binding last *escalated*; lets the
+    # engine re-report the escalation without re-sampling while that
+    # footprint is unchanged (Alg. 1 line 11: escalate, never loop).
+    failed_stamps: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -84,6 +88,7 @@ class TraceLink:
             "source_keys": self.source_keys,
             "target_key": self.target_key,
             "stamps": self.stamps,
+            "failed_stamps": self.failed_stamps,
             "footprints": {k: _to_jsonable(v) for k, v in self.footprints.items()},
         }
 
@@ -96,6 +101,7 @@ class TraceLink:
             target_key=d["target_key"],
             stamps=d.get("stamps", {}),
             footprints=d.get("footprints", {}),
+            failed_stamps=d.get("failed_stamps", {}),
         )
 
 

@@ -25,8 +25,18 @@ def _all_criteria_text(task: DevBenchTask) -> str:
     return "\n\n".join(lines)
 
 
-def run_free_text(task: DevBenchTask, llm: LLMBackend, *, temperature: float = 0.2) -> ConfigRunResult:
-    criteria_text = _all_criteria_text(task)
+def run_free_text(
+    task: DevBenchTask,
+    llm: LLMBackend,
+    *,
+    temperature: float = 0.2,
+    criteria_text: str | None = None,
+    grade: bool = True,
+) -> ConfigRunResult:
+    """`criteria_text` overrides the task's own (RQ2 re-runs the pipeline on
+    an edited requirement set); `grade=False` skips the DevBench test run."""
+    if criteria_text is None:
+        criteria_text = _all_criteria_text(task)
 
     analyst_prompt = (
         f"You are a software Analyst. Product requirements document:\n{task.prd_text}\n\n"
@@ -61,7 +71,9 @@ def run_free_text(task: DevBenchTask, llm: LLMBackend, *, temperature: float = 0
     tester_out = llm.generate(tester_prompt, temperature=temperature)
 
     module_text = extract_code_blob(developer_out)
-    test_result = run_devbench_tests(task, module_text, canary_test_sources=canary_test_files())
+    test_result = (
+        run_devbench_tests(task, module_text, canary_test_sources=canary_test_files()) if grade else None
+    )
 
     turns = [
         Turn("Analyst", analyst_prompt, analyst_out),
@@ -74,5 +86,5 @@ def run_free_text(task: DevBenchTask, llm: LLMBackend, *, temperature: float = 0
         config=CONFIG_NAME,
         patch_text=module_text,
         turns=turns,
-        extra={"test_result": vars(test_result)},
+        extra={"test_result": vars(test_result) if test_result else {}},
     )

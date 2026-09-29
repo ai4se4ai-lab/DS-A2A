@@ -18,6 +18,7 @@ class OpenAIBackend(LLMBackend):
         self.timeout = timeout
 
     def generate(self, prompt: str, *, temperature: float = 0.2) -> str:
+        self.last_usage = None
         try:
             resp = requests.post(
                 f"{self.base_url}/chat/completions",
@@ -33,4 +34,7 @@ class OpenAIBackend(LLMBackend):
         except requests.RequestException as exc:
             raise LLMError(f"OpenAI generate() failed: {exc}") from exc
         data = resp.json()
+        usage = data.get("usage") or {}
+        if usage:
+            self.last_usage = (int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0)))
         return data["choices"][0]["message"]["content"].strip()

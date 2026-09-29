@@ -51,6 +51,11 @@ def build_arch_mm() -> MetamodelBuilder:
     b.attribute(operation, "id")
     b.attribute(operation, "name")
     b.attribute(operation, "signature")
+    # `spec`: the originating story's criterion text, copied *structurally*
+    # (no LLM) by Req2Arch so Arch2Code's footprint can carry the behavior,
+    # not just the signature -- otherwise the Developer has to guess what
+    # e.g. canary_checksum_1 should do from its name alone.
+    b.attribute(operation, "spec")
     b.reference(operation, "component", "Component", many=False, containment=False)
 
     root = b.eclass("ArchModel")

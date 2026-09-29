@@ -118,11 +118,26 @@ def apply_stochastic_binding(
     fp_digest = digest(footprint)
     if trace_link.stamps.get(binding.name) == fp_digest:
         return (False, None)  # footprint unchanged since acceptance -> no re-invocation
+    if trace_link.failed_stamps.get(binding.name) == fp_digest:
+        # Already escalated on this exact footprint: re-sampling the same
+        # prompt would just burn another k samples for the same outcome, so
+        # re-report the (still open) escalation without invoking the LLM.
+        # A footprint change clears this and earns a fresh budget.
+        return (
+            False,
+            Escalation(
+                target_key=trace_link.target_key,
+                binding=binding.name,
+                rule=trace_link.rule,
+                reason="escalated earlier on an unchanged footprint; not re-sampled",
+            ),
+        )
 
     prompt_head = eval_expr(binding.prompt_expr, match.bindings, helpers)
     prompt = f"{prompt_head}\n\nContext (footprint only):\n{_footprint_to_text(footprint)}"
 
     last_reason = "no attempts made"
+    any_sample_rejected = False
     for _attempt in range(max_resamples):
         try:
             raw = llm.generate(prompt, temperature=temperature)
@@ -164,8 +179,15 @@ def apply_stochastic_binding(
                 setattr(target_obj, binding.name, raw)
             trace_link.stamps[binding.name] = fp_digest
             trace_link.footprints[binding.name] = footprint
+            trace_link.failed_stamps.pop(binding.name, None)
             return (True, None)
+        any_sample_rejected = True
 
+    # Only a *content* rejection is cached: if every attempt was a transport
+    # failure (LLMError: timeout, connection), the footprint was never
+    # actually judged, so the next pass should still try it.
+    if any_sample_rejected:
+        trace_link.failed_stamps[binding.name] = fp_digest
     return (
         False,
         Escalation(target_key=trace_link.target_key, binding=binding.name, rule=trace_link.rule, reason=last_reason),

@@ -17,6 +17,7 @@ class AnthropicBackend(LLMBackend):
         self.timeout = timeout
 
     def generate(self, prompt: str, *, temperature: float = 0.2) -> str:
+        self.last_usage = None
         try:
             resp = requests.post(
                 "https://api.anthropic.com/v1/messages",
@@ -37,4 +38,7 @@ class AnthropicBackend(LLMBackend):
         except requests.RequestException as exc:
             raise LLMError(f"Anthropic generate() failed: {exc}") from exc
         data = resp.json()
+        usage = data.get("usage") or {}
+        if usage:
+            self.last_usage = (int(usage.get("input_tokens", 0)), int(usage.get("output_tokens", 0)))
         return "".join(block.get("text", "") for block in data.get("content", [])).strip()

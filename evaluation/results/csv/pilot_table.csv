@@ -1,6 +1,0 @@
-Metric,Free text,Shared schema,AgentM2M
-P1 modes per trace (MAST),0.60,1.00,1.40
-P2 modes per trace (MAST),0.00,0.00,0.00
-Task success (%),100.0,100.0,100.0
-Impact recall / precision (RQ2),--,1.00 / 0.50,1.00 / 1.00
-LLM tokens per task (k),4.34,1.79,1.64

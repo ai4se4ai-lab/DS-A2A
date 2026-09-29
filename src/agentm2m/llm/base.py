@@ -13,6 +13,9 @@ from abc import ABC, abstractmethod
 
 class LLMBackend(ABC):
     name: str = "base"
+    # (input_tokens, output_tokens) the provider reported for the most recent
+    # generate() call, when it reports them; None -> fall back to count_tokens.
+    last_usage: tuple[int, int] | None = None
 
     @abstractmethod
     def generate(self, prompt: str, *, temperature: float = 0.2) -> str:

@@ -18,6 +18,7 @@ rule Story2Operation {
     id        <- s.id,                     -- structural: qualified, globally-unique trace key
     name      <- s.id.realName(),          -- structural: exact real symbol name
     component <- s.epic,                   -- resolved via trace
+    spec      <- s.criteria.criteriaText(), -- structural: criterion text carried forward, no LLM
     signature <- @llm('Derive a precise Python signature (parameter list and return type, e.g. name(param1, param2) -> ReturnType) for this operation from its acceptance criteria. Respond with ONLY the signature on one line, no markdown code fences, no explanation.',
                        s.criteria),         -- footprint
     @check signature.parses() )

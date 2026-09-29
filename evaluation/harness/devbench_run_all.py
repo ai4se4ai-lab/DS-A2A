@@ -49,8 +49,13 @@ def run_one(config_name: str, repo: str, task, llm, *, model: str, seed: int, te
     t0 = time.time()
     meter = TokenMeter(llm)
     result = runner(task, meter, temperature=temperature)
-    annotation = mast_annotator.annotate(repo, config_name, result.transcript_text(), meter, temperature=0.0)
     elapsed = time.time() - t0
+    # The MAST judge is evaluation overhead, not part of the system under
+    # test: meter it separately so it never inflates a config's token cost
+    # (it used to be charged to `meter`, i.e. proportional to how long each
+    # config's transcript happened to be).
+    eval_meter = TokenMeter(llm)
+    annotation = mast_annotator.annotate(repo, config_name, result.transcript_text(), eval_meter, temperature=0.0)
 
     test_result = result.extra.get("test_result", {})
     record = {
@@ -72,6 +77,8 @@ def run_one(config_name: str, repo: str, task, llm, *, model: str, seed: int, te
         "output_tokens": meter.output_tokens,
         "total_tokens": meter.total_tokens,
         "llm_calls": meter.calls,
+        "exact_token_calls": meter.exact_calls,
+        "eval_tokens": eval_meter.total_tokens,
         "elapsed_s": round(elapsed, 1),
         "extra": {k: v for k, v in result.extra.items() if k != "test_result"},
     }
@@ -108,7 +115,7 @@ def run_rq2_all(repos: list[str], *, llm, model: str, temperature: float, log_fh
         for kind, results in (
             ("agentm2m", run_impact_injection_agentm2m(task, llm, temperature=temperature)),
             ("free_text", run_impact_injection_free_text(task, llm, temperature=temperature)),
-            ("shared_schema", run_impact_injection_shared_schema(task)),
+            ("shared_schema", run_impact_injection_shared_schema(task, llm, temperature=temperature)),
         ):
             for res in results:
                 record = {
@@ -116,6 +123,9 @@ def run_rq2_all(repos: list[str], *, llm, model: str, temperature: float, log_fh
                     "change_kind": res.change.kind, "target_op": res.change.target_op,
                     "predicted": sorted(res.predicted), "oracle": sorted(res.oracle),
                     "precision": res.precision, "recall": res.recall, "tokens": res.tokens,
+                    "identification_tokens": res.identification_tokens,
+                    "propagation_tokens": res.propagation_tokens,
+                    "build_tokens": res.build_tokens,
                 }
                 log_fh.write(json.dumps(record) + "\n")
         log_fh.flush()

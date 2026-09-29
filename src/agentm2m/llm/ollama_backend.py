@@ -80,6 +80,7 @@ class OllamaBackend(LLMBackend):
                     raise LLMError(f"ollama pull {self.model} failed: {status}")
 
     def generate(self, prompt: str, *, temperature: float = 0.2) -> str:
+        self.last_usage = None
         try:
             resp = requests.post(
                 f"{self.base_url}/api/generate",
@@ -94,4 +95,7 @@ class OllamaBackend(LLMBackend):
             resp.raise_for_status()
         except requests.RequestException as exc:
             raise LLMError(f"Ollama generate() failed: {exc}") from exc
-        return resp.json().get("response", "").strip()
+        data = resp.json()
+        if "prompt_eval_count" in data or "eval_count" in data:
+            self.last_usage = (int(data.get("prompt_eval_count", 0)), int(data.get("eval_count", 0)))
+        return data.get("response", "").strip()

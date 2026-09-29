@@ -86,7 +86,12 @@ def compute_rq2(records: list[dict]) -> dict[str, dict]:
         out[config_key] = {
             "recall": mean(r["recall"] for r in rows),
             "precision": mean(r["precision"] for r in rows),
+            # Per-change cost (identification + propagation). Logs written
+            # before the split only have `tokens`, with the old semantics.
             "tokens_k": mean(r.get("tokens", 0) for r in rows) / 1000.0,
+            "identification_tokens_k": mean(r.get("identification_tokens", 0) for r in rows) / 1000.0,
+            "propagation_tokens_k": mean(r.get("propagation_tokens", r.get("tokens", 0)) for r in rows) / 1000.0,
+            "build_tokens_k": mean(r.get("build_tokens", 0) for r in rows) / 1000.0,
             "n": len(rows),
         }
     return out
