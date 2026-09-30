@@ -1,8 +1,7 @@
 # AgentM2M (DS-A2A)
 
-**Towards Deterministic Structure for Stochastic Agents: M2M Transformations for Agentic Collaborations**
+**M2M Transformations for Agentic Collaborations in Software Engineering**
 
-A prototype implementing the ICSE-NIER paper at [`docs/DS-A2A.tex`](docs/DS-A2A.tex).
 The core idea: treat every hand-off between LLM agents in a team as a
 **model-to-model (M2M) transformation** in the style of ATL. A deterministic
 engine owns matching, element creation, and reference resolution; the LLM is
