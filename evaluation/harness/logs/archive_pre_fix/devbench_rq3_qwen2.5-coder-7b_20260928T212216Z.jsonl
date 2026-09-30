@@ -1,0 +1,5 @@
+{"repo": "geotext", "model": "qwen2.5-coder:7b", "n_ops_before": 9, "n_reviews_after": 9, "retroactive_coverage": 1.0, "tokens": 53166}
+{"repo": "readtime", "model": "qwen2.5-coder:7b", "n_ops_before": 16, "n_reviews_after": 16, "retroactive_coverage": 1.0, "tokens": 100883}
+{"repo": "particle-swarm-optimization", "model": "qwen2.5-coder:7b", "n_ops_before": 10, "n_reviews_after": 10, "retroactive_coverage": 1.0, "tokens": 57053}
+{"repo": "Hybrid_Images", "model": "qwen2.5-coder:7b", "n_ops_before": 11, "n_reviews_after": 11, "retroactive_coverage": 1.0, "tokens": 77197}
+{"repo": "stocktrends", "model": "qwen2.5-coder:7b", "n_ops_before": 18, "n_reviews_after": 18, "retroactive_coverage": 1.0, "tokens": 132866}

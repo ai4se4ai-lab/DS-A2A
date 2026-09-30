@@ -12,14 +12,58 @@ import requests
 
 from .base import LLMBackend, LLMError
 
+# Sent as the `system` field of every request, replacing the model's
+# Modelfile SYSTEM prompt. Some tags ship a very long one (devstral:24b:
+# a ~5.6k-char OpenHands agent prompt, ~1.2k tokens) that Ollama prepends
+# to *every* /api/generate call -- a fixed per-call tax that dominated the
+# measured cost of many-small-call configurations and is also the wrong
+# instruction for a fill-in-one-value prompt. Applied identically to every
+# configuration; pass `system=None` to keep the model's own default.
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a precise software engineering assistant. Follow the requested output format exactly."
+)
+
 
 class OllamaBackend(LLMBackend):
     name = "ollama"
 
-    def __init__(self, base_url: str, model: str, *, auto_pull: bool = True, timeout: float = 120.0) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        *,
+        auto_pull: bool = True,
+        timeout: float = 300.0,
+        max_tokens: int = 4096,
+        system: str | None = DEFAULT_SYSTEM_PROMPT,
+        think: bool | None = False,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout
+        # The cap must not bind for any configuration's legitimate output: at
+        # 800 it truncated the baselines' single long calls (a whole module
+        # from one Developer call; qwen3.8: 6 of 8 baseline modules cut off),
+        # silently depressing their fidelity scores. 4096 leaves room for
+        # those; AgentM2M's per-binding answers are bounded by their prompts,
+        # not by this cap, so a runaway still costs it -- honestly.
+        # Every `@llm` binding in this codebase expects a short, specific
+        # answer (a signature line, a short function body, a brief prose
+        # summary); with no cap, a smaller/repetition-prone model can run
+        # away generating thousands of tokens of degenerate output for a
+        # single call, which both wastes wall-clock time and can exceed
+        # `timeout` outright (observed in practice: a single call passing
+        # 2700+ generated tokens and still climbing). Capping bounds worst-
+        # case cost without changing what's being measured (coordination
+        # structure, not raw generation length).
+        self.max_tokens = max_tokens
+        self.system = system
+        # Hidden reasoning ("thinking" models, e.g. qwen3.8) is generated and
+        # billed on every call but never shown in `response`: on a one-line
+        # signature it multiplied output ~5x (71 vs 14 tokens) for the same
+        # answer. Off for every configuration alike; a no-op for models
+        # without thinking. None leaves the model's default.
+        self.think = think
         if auto_pull:
             self._ensure_model_available()
 
@@ -62,18 +106,27 @@ class OllamaBackend(LLMBackend):
                     raise LLMError(f"ollama pull {self.model} failed: {status}")
 
     def generate(self, prompt: str, *, temperature: float = 0.2) -> str:
+        self.last_usage = None
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": temperature, "num_predict": self.max_tokens},
+        }
+        if self.system is not None:
+            payload["system"] = self.system
+        if self.think is not None:
+            payload["think"] = self.think
         try:
             resp = requests.post(
                 f"{self.base_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {"temperature": temperature},
-                },
+                json=payload,
                 timeout=self.timeout,
             )
             resp.raise_for_status()
         except requests.RequestException as exc:
             raise LLMError(f"Ollama generate() failed: {exc}") from exc
-        return resp.json().get("response", "").strip()
+        data = resp.json()
+        if "prompt_eval_count" in data or "eval_count" in data:
+            self.last_usage = (int(data.get("prompt_eval_count", 0)), int(data.get("eval_count", 0)))
+        return data.get("response", "").strip()

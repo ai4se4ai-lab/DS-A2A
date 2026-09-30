@@ -15,6 +15,8 @@ from typing import Any, Callable
 
 from lark import Token, Tree
 
+from .validators import Rejected
+
 Scope = dict[str, Any]
 Helpers = dict[str, Callable[..., Any]]
 
@@ -66,11 +68,22 @@ def eval_expr(node: Tree | Token | Any, scope: Scope, helpers: Helpers | None = 
         right = eval_expr(ch[2], scope, helpers)
         return _COMPARATORS[op_tok.type](left, right)
 
+    # and/or keep booleans as before, except that a falsy validator result
+    # carrying a reason (validators.Rejected) is passed through unchanged,
+    # so `@check a() and b()` still tells the engine which part failed.
     if data == "or_op":
-        return bool(eval_expr(ch[0], scope, helpers)) or bool(eval_expr(ch[1], scope, helpers))
+        left = eval_expr(ch[0], scope, helpers)
+        if left:
+            return True
+        right = eval_expr(ch[1], scope, helpers)
+        return True if right else (right if isinstance(right, Rejected) else False)
 
     if data == "and_op":
-        return bool(eval_expr(ch[0], scope, helpers)) and bool(eval_expr(ch[1], scope, helpers))
+        left = eval_expr(ch[0], scope, helpers)
+        if not left:
+            return left if isinstance(left, Rejected) else False
+        right = eval_expr(ch[1], scope, helpers)
+        return right if isinstance(right, Rejected) else bool(right)
 
     if data == "not_op":
         return not eval_expr(ch[0], scope, helpers)

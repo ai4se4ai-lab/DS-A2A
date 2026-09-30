@@ -16,6 +16,25 @@ import tempfile
 from pathlib import Path
 
 
+class Rejected:
+    """Falsy result a validator can return instead of `False` to say *why*
+    a sample was rejected. The engine puts the reason into the resample
+    prompt, so the next sample can fix the actual problem instead of
+    repeating the same answer (a bare `False` gives the model nothing to
+    act on). Truthiness is identical to `False` everywhere else."""
+
+    __slots__ = ("reason",)
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return f"Rejected({self.reason!r})"
+
+
 def python_compiles(source: str) -> bool:
     """A parser-based validator: does `source` parse as valid Python?"""
     try:

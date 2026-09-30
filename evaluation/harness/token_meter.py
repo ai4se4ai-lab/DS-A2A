@@ -1,11 +1,11 @@
 """Token metering for Table II's "LLM tokens per task (k)" row (Sec V).
 
-Wraps `LLMBackend.generate` and tallies input/output tokens via
-`LLMBackend.count_tokens`, the cheap provider-agnostic approximation
-already on the base class (src/agentm2m/llm/base.py) -- used instead of a
-provider's own usage stats because Ollama/local-model backends don't
-expose exact counts, and we want one consistent metric across all three
-LLM providers this evaluation might run against.
+Wraps `LLMBackend.generate` and tallies input/output tokens. Uses the
+provider's own reported usage (`LLMBackend.last_usage`: Ollama's
+prompt_eval_count/eval_count, OpenAI/Anthropic `usage`) when available,
+and falls back to `LLMBackend.count_tokens`'s len/4 approximation
+otherwise (e.g. the mock backend). `exact_calls` records how many calls
+were counted exactly, so a mixed run is visible rather than silent.
 
 A `TokenMeter` is a drop-in replacement for an `LLMBackend` wherever only
 `.generate(...)` is called (TeamRuntime, the *_config.py runners,
@@ -26,11 +26,18 @@ class TokenMeter:
     input_tokens: int = field(default=0)
     output_tokens: int = field(default=0)
     calls: int = field(default=0)
+    exact_calls: int = field(default=0)
 
     def generate(self, prompt: str, *, temperature: float = 0.2) -> str:
         response = self.backend.generate(prompt, temperature=temperature)
-        self.input_tokens += self.backend.count_tokens(prompt)
-        self.output_tokens += self.backend.count_tokens(response)
+        usage = getattr(self.backend, "last_usage", None)
+        if usage is not None:
+            self.input_tokens += usage[0]
+            self.output_tokens += usage[1]
+            self.exact_calls += 1
+        else:
+            self.input_tokens += self.backend.count_tokens(prompt)
+            self.output_tokens += self.backend.count_tokens(response)
         self.calls += 1
         return response
 

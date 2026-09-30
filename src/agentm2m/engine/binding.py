@@ -24,6 +24,25 @@ from .expr import Helpers, eval_expr
 from .lift import LIFT_BINDING_NAME, LiftRejected, lift_json_into_element
 from .matcher import Match
 from .trace import TraceLink, TraceModel, digest, element_key
+from .validators import Rejected
+
+_FEEDBACK_SNIPPET_CHARS = 400
+
+
+def _retry_prompt(prompt: str, rejected: str, reason: str) -> str:
+    """Prompt for a resample after a *content* rejection. Re-sending the
+    identical prompt at low temperature mostly reproduces the identical
+    rejected answer (observed: devstral returning the same class-qualified
+    signature twice), wasting the resample budget; telling the model what was
+    rejected is what makes the next sample differ. It adds only the model's
+    own previous output -- never source data outside the footprint."""
+    snippet = (rejected or "").strip()
+    if len(snippet) > _FEEDBACK_SNIPPET_CHARS:
+        snippet = snippet[:_FEEDBACK_SNIPPET_CHARS] + " ..."
+    return (
+        f"{prompt}\n\nYour previous answer was rejected ({reason}):\n{snippet or '(empty answer)'}\n"
+        "Answer again, following the requested output format exactly."
+    )
 
 
 @dataclass
@@ -81,11 +100,23 @@ def apply_structural_bindings(
 
 
 def _footprint_to_text(value: Any) -> str:
-    if isinstance(value, list):
-        return "\n".join(f"- {_footprint_to_text(v)}" for v in value)
     if hasattr(value, "eClass"):
         feats = {f.name: getattr(value, f.name) for f in value.eClass.eAllStructuralFeatures()}
         return f"{value.eClass.name}({feats})"
+    if isinstance(value, (str, bytes)):
+        return str(value)
+    if isinstance(value, (list, tuple)) or hasattr(value, "__iter__"):
+        # Covers plain lists/tuples *and* pyecore's own collection types for
+        # many-valued references (e.g. EOrderedSet from `s.criteria`, many=True)
+        # -- these are not `list` instances, so an `isinstance(value, list)`-only
+        # check silently falls through to `str(value)` below and renders as an
+        # opaque "EOrderedSet([<pyecore.ecore.Criterion object at 0x...>])"
+        # instead of the element's actual content, starving every stochastic
+        # binding whose footprint is a many-valued reference of real
+        # information (this footprint-rendering path is the *only* thing the
+        # LLM ever sees of the source model -- Sec III-C's footprint-bounded
+        # prompting -- so this silently defeated it for every such binding).
+        return "\n".join(f"- {_footprint_to_text(v)}" for v in value)
     return str(value)
 
 
@@ -106,14 +137,30 @@ def apply_stochastic_binding(
     fp_digest = digest(footprint)
     if trace_link.stamps.get(binding.name) == fp_digest:
         return (False, None)  # footprint unchanged since acceptance -> no re-invocation
+    if trace_link.failed_stamps.get(binding.name) == fp_digest:
+        # Already escalated on this exact footprint: re-sampling the same
+        # prompt would just burn another k samples for the same outcome, so
+        # re-report the (still open) escalation without invoking the LLM.
+        # A footprint change clears this and earns a fresh budget.
+        return (
+            False,
+            Escalation(
+                target_key=trace_link.target_key,
+                binding=binding.name,
+                rule=trace_link.rule,
+                reason="escalated earlier on an unchanged footprint; not re-sampled",
+            ),
+        )
 
     prompt_head = eval_expr(binding.prompt_expr, match.bindings, helpers)
     prompt = f"{prompt_head}\n\nContext (footprint only):\n{_footprint_to_text(footprint)}"
 
     last_reason = "no attempts made"
+    any_sample_rejected = False
+    attempt_prompt = prompt
     for _attempt in range(max_resamples):
         try:
-            raw = llm.generate(prompt, temperature=temperature)
+            raw = llm.generate(attempt_prompt, temperature=temperature)
         except LLMError as exc:
             last_reason = str(exc)
             continue
@@ -141,19 +188,32 @@ def apply_stochastic_binding(
         if ok and binding.check_expr is not None:
             check_scope = {**match.bindings, target_var: target_obj, binding.name: raw}
             try:
-                ok = bool(eval_expr(binding.check_expr, check_scope, helpers))
+                verdict = eval_expr(binding.check_expr, check_scope, helpers)
+                ok = bool(verdict)
+                if not ok:
+                    last_reason = (
+                        verdict.reason
+                        if isinstance(verdict, Rejected)
+                        else "it failed the validator: wrong format, or not what was asked"
+                    )
             except Exception as exc:  # noqa: BLE001 - a failing @check is a rejection, not a crash
                 ok, last_reason = False, f"@check raised: {exc}"
-            if not ok:
-                last_reason = "@check rejected the sampled value"
 
         if ok:
             if binding.name != LIFT_BINDING_NAME:
                 setattr(target_obj, binding.name, raw)
             trace_link.stamps[binding.name] = fp_digest
             trace_link.footprints[binding.name] = footprint
+            trace_link.failed_stamps.pop(binding.name, None)
             return (True, None)
+        any_sample_rejected = True
+        attempt_prompt = _retry_prompt(prompt, raw, last_reason)
 
+    # Only a *content* rejection is cached: if every attempt was a transport
+    # failure (LLMError: timeout, connection), the footprint was never
+    # actually judged, so the next pass should still try it.
+    if any_sample_rejected:
+        trace_link.failed_stamps[binding.name] = fp_digest
     return (
         False,
         Escalation(target_key=trace_link.target_key, binding=binding.name, rule=trace_link.rule, reason=last_reason),

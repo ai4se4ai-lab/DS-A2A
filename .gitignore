@@ -8,13 +8,8 @@ dist/
 
 .env
 
-# generated model instances / traces from example & evaluation runs
-examples/**/out/
-evaluation/results/csv/*.csv
-evaluation/results/figures/*.png
-evaluation/benchmarks/cache/
-evaluation/harness/logs/
-!evaluation/results/csv/.gitkeep
-!evaluation/results/figures/.gitkeep
+
 
 .ruff_cache/
+evaluation/benchmarks/cache/devbench/python/geotext/geotext/data_file/*
+evaluation/benchmarks/cache/devbench/python/lice/templates/*

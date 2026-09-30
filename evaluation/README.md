@@ -183,3 +183,111 @@ evaluation/
 `tests/test_evaluation_pipeline.py` runs the quick/mock path end to end
 (fixture tasks + `MockBackend`, no network, no Docker) and is part of
 `python -m pytest tests/ -q`.
+
+## The DevBench pilot (the paper's "Preliminary Evaluation" section)
+
+The SWE-bench-Lite track above is a small, Issue->Plan->Patch-shaped
+hand-off comparison; it does not use real PRD/UML/architecture-design
+documents or a repo's own real acceptance/unit tests, and has no RQ3 or
+canary-criteria mechanism. The **DevBench pilot** is a second, parallel
+track that does, built on **Li et al.'s DevBench**
+(`github.com/open-compass/DevBench`, Apache-2.0) -- *not* the
+similarly-named `github.com/microsoft/devbench` telemetry/code-completion
+benchmark described in `docs/devbench.md`, which is a different benchmark
+entirely (see the note at the top of that file). DevBench's 10 Python
+repositories each ship `docs/{PRD.md, UML_class.md, UML_sequence.md,
+architecture_design.md}` plus real, executable `acceptance_tests/` and
+`unit_tests/`, which map directly onto $M_{req}$ (PRD -> UserStory/
+Criterion), $M_{arch}$ (UML -> Component/Operation), and the oracles of
+$M_{test}$ (the real tests -- not a generated stand-in).
+
+**Scope of this pilot** (reported here rather than only in the paper): 6 of
+DevBench's 10 Python repos (`chakin`, `geotext`, `readtime`,
+`particle-swarm-optimization`, `Hybrid_Images`, `stocktrends`), 1 seed, 3
+configs (free-text / shared-schema / AgentM2M, same 4 DevTeam roles as
+`examples/01_devteam`), run once per model for 3 literature-anchored,
+already-pulled local Ollama models (`qwen2.5-coder:7b`, `devstral:24b`,
+`qwen3-coder:30b`). The original plan called for all 10 Python repos;
+measured per-repo latency (a single repo's AgentM2M config alone took
+5-15 minutes on this hardware, dominated by per-operation `@llm` calls) made
+that impractical within this session for 3 models, so the 4 excluded repos
+were dropped for disclosed, non-cherry-picked reasons: `TextCNN` (needs a
+full `torch`/`transformers` training pipeline, orthogonal to what this
+pilot measures), `ArXiv_digest` (its acceptance test shells out to the
+live arXiv API, making pass/fail conflate network availability with
+implementation correctness), and `hone`/`lice` (the two largest
+repositories by operation count, dropped purely to bound runtime). This is
+smaller than the paper's own aspirational protocol (22 repos x 3 languages
+x 3 seeds) -- a deliberate, disclosed trade-off for a *preliminary* pilot,
+not the "Evidence at scale" future work in `sec:future`.
+
+### Fetching the data
+
+```bash
+python evaluation/benchmarks/fetch_devbench.py
+# -> evaluation/benchmarks/cache/devbench/python/<repo>/... (gitignored)
+```
+
+### Running the pilot (one invocation per model; produces RQ1+RQ2+RQ3)
+
+```bash
+python -m evaluation.harness.devbench_run_all --llm mock                        # smoke test, no network
+python -m evaluation.harness.devbench_run_all --llm ollama --model qwen2.5-coder:7b
+python -m evaluation.harness.devbench_run_all --llm ollama --model devstral:24b
+python -m evaluation.harness.devbench_run_all --llm ollama --model qwen3-coder:30b
+```
+
+Each invocation writes three logs to `harness/logs/`:
+`devbench_rq1_<model>_<ts>.jsonl` (canary retention, MAST modes, real
+acceptance/unit test pass -- see "Task success" below), `devbench_rq2_<model>_<ts>.jsonl`
+(3 injected PRD changes per repo x 3 configs), and
+`devbench_rq3_<model>_<ts>.jsonl` (the HOT-added Security Reviewer's
+retroactive coverage).
+
+### Aggregating
+
+```bash
+python -m evaluation.analysis.aggregate_devbench                 # pooled across all 3 models
+python -m evaluation.analysis.aggregate_devbench --model qwen2.5-coder:7b   # one model only
+```
+
+Writes `evaluation/results/csv/devbench_raw_metrics_*.csv` and
+`devbench_summary_*.json` (the exact numbers behind `tab:prelim`), and
+prints the paired 95% bootstrap CI (percentile bootstrap over the 10
+repos) for the canary-retention AgentM2M-vs-shared-schema difference --
+the paper's own RQ1 decision rule.
+
+### What's genuinely new here vs. the SWE-bench-Lite track
+
+- **Canaries** (`harness/canary.py`): 5 fixed, repo-independent synthetic
+  operations with behavior pinned to an arbitrary constant (e.g. "append
+  the literal suffix `-9f2`"), injected into every repo's Req view
+  alongside the real operations. None appear in any real PRD, so passing
+  their test can't be explained by memorizing a reference solution --
+  "canary retention" measures whether the *exact* acceptance criterion
+  survived the hand-off chain, independent of whether the agent team
+  could also solve the (much harder) real repo.
+- **Real task success** (`harness/devbench_common.py`): generated code is
+  assembled into a runnable module and the repo's own, unmodified
+  `acceptance_test_script`/`unit_test_script` (from `repo_config.json`)
+  are actually executed via subprocess -- not a diff-well-formedness
+  proxy. Assembly writes one assembled module to every file
+  `code_file_DAG` names; for the 8/10 repos with exactly one target file
+  this is exact, for the 2 multi-file repos it over- rather than
+  under-provides (see the module docstring).
+- **RQ2 ground truth is derived, not hand-typed**
+  (`harness/impact_injector_devbench.py`): because every UserStory maps to
+  exactly one Operation/CodeEdit and no rule reads another story's data,
+  the declared footprint of a change to one story is, by construction of
+  the rules as written, exactly `{that operation}` -- for *every* repo and
+  change, not a value hand-picked per task.
+- **RQ3 is actually measured** (`harness/hot_reviewer_rq3.py`): adds a
+  Security Reviewer via `agentm2m.team.hot.apply_hot` after each repo's
+  first fixpoint and reports real retroactive-coverage percentages; "glue
+  lines changed" is a one-time architectural comparison (the HOT call vs.
+  the hand-written retrofit both baselines would need), not a per-repo
+  measurement, since the integration cost doesn't vary by repo.
+- **Independent-judge relabeling** (`harness/judge_relabel.py`) stands in
+  for the unavailable human annotator: a 20% sample is re-judged by one of
+  the *other two* pilot models (never self-judged), and agreement is
+  reported as a limitation, not a substitute for real human validation.

@@ -1,0 +1,17 @@
+-- T2 (Architect -> Developer). Footprint is op.codeContext(): the
+-- operation's signature plus the criterion text Req2Arch structurally
+-- carried forward into op.spec (Prop. 2). With signature alone the
+-- Developer had to guess behavior from the name (0/5 canaries).
+module Arch2Code;
+create OUT : Code from IN : Arch;
+uses 'helpers.py';
+
+rule Operation2CodeEdit {
+  from op : Arch!Operation
+  to  ce : Code!CodeEdit (
+    name      <- op.name,
+    operation <- op,
+    body      <- @llm('Implement this operation as a complete Python function or method (a full "def name(...):" block matching this exact signature) that satisfies the specification. If you need a library, import it inside the function body. Output ONLY the raw def block: no markdown code fences, no surrounding class/imports/explanation.',
+                       op.codeContext()),
+    @check body.compiles() and body.definesName(op.name) and body.loads() )
+}
