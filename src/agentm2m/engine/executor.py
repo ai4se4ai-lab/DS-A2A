@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ..llm.base import LLMBackend
+from ..llm.base import LLMBackend, PendingSample
 from ..metamodel.builder import MetamodelBuilder
 from ..rules.ast import Module, StochasticBinding
 from .binding import Escalation, apply_stochastic_binding, apply_structural_bindings
@@ -28,12 +28,47 @@ _TARGET_KEY_ATTR = "_amt_target_key"
 
 
 @dataclass
+class PendingBinding:
+    """A stochastic binding awaiting a value from the host (host mode).
+
+    `prompt` is prompt_b (+) den(e_b)_m -- the complete and only context the
+    host may use to produce the value (footprint-bounded prompting)."""
+
+    handoff: str
+    rule: str
+    target_key: str
+    binding: str
+    prompt: str
+    fp_digest: str
+    attempts: int = 0
+    stale: bool = False  # True: re-sample of a previously accepted value (an obligation from a change)
+
+    def to_dict(self) -> dict:
+        return {
+            "handoff": self.handoff,
+            "rule": self.rule,
+            "target_key": self.target_key,
+            "binding": self.binding,
+            "prompt": self.prompt,
+            "attempts": self.attempts,
+            "kind": "stale" if self.stale else "new",
+            # the footprint digest this prompt was built from; a value
+            # submitted for an older version is refused as stale
+            "footprint_version": self.fp_digest,
+        }
+
+
+@dataclass
 class HandoffReport:
     handoff: str
     created: list[str] = field(default_factory=list)
     deleted: list[str] = field(default_factory=list)
     resampled: list[tuple[str, str]] = field(default_factory=list)
     escalations: list[Escalation] = field(default_factory=list)
+    # Host mode only: bindings waiting for a host-supplied value, and those
+    # whose footprint still reads an unfilled upstream value.
+    pending: list[PendingBinding] = field(default_factory=list)
+    blocked: list[PendingBinding] = field(default_factory=list)
 
     @property
     def obligations_satisfied(self) -> list[tuple[str, str]]:
@@ -129,17 +164,34 @@ def run_handoff(
                 assert link is not None
                 for b in tp.bindings:
                     if isinstance(b, StochasticBinding):
-                        changed, escalation = apply_stochastic_binding(
-                            b,
-                            tp.var,
-                            obj,
-                            m,
-                            link,
-                            llm,
-                            helpers,
-                            max_resamples=max_resamples,
-                            temperature=temperature,
-                        )
+                        try:
+                            changed, escalation = apply_stochastic_binding(
+                                b,
+                                tp.var,
+                                obj,
+                                m,
+                                link,
+                                llm,
+                                helpers,
+                                max_resamples=max_resamples,
+                                temperature=temperature,
+                            )
+                        except PendingSample as ps:
+                            pb = PendingBinding(
+                                handoff=module.name,
+                                rule=rule.name,
+                                target_key=target_key,
+                                binding=b.name,
+                                prompt=ps.prompt,
+                                fp_digest=ps.fp_digest,
+                                attempts=ps.attempts,
+                                stale=ps.stale,
+                            )
+                            (report.blocked if ps.blocked else report.pending).append(pb)
+                            incomplete = getattr(llm, "incomplete", None)
+                            if incomplete is not None:
+                                incomplete.add(target_key)
+                            continue
                         if changed:
                             report.resampled.append((target_key, b.name))
                         if escalation is not None:

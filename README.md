@@ -21,6 +21,7 @@ onto the paper's Definition 1, Algorithm 1, and Propositions 1–3.
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .            # core engine
 pip install -e ".[eval]"    # + evaluation deps (pandas, matplotlib, datasets, swebench)
+pip install -e ".[dev]"     # + tests, MCP SDK, build tooling (plugin development)
 cp .env.example .env        # then edit LLM_PROVIDER / LLM_MODEL, see below
 ```
 
@@ -53,6 +54,26 @@ plus a direct Analyst → Tester hand-off — end to end, and prints the
 generated models, the obligations discharged, and whether the acceptance
 predicate `phi` holds.
 
+## Claude Code plugin
+
+`plugin/agentm2m/` packages the engine as a Claude Code plugin: an MCP server
+(`agentm2m-mcp`) plus skills (`/agentm2m:init`, `run`, `change`, `evolve`,
+`status`, `author-handoff`), a `binding-worker` subagent restricted to the
+two binding tools, and validation hooks. In the default *host* mode Claude
+Code itself fills `@llm` bindings from their footprint-bounded prompts, and
+the engine's validators decide acceptance, so no extra API key is needed.
+Teams are declared in `.agentm2m/team.yaml` and persist across sessions.
+
+```bash
+plugin/scripts/dev-install.sh      # install from this checkout (needs uv + claude CLI)
+plugin/scripts/validate.sh         # manifests, templates, all tests
+plugin/scripts/release.sh          # dry run: build wheel + plugin zip + directory entry
+```
+
+The engine is usable without Claude Code too: `agentm2m workspace init devteam`,
+`agentm2m workspace --llm anthropic run`, `agentm2m workspace impact`. See
+[`plugin/DEVELOPMENT_PLAN.md`](plugin/DEVELOPMENT_PLAN.md).
+
 ## Repository layout
 
 ```
@@ -75,7 +96,7 @@ docs/                the paper (DS-A2A.tex) and ARCHITECTURE.md
 Run everything (offline, no LLM backend needed):
 
 ```bash
-python -m pytest tests/ -q
+python -m pytest tests/ plugin/tests/ -q
 ```
 
 ## Examples

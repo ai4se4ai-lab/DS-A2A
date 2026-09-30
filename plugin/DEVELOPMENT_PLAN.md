@@ -1,5 +1,38 @@
 # AgentM2M as a Claude Code plugin: development plan
 
+## Status (2026-09-30): Phases 1-4 implemented; Phase 5 partly
+
+**Done and tested:** engine additions, MCP server, plugin, scripts, CI.
+- 109 tests pass: 39 original + 70 new. The new ones are 21 in `tests/` and 49 in `plugin/tests/`.
+- `claude plugin validate --strict` passes for the plugin and the marketplace.
+- `release.sh` dry run passes: build, `twine check`, a fresh `uvx` install of the wheel, the plugin zip, and the directory entry.
+- Live end-to-end runs in Claude Code (`--plugin-dir`, engine via `uvx`) all worked:
+  - `/agentm2m:init` created the workspace.
+  - `/agentm2m:run` reached φ = true, with `binding-worker` subagents filling the values.
+  - `/agentm2m:change`: tightening S2.1 re-derived exactly `{op_S2.signature, tc_S2.1.oracle, ed_S2.body}`. Nothing of S1 changed.
+  - `/agentm2m:evolve` added a SecurityReviewer, which received 4 retroactive obligations. 11/11 bindings ended fresh.
+- Marketplace `add` and `install` were checked in an isolated `CLAUDE_CONFIG_DIR`.
+
+**Not done yet (on purpose):** publishing to PyPI, making the repo public, and submitting to the directory. All wait until after the double-anonymous review. `release.sh --publish` refuses to run unless `AGENTM2M_ALLOW_PUBLIC=1` is set, and the CI publish job needs the repo variable `ALLOW_PUBLIC=true`. Until the engine is on PyPI, set `AGENTM2M_ENGINE=/path/to/checkout` when using the plugin.
+
+**Deviations from the plan below, and why:**
+- **Templates ship inside the engine package** (`src/agentm2m/templates/`), not in `plugin/agentm2m/templates/`. This way the MCP server finds them wherever uvx installs it.
+- **Workspace state is a JSON store** (`agentm2m/store.py`), not XMI plus a sidecar. Cross-view references across several XMI resources are fragile in pyecore, and the store also keeps engine target keys.
+- **The service layer is `agentm2m/workspace.py`.** `mcp_server.py` is a thin wrapper over it and works with MCP SDK 1.x (`FastMCP`) and 2.x (`MCPServer`). The CLI also gained `agentm2m workspace …`.
+- **Additions found during live testing:**
+  1. `submit_binding` requires the prompt's `footprint_version`. A value written for an outdated footprint is refused as stale. Without this, a code body written against the old signature was stamped against the new one.
+  2. `model_edit` re-runs `R^str` immediately, with no sampling. Without this, status and φ lagged behind structural copies.
+  3. Bindings whose footprint reads an unfilled upstream value are reported as *blocked*, not offered with empty context.
+- **Template T2 reads the criteria as well as the signature,** which T1 copies structurally onto the operation. This matches the paper (Sec. III Step 6 / Sec. V), so a tightened criterion reaches the code.
+- **Other fixes made along the way:**
+  - `grammar.lark` was missing from package data, so any non-editable install would have been broken.
+  - `extends: X` given as a single string was mis-parsed.
+  - `[tool.uv]` gained `cache-keys`, so uvx rebuilds a local checkout when `src/` changes, and a 7-day `exclude-newer` cooldown.
+
+**Developer quickstart:** `pip install -e ".[dev]"`, then `plugin/scripts/validate.sh`, then `plugin/scripts/dev-install.sh`, then start `claude` with `AGENTM2M_ENGINE` set.
+
+---
+
 ## Context
 
 `agentm2m` (under `src/agentm2m/`) implements the approach in `docs/DS-A2A.tex`:

@@ -23,7 +23,11 @@ Agents"). Read `docs/DS-A2A.tex` Sec III first — this document assumes it.
 | Team megamodel `Team = (A, V, T, omega, phi)` (Sec III-A, Fig. 1) | `agentm2m.team.model.Team` | Kept as plain Python state, not an Ecore-modeled instance -- see "Why isn't Team modeled in EMF too?" below. |
 | models@run.time, cross-hand-off obligation propagation | `agentm2m.team.runtime.TeamRuntime` | `run_to_fixpoint()` just re-runs every registered hand-off in registration order until nothing changes (capped by `max_passes`, escalating rather than looping forever). No explicit message-passing is needed for propagation: a downstream hand-off's *own* stamp check automatically notices when an upstream hand-off changed a value its footprint reads. |
 | Higher-order transformation (Sec III-D, Security Reviewer scenario) | `agentm2m.team.hot` | `TeamChange` is the declarative "relation model"; `apply_hot` registers the new agent/view/hand-off. Because the new hand-off's `TraceModel` starts empty, its first run treats every pre-existing match as new -- retroactive obligations with no hand-written glue, "for free" from Algorithm 1's own logic. |
-| Acceptance predicate `phi` | `agentm2m.engine.executor.acceptance_holds`, `TeamRuntime.acceptance_holds` | Every match covered by a trace link, no open obligation (no stamp mismatch), all validators passed (no escalations) on the last run. |
+| Acceptance predicate `phi` | `agentm2m.engine.executor.acceptance_holds`, `TeamRuntime.acceptance_holds` | Every match covered by a trace link, no open obligation (no stamp mismatch), all validators passed (no escalations) on the last run, and every stochastic binding's stamp fresh for its current footprint (`TeamRuntime.stamps_fresh`). |
+| Host mode: the LLM `L` is the host (Claude Code) | `agentm2m.llm.host_backend.HostBackend`, `TeamRuntime.submit_binding` | A *deferred* backend: a stale binding is not sampled but reported as a `PendingBinding` (prompt = `prompt_b (+) den(e_b)_m`, plus the footprint digest it was built from). The host's value goes through the same `accept_sample` path as an in-engine sample (`@check`, Lift, stamping), is refused if the footprint moved since the prompt was issued, and escalates after `k` rejections on one footprint. Bindings whose footprint still reads an unfilled upstream value are reported as *blocked*, never offered with empty context. |
+| Team as data (`team.yaml`) | `agentm2m.team.spec` | View metamodels, owners (omega), seed models and hand-offs declared in YAML, built through `MetamodelBuilder`/`Team`. |
+| Persistent workspace, models@run.time across processes | `agentm2m.workspace.Workspace`, `agentm2m.store` | `.agentm2m/state/state.json` holds every view model (JSON, with cross-view references and engine target keys), every trace model, and runtime HOT evolutions. An edit re-runs `R^str` immediately (deferred backend, no sampling), so obligations are visible at once; `impact` computes `Obl(Delta)` on a scratch copy. |
+| Claude Code plugin | `agentm2m.mcp_server`, `plugin/agentm2m/` | MCP tools over `Workspace`; see `plugin/DEVELOPMENT_PLAN.md`. |
 
 ## Why isn't `Team` modeled in EMF too?
 
@@ -38,15 +42,15 @@ indirection without changing any guarantee the paper claims, so `Team` and
 
 ## Known prototype limitations
 
-- **Incremental re-execution is in-process only.** Each created target
-  element is tagged with a Python-only bookkeeping attribute
-  (`_amt_target_key`, not an EMF feature, so it doesn't survive XMI
-  serialization) that lets `run_handoff` find "the element I created for
-  this match last time" across repeated calls. This works for every
-  scenario in `examples/` and `evaluation/` (each holds its models in
-  memory across a run), but resuming a hand-off after reloading a
-  serialized target model in a fresh process isn't supported yet -- it
-  would need a persisted element id, which is future work.
+- **Incremental re-execution across processes needs the workspace store.**
+  Each created target element is tagged with a Python-only bookkeeping
+  attribute (`_amt_target_key`, not an EMF feature) that lets `run_handoff`
+  find "the element I created for this match last time". XMI
+  (`agentm2m.metamodel.io`) does not carry it, but the JSON store used by
+  `agentm2m.workspace` (`agentm2m.store`) does, together with cross-view
+  references, so a team saved by one process resumes incrementally in
+  another. Scripts that hold models in memory (`examples/`, `evaluation/`)
+  are unaffected.
 - **The OCL subset is intentionally small.** See `agentm2m.engine.expr`'s
   module docstring for exactly what's supported; anything else is meant to
   go through a rule module's `uses "helpers.py";` Python helpers, not a

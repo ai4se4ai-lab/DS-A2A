@@ -80,6 +80,12 @@ class TraceLink:
     # engine re-report the escalation without re-sampling while that
     # footprint is unchanged (Alg. 1 line 11: escalate, never loop).
     failed_stamps: dict[str, str] = field(default_factory=dict)
+    # Host mode only (values submitted by Claude Code rather than sampled in
+    # one engine call): rejected submissions so far on the current footprint,
+    # and the last rejection {value, reason, digest}, fed back into the next
+    # prompt exactly like the in-engine resample loop's retry prompt.
+    attempts: dict[str, int] = field(default_factory=dict)
+    rejections: dict[str, dict] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -89,6 +95,8 @@ class TraceLink:
             "target_key": self.target_key,
             "stamps": self.stamps,
             "failed_stamps": self.failed_stamps,
+            "attempts": self.attempts,
+            "rejections": self.rejections,
             "footprints": {k: _to_jsonable(v) for k, v in self.footprints.items()},
         }
 
@@ -102,6 +110,8 @@ class TraceLink:
             stamps=d.get("stamps", {}),
             footprints=d.get("footprints", {}),
             failed_stamps=d.get("failed_stamps", {}),
+            attempts=d.get("attempts", {}),
+            rejections=d.get("rejections", {}),
         )
 
 

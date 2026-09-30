@@ -30,3 +30,21 @@ class LLMBackend(ABC):
 
 class LLMError(RuntimeError):
     """Raised when a backend fails to produce a completion (used to trigger escalation)."""
+
+
+class PendingSample(Exception):
+    """Raised instead of sampling when the backend is *deferred* (host mode):
+    the value for this binding will be supplied later by the host (Claude
+    Code) through `TeamRuntime.submit_binding`, not drawn now.
+
+    Deliberately not an `LLMError`: it is not a transport failure and must
+    not count against the resample budget or trigger escalation.
+    """
+
+    def __init__(self, *, prompt: str, fp_digest: str, attempts: int = 0, blocked: bool = False, stale: bool = False) -> None:
+        super().__init__("pending host sample")
+        self.prompt = prompt
+        self.fp_digest = fp_digest
+        self.attempts = attempts
+        self.blocked = blocked
+        self.stale = stale

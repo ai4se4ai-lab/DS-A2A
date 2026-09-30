@@ -18,7 +18,7 @@ from typing import Any
 
 from pyecore.ecore import EcoreUtils
 
-from ..llm.base import LLMBackend, LLMError
+from ..llm.base import LLMBackend, LLMError, PendingSample
 from ..rules.ast import StochasticBinding, StructuralBinding, TargetPattern
 from .expr import Helpers, eval_expr
 from .lift import LIFT_BINDING_NAME, LiftRejected, lift_json_into_element
@@ -120,6 +120,98 @@ def _footprint_to_text(value: Any) -> str:
     return str(value)
 
 
+def accept_sample(
+    binding: StochasticBinding,
+    target_var: str,
+    target_obj: Any,
+    match: Match,
+    trace_link: TraceLink,
+    raw: str,
+    helpers: Helpers,
+    *,
+    footprint: Any,
+    fp_digest: str,
+) -> tuple[bool, str]:
+    """Judge one sampled value `raw` for `binding` and commit it if accepted.
+
+    Shared by the in-engine resample loop (`apply_stochastic_binding`) and by
+    host mode (`TeamRuntime.submit_binding`), so a value typed by Claude Code
+    passes exactly the same @check / Lift conformance / stamping path as one
+    sampled from a backend. Returns (accepted, rejection_reason).
+
+    Algorithm 1, line 10: "if accepted: t.f_b <- v" -- the target is only
+    written once a sample is accepted. Lift already satisfies this
+    (lift_json_into_element raises *before* writing any EAttribute if the
+    JSON is rejected); for an ordinary binding `raw` is not committed to
+    target_obj until any @check has passed. @check itself never needs the
+    premature write: check_scope supplies the sampled value under
+    `binding.name` directly.
+    """
+    reason = ""
+    ok: bool
+    if binding.name == LIFT_BINDING_NAME:
+        try:
+            lift_json_into_element(raw, target_obj)
+        except LiftRejected as exc:
+            ok, reason = False, str(exc)
+        else:
+            ok = True
+    else:
+        ok = True
+
+    if ok and binding.check_expr is not None:
+        check_scope = {**match.bindings, target_var: target_obj, binding.name: raw}
+        try:
+            verdict = eval_expr(binding.check_expr, check_scope, helpers)
+            ok = bool(verdict)
+            if not ok:
+                reason = (
+                    verdict.reason
+                    if isinstance(verdict, Rejected)
+                    else "it failed the validator: wrong format, or not what was asked"
+                )
+        except Exception as exc:  # noqa: BLE001 - a failing @check is a rejection, not a crash
+            ok, reason = False, f"@check raised: {exc}"
+
+    if ok:
+        if binding.name != LIFT_BINDING_NAME:
+            setattr(target_obj, binding.name, raw)
+        trace_link.stamps[binding.name] = fp_digest
+        trace_link.footprints[binding.name] = footprint
+        trace_link.failed_stamps.pop(binding.name, None)
+        trace_link.attempts.pop(binding.name, None)
+        trace_link.rejections.pop(binding.name, None)
+    return ok, reason
+
+
+def build_prompt(binding: StochasticBinding, match: Match, helpers: Helpers, footprint: Any) -> str:
+    """pi = prompt_b (+) den(e_b)_m: the only text a sampler ever sees."""
+    prompt_head = eval_expr(binding.prompt_expr, match.bindings, helpers)
+    return f"{prompt_head}\n\nContext (footprint only):\n{_footprint_to_text(footprint)}"
+
+
+def _footprint_blocked(footprint: Any, incomplete: set[str]) -> bool:
+    """Host mode: is this footprint still waiting on an upstream binding?
+
+    In backend mode hand-offs run synchronously in registration order, so an
+    upstream value is always sampled before a downstream footprint reads it.
+    In host mode sampling is deferred to Claude Code, so a downstream
+    footprint can reach an upstream element whose stochastic value does not
+    exist yet (e.g. CodeEdit.body reading a not-yet-filled
+    Operation.signature). Offering such a binding would ask for a value from
+    an empty footprint, so it is reported as *blocked* instead.
+    """
+    if footprint is None or footprint == "":
+        return True
+    if hasattr(footprint, "eClass"):
+        return getattr(footprint, "_amt_target_key", None) in incomplete
+    if isinstance(footprint, (str, bytes, int, float, bool)):
+        return False
+    if hasattr(footprint, "__iter__"):
+        return any(_footprint_blocked(v, incomplete) for v in footprint)
+    return False
+
+
 def apply_stochastic_binding(
     binding: StochasticBinding,
     target_var: str,
@@ -132,7 +224,12 @@ def apply_stochastic_binding(
     max_resamples: int,
     temperature: float,
 ) -> tuple[bool, Escalation | None]:
-    """Returns (value_changed_this_run, escalation_or_None)."""
+    """Returns (value_changed_this_run, escalation_or_None).
+
+    With a deferred backend (`llm.deferred`, i.e. host mode) no sample is
+    drawn here: a stale binding raises `PendingSample` carrying its prompt,
+    and the value arrives later through `TeamRuntime.submit_binding`.
+    """
     footprint = eval_expr(binding.footprint_expr, match.bindings, helpers)
     fp_digest = digest(footprint)
     if trace_link.stamps.get(binding.name) == fp_digest:
@@ -152,8 +249,25 @@ def apply_stochastic_binding(
             ),
         )
 
-    prompt_head = eval_expr(binding.prompt_expr, match.bindings, helpers)
-    prompt = f"{prompt_head}\n\nContext (footprint only):\n{_footprint_to_text(footprint)}"
+    if getattr(llm, "deferred", False):
+        incomplete = getattr(llm, "incomplete", set())
+        blocked = _footprint_blocked(footprint, incomplete)
+        prompt = "" if blocked else build_prompt(binding, match, helpers, footprint)
+        attempts = 0
+        rejection = trace_link.rejections.get(binding.name)
+        if rejection and rejection.get("digest") == fp_digest:
+            attempts = trace_link.attempts.get(binding.name, 0)
+            if not blocked:
+                prompt = _retry_prompt(prompt, rejection.get("value", ""), rejection.get("reason", ""))
+        raise PendingSample(
+            prompt=prompt,
+            fp_digest=fp_digest,
+            attempts=attempts,
+            blocked=blocked,
+            stale=binding.name in trace_link.stamps,
+        )
+
+    prompt = build_prompt(binding, match, helpers, footprint)
 
     last_reason = "no attempts made"
     any_sample_rejected = False
@@ -165,47 +279,13 @@ def apply_stochastic_binding(
             last_reason = str(exc)
             continue
 
-        # Algorithm 1, line 10: "if accepted: t.f_b <- v" -- the target is
-        # only written once a sample is accepted. Lift already satisfies
-        # this (lift_json_into_element raises *before* writing any
-        # EAttribute if the JSON is rejected); for an ordinary binding we
-        # must not commit `raw` to target_obj until any @check has passed,
-        # and never leave a rejected sample sitting on the target after the
-        # resample budget is exhausted. @check itself never needs the
-        # premature write: check_scope already supplies the sampled value
-        # under `binding.name` directly.
-        ok: bool
-        if binding.name == LIFT_BINDING_NAME:
-            try:
-                lift_json_into_element(raw, target_obj)
-            except LiftRejected as exc:
-                ok, last_reason = False, str(exc)
-            else:
-                ok = True
-        else:
-            ok = True
-
-        if ok and binding.check_expr is not None:
-            check_scope = {**match.bindings, target_var: target_obj, binding.name: raw}
-            try:
-                verdict = eval_expr(binding.check_expr, check_scope, helpers)
-                ok = bool(verdict)
-                if not ok:
-                    last_reason = (
-                        verdict.reason
-                        if isinstance(verdict, Rejected)
-                        else "it failed the validator: wrong format, or not what was asked"
-                    )
-            except Exception as exc:  # noqa: BLE001 - a failing @check is a rejection, not a crash
-                ok, last_reason = False, f"@check raised: {exc}"
-
+        ok, reason = accept_sample(
+            binding, target_var, target_obj, match, trace_link, raw, helpers,
+            footprint=footprint, fp_digest=fp_digest,
+        )
         if ok:
-            if binding.name != LIFT_BINDING_NAME:
-                setattr(target_obj, binding.name, raw)
-            trace_link.stamps[binding.name] = fp_digest
-            trace_link.footprints[binding.name] = footprint
-            trace_link.failed_stamps.pop(binding.name, None)
             return (True, None)
+        last_reason = reason
         any_sample_rejected = True
         attempt_prompt = _retry_prompt(prompt, raw, last_reason)
 

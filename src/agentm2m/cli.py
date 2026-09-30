@@ -58,6 +58,48 @@ def cmd_llm_check(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_workspace(args: argparse.Namespace) -> int:
+    from .workspace import Workspace, WorkspaceError, list_templates
+
+    if args.ws_command == "templates":
+        print("\n".join(list_templates()))
+        return 0
+    ws = Workspace(args.dir, backend=args.llm)
+    try:
+        if args.ws_command == "init":
+            result = ws.init(args.template, force=args.force)
+        elif args.ws_command == "validate":
+            result = ws.validate()
+            if args.brief:
+                if result["ok"]:
+                    print(f"agentm2m: workspace OK ({len(result['handoffs'])} hand-off(s))")
+                else:
+                    print("agentm2m: workspace INVALID\n" + "\n".join(f"  - {e}" for e in result["errors"]), file=sys.stderr)
+                return 0 if result["ok"] else 1
+            print(json.dumps(result, indent=2))
+            return 0 if result["ok"] else 1
+        elif args.ws_command == "status":
+            result = ws.status()
+            if args.brief:
+                b = result["bindings"]
+                print(
+                    f"agentm2m: team {result['team']} -- {len(result['agents'])} agents, "
+                    f"{len(result['handoffs'])} hand-offs, bindings {b}, phi={result['phi']}"
+                )
+                return 0
+        elif args.ws_command == "run":
+            result = ws.run()
+        elif args.ws_command == "impact":
+            result = ws.impact()
+        else:  # pragma: no cover - argparse enforces choices
+            raise WorkspaceError(f"unknown command {args.ws_command}")
+    except WorkspaceError as exc:
+        print(f"agentm2m: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, indent=2, default=str))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="agentm2m")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -76,6 +118,21 @@ def build_parser() -> argparse.ArgumentParser:
     p_llm.add_argument("--provider", default=None)
     p_llm.add_argument("--model", default=None)
     p_llm.set_defaults(func=cmd_llm_check)
+
+    p_ws = sub.add_parser("workspace", help="manage a persistent .agentm2m/ team workspace")
+    p_ws.add_argument("--dir", default=".", help="project directory containing .agentm2m/ (default: .)")
+    p_ws.add_argument("--llm", default=None, help="host|mock|ollama|openai|anthropic (default: $AGENTM2M_LLM or host)")
+    ws_sub = p_ws.add_subparsers(dest="ws_command", required=True)
+    ws_sub.add_parser("templates", help="list built-in team templates")
+    p_init = ws_sub.add_parser("init", help="create .agentm2m/ from a template")
+    p_init.add_argument("template", nargs="?", default="devteam")
+    p_init.add_argument("--force", action="store_true")
+    for name in ("validate", "status"):
+        p = ws_sub.add_parser(name)
+        p.add_argument("--brief", action="store_true", help="one-line output (used by the Claude Code plugin hooks)")
+    ws_sub.add_parser("run", help="run all hand-offs to a fixpoint")
+    ws_sub.add_parser("impact", help="preview open obligations without any LLM call")
+    p_ws.set_defaults(func=cmd_workspace)
 
     return parser
 
