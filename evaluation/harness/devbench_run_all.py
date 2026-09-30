@@ -156,6 +156,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--temperature", type=float, default=0.2)
     parser.add_argument("--out", default=None)
+    parser.add_argument("--skip-rq1", action="store_true", help="resume a run whose RQ1 log is already complete")
     parser.add_argument("--skip-rq2", action="store_true")
     parser.add_argument("--skip-rq3", action="store_true")
     args = parser.parse_args()
@@ -173,9 +174,10 @@ def main() -> int:
 
     print(f"Using LLM backend: {llm.name} ({model_tag})", flush=True)
 
-    print(f"=== RQ1: writing to {rq1_path} ===", flush=True)
-    with rq1_path.open("w") as fh:
-        run_all(args.repos, llm=llm, model=model_tag, seed=args.seed, temperature=args.temperature, log_fh=fh)
+    if not args.skip_rq1:
+        print(f"=== RQ1: writing to {rq1_path} ===", flush=True)
+        with rq1_path.open("w") as fh:
+            run_all(args.repos, llm=llm, model=model_tag, seed=args.seed, temperature=args.temperature, log_fh=fh)
 
     if not args.skip_rq2:
         print(f"=== RQ2: writing to {rq2_path} ===", flush=True)
