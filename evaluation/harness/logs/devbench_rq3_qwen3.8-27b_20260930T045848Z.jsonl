@@ -1,0 +1,8 @@
+{"repo": "geotext", "model": "qwen3.8:27b", "n_ops_before": 9, "n_reviews_after": 9, "retroactive_coverage": 1.0, "tokens": 8964}
+{"repo": "readtime", "model": "qwen3.8:27b", "n_ops_before": 16, "n_reviews_after": 16, "retroactive_coverage": 1.0, "tokens": 18319}
+{"repo": "particle-swarm-optimization", "model": "qwen3.8:27b", "n_ops_before": 10, "n_reviews_after": 10, "retroactive_coverage": 1.0, "tokens": 12304}
+{"repo": "stocktrends", "model": "qwen3.8:27b", "n_ops_before": 18, "n_reviews_after": 18, "retroactive_coverage": 1.0, "tokens": 24545}
+{"repo": "chakin", "model": "qwen3.8:27b", "n_ops_before": 9, "n_reviews_after": 9, "retroactive_coverage": 1.0, "tokens": 8648}
+{"repo": "lice", "model": "qwen3.8:27b", "n_ops_before": 22, "n_reviews_after": 22, "retroactive_coverage": 1.0, "tokens": 25622}
+{"repo": "hone", "model": "qwen3.8:27b", "n_ops_before": 22, "n_reviews_after": 22, "retroactive_coverage": 1.0, "tokens": 24024}
+{"repo": "ArXiv_digest", "model": "qwen3.8:27b", "n_ops_before": 12, "n_reviews_after": 12, "retroactive_coverage": 1.0, "tokens": 14152}
