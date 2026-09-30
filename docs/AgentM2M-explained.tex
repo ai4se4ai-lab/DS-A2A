@@ -408,7 +408,9 @@ package Req {                                   -- owned by Analyst
   class UserStory { attribute id : String;  attribute status : String;
                     reference epic : Epic;
                     reference criteria[1-*] container : Criterion; }
-  class Criterion { attribute id : String;  attribute text : String; } }
+  class Criterion { attribute id : String;  attribute text : String; }
+  class ModuleCriterion { attribute id, text : String; } -- held once, read by no footprint
+}
 package Arch {                                  -- owned by Architect
   class Component { attribute name : String; }
   class Operation { attribute id, name, signature, spec : String;
@@ -516,19 +518,24 @@ component.)
 
 \what{Step S5: one accepted story and one criterion per operation.} The
 story's \code{id} is \code{Component::name}; its single criterion carries a
-text built by \code{criterion_text_for}, which combines the ground-truth
-signature hint from the UML with the module-level acceptance criteria. For
-\code{download}:
+text built by \code{criterion_text_for}: the ground-truth signature hint
+from the UML and the operation's role. The module-level acceptance criteria
+of Step~S1 are \emph{not} copied into each criterion. They are held once, as
+\cls{ModuleCriterion} elements at the model's root, which no rule matches
+and no per-operation footprint reads. (The first pilot copied them into
+every criterion, where they were 65--86\% of every footprint;
+\Cref{sec:tokens}.) For \code{download}:
 
-\begin{lstlisting}[style=model, caption={The seeded \cls{Criterion} for \code{download} (verbatim).}, label={lst:crit}]
+\begin{lstlisting}[style=model, caption={The seeded \cls{Criterion} for \code{download} (verbatim), and the module-level criteria held once.}, label={lst:crit}]
 Criterion {
   id   = "Global_functions::download.C1"
   text = "Implement `download(number: int, name: string, save_dir: string)` on
           component `Global_functions`. This is a free function (not a class
-          method).
-          Module-level acceptance criteria this operation must help satisfy:
-          - Feature complete as per the functionalities described above.
-          - Passing all unit tests included in the `test_downloader.py`." }
+          method)." }
+ModuleCriterion { id = "module.MC1"
+  text = "Feature complete as per the functionalities described above." }
+ModuleCriterion { id = "module.MC2"
+  text = "Passing all unit tests included in the `test_downloader.py`." }
 \end{lstlisting}
 
 \Cref{fig:mreq} shows the part of the resulting model that the rest of the
@@ -554,7 +561,7 @@ walkthrough uses.
      \draw[{Diamond[open,length=6pt]}->] (\s.east) -- node[above] {criteria} (\c.west);
 \end{tikzpicture}
 \caption{Part of the seeded $M_{\mathit{req}}$ for \texttt{chakin} (4 of the
-9 stories). In total: 2 epics, 9 stories, 9 criteria, all \code{accepted}.}
+9 stories). In total: 2 epics, 9 stories, 9 criteria, all \code{accepted}, plus 2 module-level criteria (not shown).}
 \label{fig:mreq}
 \end{figure}
 
@@ -663,7 +670,8 @@ rule Operation2CodeEdit {
                    ... that satisfies the specification. Output ONLY the raw
                    def block ...',
                    op.codeContext()),          -- footprint: signature + spec
-    @check body.compiles() ) }
+    @check body.compiles() and body.definesName(op.name)
+           and body.loads() ) }
 \end{lstlisting}
 
 \begin{lstlisting}[language=ATL, style=model, caption={\file{devbench_rules/Req2Test.agentm2m}.}, label={lst:req2test}]
@@ -677,7 +685,10 @@ rule Criterion2TestCase {
                    operation under test is available as a function named
                    implementation (do NOT define or import it). Define
                    def test_oracle(): that calls implementation(...) and asserts
-                   the criterion holds. Output ONLY the raw Python def block.',
+                   the criterion holds with at most 3 assert statements. If the
+                   operation is a method, implementation is already bound to an
+                   instance: pass only the arguments after self, and never
+                   construct the class. Output ONLY the raw Python def block.',
                    c.text),
     @check oracle.failsOnStub() ) }
 \end{lstlisting}
@@ -711,16 +722,27 @@ For each stochastic binding the engine records three things:
 given match, this expression is evaluated to a concrete value, and that value
 is the \emph{only} source data rendered into the prompt.
 \item \textbf{Validator.} Every validator first \emph{extracts} the code
-from the sample (the first fenced block if there is one, else the raw text),
-so that it judges content, not wrapping: coder models routinely add a prose
-preamble or markdown fences even when told not to. \code{parses()} then
-accepts \code{name(args) -> T} (leniently: an optional leading \code{def} and
-trailing colon are allowed); \code{compiles()} runs Python's compiler on the
-body; \code{failsOnStub()} requires an oracle that calls
+from the sample (the first fenced block if there is one; otherwise the raw
+text, minus a pair of inline backticks around a one-line answer), so that it
+judges content, not wrapping: coder models routinely add a prose preamble,
+markdown fences or inline backticks even when told not to. A validator that
+rejects returns a \emph{reason} (e.g., ``the code must define a top-level
+\code{def download(...)}''), which the engine puts into the resample prompt
+(\Cref{sec:tokens}). \code{parses()} then
+accepts \code{name(args) -> T} (leniently: an optional leading \code{def},
+a \code{Class.} qualifier and a trailing colon are allowed);
+\code{compiles()} runs Python's compiler on the body,
+\code{definesName(op.name)} requires a top-level \code{def} with the
+operation's exact name, and \code{loads()} executes the body's top-level
+statements (imports and the \code{def}), so an import of a non-existent name
+is caught at this binding rather than breaking the assembled module; \code{failsOnStub()} requires an oracle that calls
 \code{implementation(...)} \emph{without defining it}, runs it against a stub
 that raises \code{NotImplementedError}, and accepts it only if it fails on
 the stub with that error or an \code{AssertionError} (a vacuous oracle, or
-one that tests its own inline re-implementation, is rejected).
+one that tests its own inline re-implementation, is rejected). An oracle cut
+off by the output-token cap is first shortened by up to three unfinished
+trailing lines, so a complete \code{test\_oracle} is not discarded because
+its last assert was truncated.
 \item \textbf{Owner.} The LLM that answers is the one of the target view's
 owner, found through $\omega$: the Architect answers \code{signature}, the
 Developer \code{body}, the Tester \code{oracle}.
@@ -851,10 +873,7 @@ fences, no explanation.
 Context (footprint only):
 - Criterion({'id': 'Global_functions::download.C1', 'text': 'Implement
   `download(number: int, name: string, save_dir: string)` on component
-  `Global_functions`. This is a free function (not a class method).
-  Module-level acceptance criteria this operation must help satisfy:
-  - Feature complete as per the functionalities described above.
-  - Passing all unit tests included in the `test_downloader.py`.'})
+  `Global_functions`. This is a free function (not a class method).'})
 \end{lstlisting}
 
 In our run, the first sample is prose and is rejected; the second is
@@ -1007,47 +1026,84 @@ effect.
 
 The premise of \tool{} is that the LLM fills in only the values a
 deterministic engine cannot compute. That premise is only as good as the
-engine's discipline about \emph{when} it asks. The rule the runtime
-implements is:
+engine's discipline about \emph{when} it asks, \emph{what} it sends, and
+\emph{how many tries} it takes to get an acceptable value. The first pilot
+had none of that discipline, and \tool{} cost several times more than
+free-text hand-offs. This section explains where the tokens went, what we
+changed, and why the result can undercut free text.
+
+\subsection{The token cost equation}
+
+A free-text team pays for a few long calls: every role re-reads the whole
+upstream transcript, and the cost is roughly fixed per task. \tool{} pays per
+stochastic binding instance. For a run, its token cost is
+\[
+C_{\tool{}} \;=\; \sum_{(t,b)\,\in\,S}\ \sum_{i=1}^{n_{t,b}}
+\Big(\underbrace{P}_{\text{preamble}} + \underbrace{|\pi_b|}_{\text{prompt}}
++ \underbrace{|\fp_b(m)|}_{\text{footprint}} + \underbrace{|v_i|}_{\text{output}}
++ \underbrace{|f_{i-1}|}_{\text{feedback}}\Big),
+\]
+where $S$ is the set of bindings that must be sampled, $n_{t,b}\le k$ is the
+number of samples binding $(t,b)$ needs, and $f_{i-1}$ is the feedback
+carried into a resample ($f_0=\emptyset$). Every factor has a lever, and the
+first pilot left each of them unmanaged:
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+Factor & What went wrong in the pilot & Lever in \tool{} \\
+\midrule
+$|S|$: which bindings are sampled & Escalated bindings were re-sampled on every pass with an unchanged footprint (36 of 54 calls on \texttt{geotext}). & Version stamps and \emph{failed stamps}: sample only when the footprint changed since the last acceptance \emph{and} the last escalation. Everything derivable is a structural binding and costs nothing. \\
+$n_{t,b}$: samples per binding & Correct values were rejected for their wrapping (prose, fences, inline backticks, a \code{Class.} prefix); rejected samples were retried with the identical prompt and came back identical. & \emph{Extract, then validate}: validators judge content, not wrapping. \emph{Reasoned resampling}: a validator returns why it rejected, and the resample prompt carries the rejected answer and that reason. \\
+$|v_i|$: output per sample & Oracles grew assert by assert until the 800-token cap cut them mid-line, which made them unparsable, so they were rejected and re-run. & \emph{Bounded outputs}: the prompt fixes the answer's size (at most 3 asserts); an answer truncated at the cap is recovered by dropping its unfinished tail. \\
+$|\fp_b(m)|$: footprint & Each operation's criterion repeated the module-wide acceptance bullets, which made up 65--86\% of every footprint (274 tokens per footprint on \texttt{stocktrends}). & \emph{Minimal footprints}: module-level criteria are held once, as \cls{ModuleCriterion} elements that no per-operation footprint reads (37 tokens per footprint on \texttt{stocktrends}). \\
+$P$: preamble & A model's default system prompt was prepended to every call (1.2k tokens for \texttt{devstral:24b}). & \emph{Minimal preamble}: one short system line, identical for every configuration. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent The contrast with free text follows from the equation. Free text
+pays for \emph{repetition across roles}: the analyst's summary, the
+architect's design and the developer's code are each re-read in full by the
+next role. \tool{} pays for \emph{repetition across bindings}: the prompt
+text and the preamble recur in every call. With the levers above, each
+binding's call is small, about 170 input and 40 output tokens here. So
+\tool{} is cheaper to build than free text when a module has few bindings,
+and more expensive when it has many. For a change, it is always much
+cheaper, because $S$ shrinks to the change's obligations.
+
+\subsection{The calling rule and its bound}
 
 \begin{quote}
 A stochastic binding $(t,b)$ is sampled if and only if its footprint digest
 differs from both its stamp (last accepted value) and its failed stamp (last
-escalation). It is sampled at most $k$ times, and only a sample that fails
-its validator counts against $k$.
+escalation). It is sampled at most $k$ times. Only a sample that fails its
+validator counts against $k$, and each resample carries the rejected answer
+and the validator's reason.
 \end{quote}
 
 \noindent Every other step (matching, creating and deleting targets,
 resolving references, copying text forward, deciding impact, deciding
 termination) is deterministic and costs no tokens.
 
-\begin{center}\small
-\begin{tabularx}{\textwidth}{@{}l X l@{}}
-\toprule
-Mechanism & What it prevents & Where \\
-\midrule
-Structural bindings & Anything derivable by OCL (ids, names, references, text carried forward such as \code{op.spec}) is computed, never generated. & rules, \file{binding.py} \\
-Footprint-bounded prompts & Input tokens per call are bounded by prompt $+$ footprint, independent of conversation length or how many artifacts the team holds. & \file{binding.py} \\
-Version stamps & A binding whose footprint is unchanged since acceptance is not re-sampled. & \file{binding.py}, \file{trace.py} \\
-Failed stamps & A binding escalated on a footprint is not re-sampled on later passes while that footprint is unchanged; its escalation is re-reported, so $\varphi$ stays false. & \file{binding.py}, \file{trace.py} \\
-Bounded resampling & At most $k$ samples, counted only on content rejection; a transport error does not consume the escalation. & \file{binding.py} \\
-Extract, then validate & A correct value wrapped in prose or fences is not rejected (and re-sampled) for its wrapping. & \file{devbench_rules/helpers.py} \\
-Minimal per-call preamble & A fixed per-call overhead (the model's default system prompt) is multiplied by the number of calls. The backend sends one short system line instead, identically for every configuration. & \file{ollama_backend.py} \\
-\bottomrule
-\end{tabularx}
-\end{center}
+\paragraph{The resulting bound.} A run to fixpoint makes at most
+$k\cdot|S|$ LLM calls; later passes add calls only for bindings whose
+footprint was changed by a value accepted earlier in the same run. For the
+first build, $S$ is every binding instance (on \texttt{geotext}: 9
+signatures, 9 bodies, 9 oracles, so at most 54 calls with $k=2$, and 27 if
+every first sample is accepted; the final run made 28). For a change
+$\Delta$, $S$ is exactly $\Obl(\Delta)$ (\Cref{sec:step6}), so \emph{the
+cost of a change grows with its obligations, not with the size of the
+team's models}. Free-text and shared-schema teams have no such set, so their
+honest cost of a change is running their pipeline again.
 
-\paragraph{The resulting bound.} Let $S$ be the set of stochastic binding
-instances $(t,b)$ whose digest differs from both stamps when a run starts.
-A run to fixpoint makes at most $k\cdot|S|$ LLM calls in total; later passes
-add calls only for bindings whose footprint was changed by a value accepted
-earlier in the same run. For the first build, $S$ is every binding instance
-(here: 9 signatures, 9 bodies, 9 oracles, so at most 54 calls with $k=2$,
-27 if every first sample is accepted). For a change $\Delta$, $S$ is exactly
-$\Obl(\Delta)$ (\Cref{sec:step6}), so \emph{the cost of a change grows with
-its obligations, not with the size of the team's models}. Free-text and
-shared-schema teams have no such set; their honest cost of a change is
-running their pipeline again.
+\paragraph{Validators that protect the whole module.} Two more validators
+serve accuracy, but they also stop one bad value from wasting everyone
+else's tokens. \code{definesName(op.name)} rejects a body whose \code{def}
+has the wrong name. \code{loads()} executes a body's top-level statements
+and rejects, e.g., \code{from typing import Context}. Before these checks, a
+single such body made the whole assembled module fail to import, which
+discarded every other body and all five canaries (\texttt{lice}: 0/5).
 
 \paragraph{What we measure, and how.} Token counts are the provider's own
 (Ollama's \code{prompt\_eval\_count}/\code{eval\_count}, OpenAI/Anthropic
@@ -1069,47 +1125,76 @@ which accounted for about 34k of the 38k input tokens of \tool{}'s 28 calls on
 \texttt{geotext}, against about 5k for the 4 free-text calls. The prompt is
 also the wrong instruction for filling in one value. The Ollama backend now
 sends a one-line system prompt for every configuration alike, which reduced
-a probe call's input from 1{,}227 to 38 tokens. \todo{post-fix devstral numbers.}
+a probe call's input from 1{,}227 to 38 tokens.
+
+\subsection{Results}
 
 \begin{table}[h]
 \centering\small
-\caption{Effect of the fixes on \texttt{geotext}, \texttt{qwen2.5-coder:7b}.
-Pre-fix numbers are from the archived log, used a length/4 estimate, and
-included the MAST judge; post-fix numbers use exact counts and exclude it.
-RQ2 values are means over the three changes (tighten, add, remove).}
+\caption{Build cost (RQ1) with \texttt{qwen2.5-coder:7b}. \emph{Pre-fix}:
+archived log, length/4 estimate, MAST judge included. \emph{Final}: all
+levers of this section, exact counts, MAST judge excluded. Canaries are the
+five criteria constants that survived to the code (\tool{} / free text /
+shared schema).}
 \label{tab:tokens}
-\begin{tabular}{@{}l r r r r@{}}
+\begin{tabular}{@{}l l r r r r c@{}}
 \toprule
-& \multicolumn{2}{c}{Pre-fix} & \multicolumn{2}{c}{Post-fix} \\
-\cmidrule(lr){2-3}\cmidrule(l){4-5}
-Configuration & calls & tokens & calls & tokens \\
+& & \multicolumn{2}{c}{Pre-fix} & \multicolumn{2}{c}{Final} & Canaries \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+Repository & Configuration & calls & tokens & calls & tokens & (final) \\
 \midrule
-\multicolumn{5}{@{}l}{\emph{RQ1: build once}} \\
-\quad \tool{} & 55 & 26.6k & 29 & 8.3k \\
-\quad free text & 5 & 13.8k & 4 & 5.8k \\
-\quad shared schema & 4 & 5.5k & 3 & 2.8k \\
+\multirow{3}{*}{\texttt{geotext}} & \tool{} & 55 & 26.6k & 28 & \textbf{5.8k} & 5/5 \\
+ & free text & 5 & 13.8k & 4 & 6.2k & 0/5 \\
+ & shared schema & 4 & 5.5k & 3 & 2.6k & 0/5 \\
 \midrule
-\multicolumn{5}{@{}l}{\emph{RQ2: per change (identification $+$ propagation)}} \\
-\quad \tool{} & -- & 37.4k & -- & 0.58k \\
-\quad free text & -- & 0.10k & -- & 6.94k \\
-\quad shared schema & -- & 0 & -- & 3.00k \\
+\multirow{3}{*}{\texttt{readtime}} & \tool{} & 99 & 53.5k & 57 & 13.4k & 5/5 \\
+ & free text & 5 & 15.9k & 4 & 6.7k & 0/5 \\
+ & shared schema & 4 & 9.7k & 3 & 3.8k & 0/5 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent Three observations. (i) The fixes cut \tool{}'s first-build cost by
-about $3\times$ (output tokens from 18.6k to 3.3k), and canary retention rose
-from 0/5 to 5/5. (ii) Building once is still \emph{not} cheaper than the
-baselines (8.3k vs.\ 5.8k and 2.8k): \tool{} issues one prompt per binding and
-also produces 9 executable oracles, which the baselines do not. (iii) The
-saving is in change: a change costs \tool{} 0.58k tokens on average
-(1.30k tighten: signature, body, oracle; 0.43k add; 0 remove, which is purely
-structural), versus 6.94k for free text and 3.00k for shared schema, i.e.,
-about $12\times$ and $5\times$ less, at precision and recall 1.00. Under
-these numbers \tool{}'s extra build cost is recovered after the first change
-relative to free text and after the third relative to shared schema. The pre-fix RQ2 figures are not comparable: they metered the whole
+\noindent On \texttt{geotext} the levers took \tool{}'s build cost from 26.6k
+to 5.8k tokens (intermediate stages: 8.3k after the first round of fixes,
+8.6k before bounded outputs, with output tokens falling from 18.6k to 3.1k
+and then to 1.1k). That is \textbf{below free text (6.2k)}, and \tool{} is
+the only configuration whose code kept all five canaries. On
+\texttt{readtime}, whose 16 operations give 48 bindings, the build still
+costs about $2\times$ free text (13.4k vs.\ 6.7k), down from $3.4\times$
+(53.5k vs.\ 15.9k). This is the crossover the cost equation predicts, and
+shared schema, with 3 calls and no executable oracles, remains the cheapest
+build. \todo{pooled build costs over all repositories.}
+
+\begin{table}[h]
+\centering\small
+\caption{Cost of one change (RQ2) on \texttt{geotext}, mean over tighten, add,
+remove. Measured after the first round of fixes (escalation memo,
+extraction, exact metering), before the later levers; the final levers
+only reduce \tool{}'s side further.}
+\label{tab:rq2tokens}
+\begin{tabular}{@{}l r r r@{}}
+\toprule
+Configuration & identification & propagation & per change \\
+\midrule
+\tool{} & 0 & 0.58k & \textbf{0.58k} \\
+free text & 0.13k & 6.81k & 6.94k \\
+shared schema & 0 & 3.00k & 3.00k \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent A change costs \tool{} 0.58k tokens on average (1.30k to tighten:
+signature, body and oracle of one operation; 0.43k to add; 0 to remove,
+which is purely structural). That is about $12\times$ less than free text
+and $5\times$ less than shared schema, at precision and recall 1.00. Taken
+together with the build costs, \tool{}'s total cost is below free text's
+before any change on \texttt{geotext}. On \texttt{readtime}, if per-change
+costs are similar to \texttt{geotext}'s (not yet measured there), it falls
+below free text's after the second change (build $+$ 2 changes: about 14.6k
+vs.\ 20.1k). The pre-fix RQ2 figures (37.4k for
+\tool{} vs.\ 0.10k for free text) are not comparable: they metered a full
 rebuild for \tool{} and only an impact \emph{question} for free text.
-\todo{replace with the pooled numbers over all repositories and models once the new runs complete.}
+\todo{final-run RQ2 numbers, pooled over repositories.}
 
 % ===========================================================================
 \section{Step 5: Turn free text into models (\textsc{Lift})}\label{sec:step5}
@@ -1704,7 +1789,7 @@ Result (paper, Section~IV) & Where it comes from in this walkthrough & Consequen
 RQ1 (pre-fix): 0/5 canaries in every configuration; post-fix \texttt{geotext}: 5/5 for \tool{}, 0/5 for both baselines & The pre-fix \code{body} footprint was \code{op.signature} only; it now includes the criterion via \code{op.spec} (\Cref{sec:step4-code}). & Structure is preserved by construction; content is preserved exactly as far as the footprint declares it. \todo{confirm on all repositories and models.} \\
 RQ2: precision = recall = 1.00 on all 9 trials & Stamps are content digests of per-story footprints (\Cref{sec:step6}). & Impact follows from the rules, so it is stable across models. \\
 RQ3: 9/9 operations covered, 7 vs.\ 22 glue lines & A new hand-off starts with an empty trace (\Cref{sec:hot}). & Pre-existing work is picked up automatically; later work too. \\
-Tokens (post-fix, \texttt{geotext}): build 8.3k vs.\ 5.8k / 2.8k; per change 0.58k vs.\ 6.94k / 3.00k & One prompt per binding, no re-sampling of unchanged or already-escalated footprints; a change samples exactly $\Obl(\Delta)$ (\Cref{sec:tokens}). & \tool{} is not cheaper to build once, but a change costs about $12\times$ less than free text and $5\times$ less than shared schema. \todo{pooled numbers.} \\
+Tokens (final, \texttt{qwen2.5-coder:7b}): build 5.8k vs.\ 6.2k / 2.6k on \texttt{geotext}, 13.4k vs.\ 6.7k / 3.8k on \texttt{readtime}; per change 0.58k vs.\ 6.94k / 3.00k & The token cost equation and its levers: failed stamps, extract-then-validate, reasoned resampling, bounded outputs, minimal footprints and preamble (\Cref{sec:tokens}). & \tool{} can build a small module for less than free text; larger modules cost more to build, and every change costs about $12\times$ less than free text. \todo{pooled numbers.} \\
 \bottomrule
 \end{tabularx}
 \end{center}

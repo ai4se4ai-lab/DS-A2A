@@ -1,0 +1,8 @@
+{"repo": "geotext", "model": "qwen2.5-coder:7b", "n_ops_before": 9, "n_reviews_after": 9, "retroactive_coverage": 1.0, "tokens": 8054}
+{"repo": "readtime", "model": "qwen2.5-coder:7b", "n_ops_before": 16, "n_reviews_after": 16, "retroactive_coverage": 1.0, "tokens": 16394}
+{"repo": "particle-swarm-optimization", "model": "qwen2.5-coder:7b", "n_ops_before": 10, "n_reviews_after": 10, "retroactive_coverage": 1.0, "tokens": 9850}
+{"repo": "stocktrends", "model": "qwen2.5-coder:7b", "n_ops_before": 18, "n_reviews_after": 18, "retroactive_coverage": 1.0, "tokens": 21022}
+{"repo": "chakin", "model": "qwen2.5-coder:7b", "n_ops_before": 9, "n_reviews_after": 9, "retroactive_coverage": 1.0, "tokens": 8168}
+{"repo": "lice", "model": "qwen2.5-coder:7b", "n_ops_before": 22, "n_reviews_after": 22, "retroactive_coverage": 1.0, "tokens": 21120}
+{"repo": "hone", "model": "qwen2.5-coder:7b", "n_ops_before": 22, "n_reviews_after": 22, "retroactive_coverage": 1.0, "tokens": 24182}
+{"repo": "ArXiv_digest", "model": "qwen2.5-coder:7b", "n_ops_before": 12, "n_reviews_after": 12, "retroactive_coverage": 1.0, "tokens": 11170}

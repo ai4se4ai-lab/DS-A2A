@@ -33,13 +33,20 @@ class OllamaBackend(LLMBackend):
         model: str,
         *,
         auto_pull: bool = True,
-        timeout: float = 120.0,
-        max_tokens: int = 800,
+        timeout: float = 300.0,
+        max_tokens: int = 4096,
         system: str | None = DEFAULT_SYSTEM_PROMPT,
+        think: bool | None = False,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout
+        # The cap must not bind for any configuration's legitimate output: at
+        # 800 it truncated the baselines' single long calls (a whole module
+        # from one Developer call; qwen3.8: 6 of 8 baseline modules cut off),
+        # silently depressing their fidelity scores. 4096 leaves room for
+        # those; AgentM2M's per-binding answers are bounded by their prompts,
+        # not by this cap, so a runaway still costs it -- honestly.
         # Every `@llm` binding in this codebase expects a short, specific
         # answer (a signature line, a short function body, a brief prose
         # summary); with no cap, a smaller/repetition-prone model can run
@@ -51,6 +58,12 @@ class OllamaBackend(LLMBackend):
         # structure, not raw generation length).
         self.max_tokens = max_tokens
         self.system = system
+        # Hidden reasoning ("thinking" models, e.g. qwen3.8) is generated and
+        # billed on every call but never shown in `response`: on a one-line
+        # signature it multiplied output ~5x (71 vs 14 tokens) for the same
+        # answer. Off for every configuration alike; a no-op for models
+        # without thinking. None leaves the model's default.
+        self.think = think
         if auto_pull:
             self._ensure_model_available()
 
@@ -102,6 +115,8 @@ class OllamaBackend(LLMBackend):
         }
         if self.system is not None:
             payload["system"] = self.system
+        if self.think is not None:
+            payload["think"] = self.think
         try:
             resp = requests.post(
                 f"{self.base_url}/api/generate",

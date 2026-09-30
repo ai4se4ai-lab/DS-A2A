@@ -109,9 +109,10 @@ Persisted trace models drive change propagation, and evolving the team at
 runtime is a higher-order transformation. We relate this design to
 11 of the 14 MAST failure modes (5 directly, 6 partially) and report a
 pilot with an open-source prototype: change impact was exact
-(precision and recall 1.00) where baselines over-regenerated, and
-propagating a change cost about $12\times$ fewer tokens than re-running
-free-text hand-offs; a new agent was added at runtime with 7 lines of glue.
+(precision and recall 1.00) where baselines over-regenerated, propagating a
+change cost about $12\times$ fewer tokens than re-running free-text
+hand-offs, a small module was built for fewer tokens than with free text,
+and a new agent was added at runtime with 7 lines of glue.
 \todo{re-check abstract numbers against the pooled runs.}
 \end{abstract}
 
@@ -461,20 +462,24 @@ re-bind every stochastic binding whose \emph{version stamp}---a digest of its
 footprint at acceptance---is missing or stale, prompting with the footprint
 only and escalating after $k$ rejections.
 
-\emph{Controlled LLM usage.} A binding is sampled only when its footprint
-digest differs from both its stamp and its \emph{failed stamp}, the digest at
-which it last escalated (line~\ref{alg:memo}); an escalated binding is thus
-re-reported, not re-sampled, until its footprint changes, and it keeps
-$\varphi$ false. Only a sample that fails $\mathit{chk}_b$ counts against
-$k$ (a transport error does not), and validators extract the value from its
-wrapping (prose, markdown fences) before judging it, so a correct value is
-never re-sampled for its formatting. A run therefore makes at most $k\cdot|S|$
-calls, where $S$ is the set of bindings whose digest differs from both stamps
-when it starts; quiescent passes cost nothing, and input tokens per call are
-bounded by prompt and footprint, not by conversation length. Because the
-design makes many short calls, fixed per-call overhead must also stay small:
-the runtime replaces model-default system prompts, which can exceed 1k
-tokens, with a one-line instruction. Bindings are then checked
+\emph{Token discipline.} Free-text teams pay for repetition \emph{across
+roles}: each role re-reads the upstream transcript. \tool{} pays per
+binding, $C=\sum_{(t,b)\in S}\sum_{i\le n_{t,b}}(P+|\pi_b|+|\fp_b|+|v_i|)$
+(preamble, prompt, footprint, output), and the runtime controls every factor.
+\emph{$|S|$:} a binding is sampled only when its footprint digest differs
+from both its stamp and its \emph{failed stamp}, the digest at which it last
+escalated (line~\ref{alg:memo}); an escalated binding is re-reported, not
+re-sampled, until its footprint changes, and it keeps $\varphi$ false.
+\emph{$n_{t,b}$:} validators judge the extracted value, not its wrapping
+(prose, fences), and return a reason when they reject; the resample prompt
+carries the rejected value and that reason, so a retry is not a blind
+repeat. \emph{$|v_i|$:} prompts bound the answer's size. \emph{$|\fp_b|$:}
+footprints read only binding-specific data; context shared by all bindings
+(e.g., module-wide criteria) is held once, outside every footprint.
+\emph{$P$:} a one-line system prompt replaces model defaults, which can
+exceed 1k tokens. A run makes at most $k\cdot|S|$ calls, quiescent passes
+cost nothing, and the input per call is independent of conversation
+length. Bindings are then checked
 jointly against $\MM_j$'s OCL constraints (e.g., signatures agree on
 \code{TaskId}); a violation escalates the bindings involved. On $T_1$, \code{S3} fails the
 guard; $\mathit{comp}_{E1}$, $\mathit{op}_{S1}$, $\mathit{op}_{S2}$ and
@@ -581,8 +586,8 @@ their pipeline on the changed PRD.
 
 
 \smallskip\noindent\textbf{Results.} Numbers below are from
-\texttt{geotext} with \texttt{qwen2.5-coder:7b}. \todo{pooled results
-over all repositories and models.}
+\texttt{qwen2.5-coder:7b} on \texttt{geotext} and \texttt{readtime}.
+\todo{pooled results over all repositories and models.}
 \emph{RQ1:} \tool{} retained 5/5 canaries through
 Req$\to$Arch$\to$Code; free text and shared schema retained 0/5. No
 configuration passed DevBench's acceptance tests (a scripted backend
@@ -595,13 +600,16 @@ average (1.30k to tighten, 0.43k to add, 0 to remove, which is purely
 structural), versus 6.94k for free text and 3.00k for shared schema.
 \emph{RQ3:} the added reviewer covered all existing operations with 7 glue
 lines versus an estimated 22 manually. \todo{re-confirm on post-fix runs.}
-\emph{Building once is not cheaper:} 8.3k tokens versus 5.8k (free text)
-and 2.8k (shared schema), since \tool{} prompts once per binding and also
-produces executable oracles; the difference is recovered after one change
-relative to free text and after three relative to shared schema. An early
-version of the prototype re-sampled escalated bindings on every pass and
-rejected correct oracles for their markdown wrapping, which tripled its
-build cost; the rules of Step~4 remove both.
+\emph{Building once} cost \tool{} 5.8k tokens on \texttt{geotext}, below
+free text (6.2k), though not shared schema (2.6k), which makes 3 calls and
+writes no executable oracles. On \texttt{readtime} (48 bindings) it cost
+13.4k versus 6.7k: build cost grows with the number of bindings, so the
+per-change saving has to repay it (after two changes, at the per-change
+costs above). A first prototype lacked the token discipline of Step~4. It
+re-sampled escalated bindings on every pass, rejected correct values for
+their wrapping and retried them blindly, and repeated module-wide criteria
+in every footprint. It cost 26.6k on \texttt{geotext} and 53.5k on
+\texttt{readtime}, $2$--$3.4\times$ free text.
 
 \smallskip\noindent\textbf{Discussion and threats.} Results on one
 repository are a feasibility signal, not a powered comparison: a null RQ1
