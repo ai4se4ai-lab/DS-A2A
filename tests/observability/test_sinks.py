@@ -16,7 +16,12 @@ from agentm2m.observability.events import (
 )
 from agentm2m.observability.presence import derive_presence
 from agentm2m.observability.privacy import PrivacyConfig, redact
-from agentm2m.observability.sink import CompositeSink, JsonlEventSink, MemoryEventSink, NullEventSink
+from agentm2m.observability.sink import (
+    CompositeSink,
+    JsonlEventSink,
+    MemoryEventSink,
+    NullEventSink,
+)
 from agentm2m.observability.timeline import read_timeline
 
 
