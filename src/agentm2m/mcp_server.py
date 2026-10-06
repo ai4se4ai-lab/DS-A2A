@@ -35,7 +35,12 @@ references and trace links; only @llm attribute values need an LLM, and each is
 accepted only if its @check validator passes. Typical loop: team_status ->
 run -> next_bindings -> submit_binding (repeat) -> acceptance. For a change:
 model_edit (as the owning agent) -> impact -> run. Answer a binding ONLY from the
-prompt next_bindings returns: it already contains the whole allowed footprint.
+prompt next_bindings returns: it already contains the whole allowed footprint
+(and any authorized shared context, pinned to a version).
+Shared context: agents publish findings/decisions with context_update (as an
+authorized writer); bindings that declare the context see it in their prompt,
+and a new version obliges exactly those bindings. Observability: every state
+transition is an event (observability_events; nostr_* when a relay is set up).
 """
 
 
@@ -193,6 +198,164 @@ def acceptance() -> dict:
     by a trace link and every @llm value accepted for its current footprint
     (nothing pending, stale, or escalated). Lists what is still open."""
     return _call(_ws().acceptance)
+
+
+# ----------------------------------------------------------------------------
+# Agents and shared context
+# ----------------------------------------------------------------------------
+
+
+@mcp.tool()
+def agent_identity(agent: str) -> dict:
+    """An agent's identity: view, display name, optional Nostr public key/npub,
+    relays, and whether a local signing key is available (never the key)."""
+    return _call(_ws().agent_identity, agent)
+
+
+@mcp.tool()
+def agent_directory() -> dict:
+    """All agents with their view, write rights, Nostr identity and presence
+    (offline/idle/working/waiting/blocked/failed, derived from the event timeline)."""
+    return _call(_ws().agent_directory)
+
+
+@mcp.tool()
+def context_list(as_agent: str | None = None) -> dict:
+    """Shared contexts (metadata only, never content): version, digest, owner,
+    readers, item count; with as_agent, whether that agent may read/write each."""
+    return _call(_ws().context_list, as_agent)
+
+
+@mcp.tool()
+def context_create(
+    context_id: str,
+    as_agent: str,
+    title: str = "",
+    readers: list[str] | None = None,
+    writers: list[str] | None = None,
+    visibility: str = "private",
+    items: list[dict[str, Any]] | None = None,
+) -> dict:
+    """Create a shared context owned by as_agent. items: [{"id","type","content",
+    optional "provenance": {"trace"|"element"|"view"|"handoff": ...}, "confidence", "scope"}].
+    visibility: private (listed readers) | team (every agent reads) | relay (also published)."""
+    return _call(_ws().context_create, context_id, as_agent, title, readers, writers, visibility, items)
+
+
+@mcp.tool()
+def context_get(context_id: str, as_agent: str, version: int | None = None) -> dict:
+    """Read a context (latest, or a specific version) as an authorized reader.
+    The read is recorded as an observable context.read event."""
+    return _call(_ws().context_get, context_id, as_agent, version)
+
+
+@mcp.tool()
+def context_snapshot(context_id: str, as_agent: str, version: int) -> dict:
+    """Read one immutable version of a context (old versions stay addressable)."""
+    return _call(_ws().context_snapshot, context_id, as_agent, version)
+
+
+@mcp.tool()
+def context_update(
+    context_id: str,
+    as_agent: str,
+    expected_version: int,
+    items: list[dict[str, Any]] | None = None,
+    remove: list[str] | None = None,
+    replace: bool = False,
+) -> dict:
+    """Publish knowledge as an authorized writer: upsert items (by id), remove
+    ids, or replace all. Fails with CONTEXT_CONFLICT if expected_version is not
+    current (fetch, reconcile, retry). Returns the bindings the new version obliges."""
+    return _call(_ws().context_update, context_id, as_agent, expected_version, items, remove, replace)
+
+
+@mcp.tool()
+def context_attach(context_id: str, agent: str, as_agent: str) -> dict:
+    """The context owner (as_agent) grants `agent` read access."""
+    return _call(_ws().context_attach, context_id, agent, as_agent)
+
+
+@mcp.tool()
+def context_detach(context_id: str, agent: str, as_agent: str) -> dict:
+    """The context owner revokes a read grant made with context_attach."""
+    return _call(_ws().context_detach, context_id, agent, as_agent)
+
+
+@mcp.tool()
+def context_search(query: str, as_agent: str, type: str | None = None, limit: int = 20) -> dict:  # noqa: A002
+    """Search items of the contexts as_agent may read (case-insensitive)."""
+    return _call(_ws().context_search, query, as_agent, type, limit)
+
+
+@mcp.tool()
+def context_status() -> dict:
+    """Per context: version, owner, readers, how many bindings consume it and
+    how many of those are stale; plus contexts referenced by rules but missing."""
+    return _call(_ws().context_status)
+
+
+@mcp.tool()
+def influence_query(context_id: str, item_id: str | None = None, transitive: bool = True) -> dict:
+    """Which accepted agent decisions were derived from this context (or item),
+    at which pinned version, whether still current, and what was generated
+    downstream from them through the trace links."""
+    return _call(_ws().influence_query, context_id, item_id, transitive)
+
+
+# ----------------------------------------------------------------------------
+# Observability and Nostr
+# ----------------------------------------------------------------------------
+
+
+@mcp.tool()
+def observability_events(
+    run_id: str | None = None,
+    agent: str | None = None,
+    handoff: str | None = None,
+    event_type: str | None = None,
+    since: float | None = None,
+    until: float | None = None,
+    limit: int = 200,
+) -> dict:
+    """The local execution timeline: typed, correlated events (team, hand-off,
+    binding, obligation, trace, context). Prompts and values appear only as digests."""
+    return _call(_ws().events, run_id, agent, handoff, event_type, since, until, limit)
+
+
+@mcp.tool()
+def nostr_status() -> dict:
+    """Nostr observability: enabled, relays, kinds, engine public key, outbox
+    depth (events waiting for a relay), failures, privacy mode."""
+    return _call(_ws().nostr_status)
+
+
+@mcp.tool()
+def nostr_publish(force: bool = False) -> dict:
+    """Publish queued observability events from the outbox to the relays
+    (force=true retries immediately, ignoring backoff)."""
+    return _call(_ws().nostr_flush, force)
+
+
+@mcp.tool()
+def nostr_events(
+    run_id: str | None = None,
+    agent: str | None = None,
+    handoff: str | None = None,
+    event_type: str | None = None,
+    since: float | None = None,
+    until: float | None = None,
+    limit: int = 500,
+) -> dict:
+    """Query this workspace's events from the relays. Every event is verified
+    (signature, trusted author, schema, workspace) before it is returned."""
+    return _call(_ws().nostr_events, run_id, agent, handoff, event_type, since, until, limit)
+
+
+@mcp.tool()
+def nostr_subscribe(seconds: float = 5.0, limit: int = 100) -> dict:
+    """Listen on the relays for up to `seconds` (max 30) and return verified events."""
+    return _call(_ws().nostr_subscribe, seconds, limit)
 
 
 def main() -> None:

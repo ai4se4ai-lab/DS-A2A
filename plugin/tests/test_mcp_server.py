@@ -24,6 +24,11 @@ from mcp.client.stdio import stdio_client  # noqa: E402
 EXPECTED_TOOLS = {
     "team_init", "team_status", "team_validate", "model_show", "model_edit", "impact", "run",
     "next_bindings", "submit_binding", "trace_query", "team_evolve", "acceptance",
+    # shared context and observability (0.3)
+    "agent_identity", "agent_directory", "context_list", "context_create", "context_get", "context_snapshot",
+    "context_update", "context_attach", "context_detach", "context_search", "context_status",
+    "influence_query", "observability_events", "nostr_status", "nostr_publish", "nostr_events",
+    "nostr_subscribe",
 }
 
 
@@ -135,5 +140,38 @@ def test_engine_backend_over_stdio(project: Path):
                 assert run["phi"] is True
                 msg = await _call_err(s, "next_bindings", {})
                 assert "sampled by the engine" in msg
+
+    anyio.run(main)
+
+
+def test_context_and_observability_tools_over_stdio(project: Path):
+    async def main():
+        async with stdio_client(_params(project)) as (r, w):
+            async with ClientSession(r, w) as s:
+                await s.initialize()
+                await _call(s, "team_init", {"template": "devteam"})
+                created = await _call(s, "context_create", {
+                    "context_id": "security-review", "as_agent": "Architect", "title": "Security review",
+                    "readers": ["Developer", "Tester"],
+                    "items": [{"id": "finding-001", "type": "security-finding", "content": "auth required"}]})
+                assert created["version"] == 1
+                got = await _call(s, "context_get", {"context_id": "security-review", "as_agent": "Developer"})
+                assert got["items"][0]["author"] == "Architect"
+                err = await _call_err(s, "context_get", {"context_id": "security-review", "as_agent": "Analyst"})
+                assert "may not read" in err
+                err = await _call_err(s, "context_update", {"context_id": "security-review", "as_agent": "Architect",
+                                                            "expected_version": 7, "items": []})
+                assert "CONTEXT_CONFLICT" in err
+                listing = await _call(s, "context_list", {"as_agent": "Analyst"})
+                assert listing["contexts"][0]["can_read"] is False and "items" not in listing["contexts"][0]
+                dirx = await _call(s, "agent_directory")
+                assert set(dirx["agents"]) == {"Analyst", "Architect", "Developer", "Tester"}
+                await _call(s, "run")
+                ev = await _call(s, "observability_events", {"event_type": "context.read"})
+                assert ev["events"] and "auth required" not in json.dumps(ev)
+                st = await _call(s, "nostr_status")
+                assert st["enabled"] is False
+                assert "key" not in json.dumps(await _call(s, "agent_identity", {"agent": "Architect"})).replace(
+                    "has_local_signing_key", "").replace("pubkey", "")
 
     anyio.run(main)
