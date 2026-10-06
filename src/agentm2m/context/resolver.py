@@ -62,8 +62,7 @@ class ContextResolver:
             try:
                 snap, items = self.store.resolve(ref.context_id, as_agent=agent, item_ids=ref.item_ids)
             except ContextAccessDenied as exc:
-                raise ContextUnavailable(f"agent {agent} is not authorized to read context "
-                                         f"{ref.context_id!r}: {exc}") from None
+                raise ContextUnavailable(str(exc)) from None  # "agent X may not read context Y (not a reader)"
             except ContextNotFound as exc:
                 raise ContextUnavailable(f"context {ref.context_id!r} is unavailable: {exc}") from None
             out.append(ResolvedContext(snapshot=snap, items=tuple(items), item_ids=tuple(ref.item_ids)))

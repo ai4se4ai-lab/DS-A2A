@@ -151,7 +151,7 @@ def test_unauthorized_context_blocks(tmp_path: Path):
     fill_all(ws)
     assert _states(ws)[(BODY_S2, "body")] == "blocked"
     errs = ws.events(event_type="context.error")["events"]
-    assert "not authorized" in errs[-1]["payload"]["error"]
+    assert "may not read" in errs[-1]["payload"]["error"] and "not a reader" in errs[-1]["payload"]["error"]
 
 
 def test_deleted_context_turns_accepted_binding_blocked(tmp_path: Path):

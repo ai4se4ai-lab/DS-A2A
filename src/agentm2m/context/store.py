@@ -89,7 +89,7 @@ class MemoryContextStore:
         ok = e.policy.can_write(agent, now) if mode == "write" else e.policy.can_read(agent, now,
                                                                                       frozenset(e.grants))
         if not ok:
-            why = "expired" if e.policy.expired(now) else f"not a {mode}r"
+            why = "the context has expired" if e.policy.expired(now) else f"not a {'writer' if mode == 'write' else 'reader'}"
             raise ContextAccessDenied(f"agent {agent!r} may not {mode} context {cid!r} ({why})")
 
     @staticmethod
