@@ -81,5 +81,11 @@ def test_every_shipped_rule_file_still_parses():
         for rule in module.rules:
             for tp in rule.to_clause.patterns:
                 for b in tp.bindings:
-                    if isinstance(b, StochasticBinding):
-                        assert b.context_refs == ()
+                    if isinstance(b, StochasticBinding) and not f.name.endswith(".ctx.agentm2m"):
+                        assert b.context_refs == (), f  # only the opt-in *.ctx variants read contexts
+    ctx_files = [f for f in files if f.name.endswith(".ctx.agentm2m")]
+    assert ctx_files
+    for f in ctx_files:
+        refs = [b.context_refs for r in parse_module_file(f).rules for tp in r.to_clause.patterns
+                for b in tp.bindings if isinstance(b, StochasticBinding)]
+        assert any(refs), f

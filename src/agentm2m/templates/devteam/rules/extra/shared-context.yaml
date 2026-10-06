@@ -1,0 +1,18 @@
+# Shared context for the DevTeam (AgentM2M 0.3). Merge into team.yaml after
+# adding the Security Reviewer (team_evolve with SecurityReviewer.view.yaml):
+#
+#   handoffs:
+#     - {name: Req2Arch,  rule: rules/Req2Arch.agentm2m}
+#     - {name: Arch2Code, rule: rules/extra/Arch2Code.ctx.agentm2m}   # reads security-review
+#     - {name: Req2Test,  rule: rules/extra/Req2Test.ctx.agentm2m}    # reads security-review
+#
+# The Security Reviewer publishes findings with context_update; the Developer's
+# code bodies and the Tester's oracles see them in their prompts, pinned to a
+# version, and a new version obliges exactly those bindings.
+contexts:
+  security-review:
+    title: Security review findings
+    owner: SecurityReviewer
+    writers: [SecurityReviewer]
+    readers: [Developer, Tester]
+    visibility: private        # 'relay' also syncs it to other machines over Nostr

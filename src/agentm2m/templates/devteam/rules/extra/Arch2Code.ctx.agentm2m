@@ -1,0 +1,19 @@
+-- T2 with shared context (AgentM2M 0.3): same structure as rules/Arch2Code.agentm2m,
+-- but the Developer's body binding also reads the 'security-review' context
+-- published by the Security Reviewer. Swap it in by pointing the Arch2Code
+-- hand-off in team.yaml at this file and declaring the context (see
+-- shared-context.yaml). A new context version obliges exactly these bindings.
+module Arch2Code;
+create OUT : Code from IN : Arch;
+uses '../helpers.py';
+
+rule Operation2CodeEdit {
+  from op : Arch!Operation
+  to  ce : Code!CodeEdit (
+    name      <- op.name,
+    operation <- op,
+    body      <- @llm('Implement this operation as one self-contained Python function: first the signature, then the acceptance criteria it must satisfy, then any security findings that apply. Answer with Python code only.',
+                       op.implFootprint(),
+                       context = ['security-review']),
+    @check body.compiles() )
+}
