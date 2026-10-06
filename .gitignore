@@ -13,3 +13,5 @@ dist/
 .ruff_cache/
 evaluation/benchmarks/cache/devbench/python/geotext/geotext/data_file/*
 evaluation/benchmarks/cache/devbench/python/lice/templates/*
+# AgentM2M signing keys (never commit)
+.agentm2m/secrets/

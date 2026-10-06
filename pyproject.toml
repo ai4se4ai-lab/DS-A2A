@@ -20,7 +20,9 @@ dependencies = [
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.2"]
-dev = ["pytest>=8.0", "ruff>=0.6", "mcp>=1.2", "build>=1.2", "twine>=5.0"]
+# Optional Nostr observability transport: BIP-340 signing + relay websockets.
+nostr = ["coincurve>=20", "websockets>=13"]
+dev = ["pytest>=8.0", "ruff>=0.6", "mcp>=1.2", "build>=1.2", "twine>=5.0", "coincurve>=20", "websockets>=13"]
 eval = [
     "pandas>=2.2",
     "matplotlib>=3.9",

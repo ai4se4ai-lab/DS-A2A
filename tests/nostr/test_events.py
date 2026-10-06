@@ -31,12 +31,12 @@ BIP340_SIG1 = (
 
 
 def _unsigned(**kw) -> UnsignedEvent:
-    base = dict(
-        created_at=1_760_000_000,
-        kind=1,
-        tags=[["t", "agentm2m"], ["type", "team.started"]],
-        content='{"hello":"world"}',
-    )
+    base = {
+        "created_at": 1_760_000_000,
+        "kind": 1,
+        "tags": [["t", "agentm2m"], ["type", "team.started"]],
+        "content": '{"hello":"world"}',
+    }
     base.update(kw)
     return UnsignedEvent(**base)
 
