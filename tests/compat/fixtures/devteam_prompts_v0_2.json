@@ -1,0 +1,30 @@
+{
+ "Criterion2TestCase::tc::c=Criterion#S1.1|oracle": {
+  "footprint_version": "9fdad871d367d680",
+  "prompt": "Write a test oracle for this acceptance criterion: Python code defining a function test_oracle() that calls implementation() and asserts the criterion holds. Answer with Python code only.\n\nContext (footprint only):\na title is required"
+ },
+ "Criterion2TestCase::tc::c=Criterion#S2.1|oracle": {
+  "footprint_version": "123ccdc996aff09e",
+  "prompt": "Write a test oracle for this acceptance criterion: Python code defining a function test_oracle() that calls implementation() and asserts the criterion holds. Answer with Python code only.\n\nContext (footprint only):\ncompleting a done task is rejected"
+ },
+ "Criterion2TestCase::tc::c=Criterion#S3.1|oracle": {
+  "footprint_version": "1047d8fad948bd51",
+  "prompt": "Write a test oracle for this acceptance criterion: Python code defining a function test_oracle() that calls implementation() and asserts the criterion holds. Answer with Python code only.\n\nContext (footprint only):\nthe file has a header row"
+ },
+ "Operation2CodeEdit::ce::op=Operation#op_s1|body": {
+  "footprint_version": "719411b795c7babf",
+  "prompt": "Implement this operation as one self-contained Python function: first the signature, then the acceptance criteria it must satisfy. Answer with Python code only.\n\nContext (footprint only):\n- markTaskDone(id: TaskId) -> Task\n- S1.1: a title is required"
+ },
+ "Operation2CodeEdit::ce::op=Operation#op_s2|body": {
+  "footprint_version": "7570d6b3b883079c",
+  "prompt": "Implement this operation as one self-contained Python function: first the signature, then the acceptance criteria it must satisfy. Answer with Python code only.\n\nContext (footprint only):\n- markTaskDone(id: TaskId) -> Task\n- S2.1: completing a done task is rejected"
+ },
+ "Story2Operation::op::s=UserStory#S1|signature": {
+  "footprint_version": "d550b926cae2fdb8",
+  "prompt": "Derive an API signature for this user story. Answer with exactly one line of the form name(param: Type, ...) -> ReturnType and nothing else.\n\nContext (footprint only):\n- Criterion({'id': 'S1.1', 'text': 'a title is required'})"
+ },
+ "Story2Operation::op::s=UserStory#S2|signature": {
+  "footprint_version": "17d16e43c92c4b01",
+  "prompt": "Derive an API signature for this user story. Answer with exactly one line of the form name(param: Type, ...) -> ReturnType and nothing else.\n\nContext (footprint only):\n- Criterion({'id': 'S2.1', 'text': 'completing a done task is rejected'})"
+ }
+}

@@ -1,0 +1,382 @@
+{
+ "evolutions": [],
+ "models": {
+  "Arch": {
+   "children": {
+    "components": [
+     {
+      "attrs": {
+       "name": "E1"
+      },
+      "target_key": "Epic2Component::c::e=Epic#E1",
+      "type": "Arch.Component",
+      "uid": "Arch:/components.0"
+     }
+    ],
+    "operations": [
+     {
+      "attrs": {
+       "criteria": "S1.1: a title is required",
+       "name": "op_s1",
+       "signature": "markTaskDone(id: TaskId) -> Task"
+      },
+      "refs": {
+       "component": "Arch:/components.0"
+      },
+      "target_key": "Story2Operation::op::s=UserStory#S1",
+      "type": "Arch.Operation",
+      "uid": "Arch:/operations.0"
+     },
+     {
+      "attrs": {
+       "criteria": "S2.1: completing a done task is rejected",
+       "name": "op_s2",
+       "signature": "markTaskDone(id: TaskId) -> Task"
+      },
+      "refs": {
+       "component": "Arch:/components.0"
+      },
+      "target_key": "Story2Operation::op::s=UserStory#S2",
+      "type": "Arch.Operation",
+      "uid": "Arch:/operations.1"
+     }
+    ]
+   },
+   "type": "Arch.ArchModel",
+   "uid": "Arch:/"
+  },
+  "Code": {
+   "children": {
+    "edits": [
+     {
+      "attrs": {
+       "body": "def op(task_id):\n    return {'id': task_id, 'done': True}\n",
+       "name": "op_s1"
+      },
+      "refs": {
+       "operation": "Arch:/operations.0"
+      },
+      "target_key": "Operation2CodeEdit::ce::op=Operation#op_s1",
+      "type": "Code.CodeEdit",
+      "uid": "Code:/edits.0"
+     },
+     {
+      "attrs": {
+       "body": "def op(task_id):\n    return {'id': task_id, 'done': True}\n",
+       "name": "op_s2"
+      },
+      "refs": {
+       "operation": "Arch:/operations.1"
+      },
+      "target_key": "Operation2CodeEdit::ce::op=Operation#op_s2",
+      "type": "Code.CodeEdit",
+      "uid": "Code:/edits.1"
+     }
+    ]
+   },
+   "type": "Code.CodeModel",
+   "uid": "Code:/"
+  },
+  "Req": {
+   "children": {
+    "epics": [
+     {
+      "attrs": {
+       "name": "E1"
+      },
+      "type": "Req.Epic",
+      "uid": "Req:/epics.0"
+     }
+    ],
+    "stories": [
+     {
+      "attrs": {
+       "id": "S1",
+       "status": "accepted",
+       "title": "create a task"
+      },
+      "children": {
+       "criteria": [
+        {
+         "attrs": {
+          "id": "S1.1",
+          "text": "a title is required"
+         },
+         "type": "Req.Criterion",
+         "uid": "Req:/stories.0/criteria.0"
+        }
+       ]
+      },
+      "refs": {
+       "epic": "Req:/epics.0"
+      },
+      "type": "Req.UserStory",
+      "uid": "Req:/stories.0"
+     },
+     {
+      "attrs": {
+       "id": "S2",
+       "status": "accepted",
+       "title": "mark a task done"
+      },
+      "children": {
+       "criteria": [
+        {
+         "attrs": {
+          "id": "S2.1",
+          "text": "completing a done task is rejected"
+         },
+         "type": "Req.Criterion",
+         "uid": "Req:/stories.1/criteria.0"
+        }
+       ]
+      },
+      "refs": {
+       "epic": "Req:/epics.0"
+      },
+      "type": "Req.UserStory",
+      "uid": "Req:/stories.1"
+     },
+     {
+      "attrs": {
+       "id": "S3",
+       "status": "draft",
+       "title": "export tasks as CSV"
+      },
+      "children": {
+       "criteria": [
+        {
+         "attrs": {
+          "id": "S3.1",
+          "text": "the file has a header row"
+         },
+         "type": "Req.Criterion",
+         "uid": "Req:/stories.2/criteria.0"
+        }
+       ]
+      },
+      "refs": {
+       "epic": "Req:/epics.0"
+      },
+      "type": "Req.UserStory",
+      "uid": "Req:/stories.2"
+     }
+    ]
+   },
+   "type": "Req.ReqModel",
+   "uid": "Req:/"
+  },
+  "Test": {
+   "children": {
+    "cases": [
+     {
+      "attrs": {
+       "name": "S1.1",
+       "oracle": "def test_oracle():\n    result = implementation('t1')\n    assert result['done'] is True\n"
+      },
+      "refs": {
+       "criterion": "Req:/stories.0/criteria.0"
+      },
+      "target_key": "Criterion2TestCase::tc::c=Criterion#S1.1",
+      "type": "Test.TestCase",
+      "uid": "Test:/cases.0"
+     },
+     {
+      "attrs": {
+       "name": "S2.1",
+       "oracle": "def test_oracle():\n    result = implementation('t1')\n    assert result['done'] is True\n"
+      },
+      "refs": {
+       "criterion": "Req:/stories.1/criteria.0"
+      },
+      "target_key": "Criterion2TestCase::tc::c=Criterion#S2.1",
+      "type": "Test.TestCase",
+      "uid": "Test:/cases.1"
+     },
+     {
+      "attrs": {
+       "name": "S3.1",
+       "oracle": "def test_oracle():\n    result = implementation('t1')\n    assert result['done'] is True\n"
+      },
+      "refs": {
+       "criterion": "Req:/stories.2/criteria.0"
+      },
+      "target_key": "Criterion2TestCase::tc::c=Criterion#S3.1",
+      "type": "Test.TestCase",
+      "uid": "Test:/cases.2"
+     }
+    ]
+   },
+   "type": "Test.TestModel",
+   "uid": "Test:/"
+  }
+ },
+ "traces": {
+  "Arch2Code": {
+   "handoff": "Arch2Code",
+   "links": [
+    {
+     "attempts": {},
+     "failed_stamps": {},
+     "footprints": {
+      "body": [
+       "markTaskDone(id: TaskId) -> Task",
+       "S1.1: a title is required"
+      ]
+     },
+     "match_key": "op=Operation#op_s1",
+     "rejections": {},
+     "rule": "Operation2CodeEdit",
+     "source_keys": {
+      "op": "Operation#op_s1"
+     },
+     "stamps": {
+      "body": "719411b795c7babf"
+     },
+     "target_key": "Operation2CodeEdit::ce::op=Operation#op_s1"
+    },
+    {
+     "attempts": {},
+     "failed_stamps": {},
+     "footprints": {
+      "body": [
+       "markTaskDone(id: TaskId) -> Task",
+       "S2.1: completing a done task is rejected"
+      ]
+     },
+     "match_key": "op=Operation#op_s2",
+     "rejections": {},
+     "rule": "Operation2CodeEdit",
+     "source_keys": {
+      "op": "Operation#op_s2"
+     },
+     "stamps": {
+      "body": "7570d6b3b883079c"
+     },
+     "target_key": "Operation2CodeEdit::ce::op=Operation#op_s2"
+    }
+   ]
+  },
+  "Req2Arch": {
+   "handoff": "Req2Arch",
+   "links": [
+    {
+     "attempts": {},
+     "failed_stamps": {},
+     "footprints": {},
+     "match_key": "e=Epic#E1",
+     "rejections": {},
+     "rule": "Epic2Component",
+     "source_keys": {
+      "e": "Epic#E1"
+     },
+     "stamps": {},
+     "target_key": "Epic2Component::c::e=Epic#E1"
+    },
+    {
+     "attempts": {},
+     "failed_stamps": {},
+     "footprints": {
+      "signature": [
+       {
+        "_type": "Criterion",
+        "id": "S1.1",
+        "text": "a title is required"
+       }
+      ]
+     },
+     "match_key": "s=UserStory#S1",
+     "rejections": {},
+     "rule": "Story2Operation",
+     "source_keys": {
+      "s": "UserStory#S1"
+     },
+     "stamps": {
+      "signature": "d550b926cae2fdb8"
+     },
+     "target_key": "Story2Operation::op::s=UserStory#S1"
+    },
+    {
+     "attempts": {},
+     "failed_stamps": {},
+     "footprints": {
+      "signature": [
+       {
+        "_type": "Criterion",
+        "id": "S2.1",
+        "text": "completing a done task is rejected"
+       }
+      ]
+     },
+     "match_key": "s=UserStory#S2",
+     "rejections": {},
+     "rule": "Story2Operation",
+     "source_keys": {
+      "s": "UserStory#S2"
+     },
+     "stamps": {
+      "signature": "17d16e43c92c4b01"
+     },
+     "target_key": "Story2Operation::op::s=UserStory#S2"
+    }
+   ]
+  },
+  "Req2Test": {
+   "handoff": "Req2Test",
+   "links": [
+    {
+     "attempts": {},
+     "failed_stamps": {},
+     "footprints": {
+      "oracle": "a title is required"
+     },
+     "match_key": "c=Criterion#S1.1",
+     "rejections": {},
+     "rule": "Criterion2TestCase",
+     "source_keys": {
+      "c": "Criterion#S1.1"
+     },
+     "stamps": {
+      "oracle": "9fdad871d367d680"
+     },
+     "target_key": "Criterion2TestCase::tc::c=Criterion#S1.1"
+    },
+    {
+     "attempts": {},
+     "failed_stamps": {},
+     "footprints": {
+      "oracle": "completing a done task is rejected"
+     },
+     "match_key": "c=Criterion#S2.1",
+     "rejections": {},
+     "rule": "Criterion2TestCase",
+     "source_keys": {
+      "c": "Criterion#S2.1"
+     },
+     "stamps": {
+      "oracle": "123ccdc996aff09e"
+     },
+     "target_key": "Criterion2TestCase::tc::c=Criterion#S2.1"
+    },
+    {
+     "attempts": {},
+     "failed_stamps": {},
+     "footprints": {
+      "oracle": "the file has a header row"
+     },
+     "match_key": "c=Criterion#S3.1",
+     "rejections": {},
+     "rule": "Criterion2TestCase",
+     "source_keys": {
+      "c": "Criterion#S3.1"
+     },
+     "stamps": {
+      "oracle": "1047d8fad948bd51"
+     },
+     "target_key": "Criterion2TestCase::tc::c=Criterion#S3.1"
+    }
+   ]
+  }
+ },
+ "version": 1
+}
