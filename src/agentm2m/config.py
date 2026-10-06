@@ -65,6 +65,8 @@ class LLMConfig:
 #     timeout: 3                     # seconds per relay round trip
 #     publish: {execution: true, agents: true, bindings: true, traces: true,
 #               contexts: true, errors: true}
+#     namespace: devteam             # shared-context sync namespace (default: team name)
+#     sync_contexts: true            # publish/pull `visibility: relay` contexts
 #   context:
 #     enabled: true
 #     backend: local
@@ -91,6 +93,9 @@ class NostrConfig:
     presence_kind: int = 34930
     timeout: float = 3.0
     publish: tuple[tuple[str, bool], ...] = tuple((c, True) for c in PUBLISH_CATEGORIES)
+    # shared-context sync: the team namespace on the relay (default: team name)
+    namespace: str | None = None
+    sync_contexts: bool = True
 
     def publishes(self, category: str) -> bool:
         return dict(self.publish).get(category, True)
@@ -162,6 +167,8 @@ class WorkspaceConfig:
             presence_kind=int(nostr_raw.get("presence_kind", 34930)),
             timeout=float(nostr_raw.get("timeout", 3.0)),
             publish=publish,
+            namespace=str(nostr_raw["namespace"]) if nostr_raw.get("namespace") else None,
+            sync_contexts=_as_bool(nostr_raw.get("sync_contexts", True), "nostr.sync_contexts"),
         )
         context = ContextConfig(enabled=_as_bool(ctx_raw.get("enabled", True), "context.enabled"),
                                 backend=str(ctx_raw.get("backend") or "local"))

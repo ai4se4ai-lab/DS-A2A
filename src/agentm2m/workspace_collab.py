@@ -105,6 +105,55 @@ class CollaborationMixin:
             self._after_op()
             return self._meta(snap)
 
+    def _context_sync(self, loaded: _Loaded):
+        if self._nostr is None or not self.config.nostr.sync_contexts:
+            return None
+        from .context.nostr_sync import NostrContextSync
+
+        def own_signer(agent: str):
+            ident = loaded.team.identities.get(agent)
+            if ident is None or not ident.identity_ref:
+                return None
+            signer = self.secrets.get(ident.identity_ref)
+            return signer if signer is not None and signer.pubkey == ident.nostr_pubkey else None
+
+        def on_event(kind: str, info: dict) -> None:
+            self.emitter.emit(kind, agent_id=info.get("agent"),
+                              context_ids=(info["context_id"],) if info.get("context_id") else (),
+                              payload={k: v for k, v in info.items() if k not in ("agent", "context_id")})
+
+        return NostrContextSync(
+            self.contexts, self._nostr.relay,
+            namespace=self.config.nostr.namespace or str(loaded.spec.get("name") or "team"),
+            pubkey_of=self._pubkey_for, signer_for=own_signer, on_event=on_event,
+        )
+
+    def _relay_publish(self, loaded: _Loaded, snap: Any, previous_digest: str, as_agent: str) -> dict | None:
+        sync = self._context_sync(loaded)
+        if sync is None:
+            return None
+        try:
+            return sync.publish(snap, previous_digest=previous_digest, as_agent=as_agent)
+        except Exception as exc:  # noqa: BLE001 - the local update stands; report the transport failure
+            return {"published": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+    def context_pull(self) -> dict:
+        """Apply verified shared-context updates from the relays (Nostr)."""
+        with self._lock:
+            loaded = self._require()
+            sync = self._context_sync(loaded)
+            if sync is None:
+                raise _werr(ValueError("context sync needs nostr.enabled (and sync_contexts) in config.yaml"))
+            self._begin("context_pull")
+            from .nostr.errors import RelayError
+
+            try:
+                report = sync.pull()
+            except RelayError as exc:
+                raise _werr(exc) from exc
+            self._after_op()
+            return report
+
     def context_get(self, context_id: str, as_agent: str, version: int | None = None) -> dict:
         with self._lock:
             loaded = self._require()
@@ -162,8 +211,13 @@ class CollaborationMixin:
                     self.emitter.emit("context.invalidated", agent_id=a["agent"], handoff_id=a["handoff"],
                                       target_key=a["target_key"], binding=a["binding"],
                                       context_ids=(context_id,), payload={"version": snap.version})
+            out = {**self._meta(snap), "changed": changed, "affected_bindings": affected}
+            if changed:
+                relay = self._relay_publish(loaded, snap, before.digest, as_agent)
+                if relay is not None:
+                    out["relay"] = relay
             self._after_op()
-            return {**self._meta(snap), "changed": changed, "affected_bindings": affected}
+            return out
 
     def context_list(self, as_agent: str | None = None) -> dict:
         """Metadata only (never content): what exists and who may read it."""

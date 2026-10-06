@@ -117,3 +117,49 @@ def test_nostr_disabled_by_default(tmp_path: Path):
     st = ws.nostr_status()
     assert st["enabled"] is False and st["outbox_depth"] == 0
     assert not (tmp_path / ".agentm2m/secrets").exists()
+
+
+def _two_nodes(tmp_path: Path, relay: DevRelayServer) -> tuple[Workspace, Workspace]:
+    """Two machines sharing team.yaml and a relay; only node A holds the Architect's key."""
+    a_dir, b_dir = tmp_path / "a", tmp_path / "b"
+    nodes = []
+    for d in (a_dir, b_dir):
+        d.mkdir()
+        _write_config(d, {"nostr": {"enabled": True, "relays": [relay.url]}})
+        ws = Workspace(d, llm=MockBackend(), max_resamples=3)
+        ws.init("devteam")
+        nodes.append(ws)
+    key = nodes[0].nostr_keygen("architect")
+    for ws in nodes:
+        spec = yaml.safe_load(ws.spec_path.read_text())
+        spec["agents"] = {"Architect": {"nostr": {"pubkey": key["pubkey"], "identity_ref": "architect"}}}
+        spec["contexts"] = {"security-review": {"owner": "Architect", "readers": ["Developer", "Tester"],
+                                                "visibility": "relay"},
+                            "private-notes": {"owner": "Architect"}}
+        ws.spec_path.write_text(yaml.safe_dump(spec, sort_keys=False))
+    return (Workspace(a_dir, llm=MockBackend(), max_resamples=3), Workspace(b_dir, llm=MockBackend(), max_resamples=3))
+
+
+def test_context_syncs_between_workspaces(tmp_path: Path, relay: DevRelayServer):
+    a, b = _two_nodes(tmp_path, relay)
+    r = a.context_update("security-review", as_agent="Architect", expected_version=1,
+                         items=[{"id": "f1", "type": "security-finding", "content": "auth required"}])
+    assert r["relay"]["published"] is True
+    pulled = b.context_pull()
+    assert pulled["applied"] == 1 and pulled["rejected"] == []
+    assert b.context_get("security-review", as_agent="Developer")["items"][0]["content"] == "auth required"
+    assert any(e["event_type"] == "context.received" for e in b.events()["events"])
+    # a private context stays local
+    p = a.context_update("private-notes", as_agent="Architect", expected_version=1,
+                         items=[{"id": "n", "type": "note", "content": "internal"}])
+    assert p["relay"]["published"] is False
+    assert b.context_pull()["applied"] == 0
+    assert b.contexts.snapshot("private-notes").version == 1
+
+
+def test_node_without_writer_key_does_not_publish(tmp_path: Path, relay: DevRelayServer):
+    a, b = _two_nodes(tmp_path, relay)
+    r = b.context_update("security-review", as_agent="Architect", expected_version=1,
+                         items=[{"id": "f1", "type": "security-finding", "content": "local only"}])
+    assert r["version"] == 2 and r["relay"]["published"] is False and "signing key" in r["relay"]["reason"]
+    assert a.context_pull()["applied"] == 0

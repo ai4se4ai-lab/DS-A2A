@@ -296,6 +296,14 @@ def context_status() -> dict:
 
 
 @mcp.tool()
+def context_sync() -> dict:
+    """Pull shared-context updates published by other machines over Nostr
+    (visibility: relay contexts). Each is applied only if signed by an agent
+    the local policy lets write it, and only as the next version."""
+    return _call(_ws().context_pull)
+
+
+@mcp.tool()
 def influence_query(context_id: str, item_id: str | None = None, transitive: bool = True) -> dict:
     """Which accepted agent decisions were derived from this context (or item),
     at which pinned version, whether still current, and what was generated

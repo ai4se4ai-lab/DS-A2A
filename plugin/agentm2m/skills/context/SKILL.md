@@ -27,5 +27,9 @@ version into that binding's prompt.
    finding influence?": the accepted values that pinned it, at which version, whether still current,
    and what was generated downstream.
 
+6. Across machines (Nostr enabled, context policy `visibility: relay`): an update by an agent whose
+   signing key is on this machine is published automatically (`relay.published` in the result);
+   `context_sync` applies other machines' updates, each verified and authorized against the local policy.
+
 Rules: read only as an authorized agent; never copy context content into a binding by hand (the
 engine already includes it, pinned); never treat context as a substitute for editing the owning view.

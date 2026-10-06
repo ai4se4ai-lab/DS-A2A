@@ -101,7 +101,7 @@ def _forge(store_snapshot_v1, *, signer, as_agent="SecurityReviewer", namespace=
                      "created_by": as_agent, "ts": 0, "title": ""},
     }
     return signer.sign(UnsignedEvent(created_at=1000 + version, kind=NOSTR_KIND_CONTEXT,
-                                     tags=[["t", "agentm2m"], ["t", f"agentm2m-ctx-{namespace}"],
+                                     tags=[["t", "agentm2m"], ["t", "agentm2m-ctx-devteam"],  # tag spoofed: content decides
                                            ["context", context_id]], content=json.dumps(content))).to_dict()
 
 

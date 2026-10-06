@@ -62,7 +62,7 @@ def test_mcp_config_launches_the_engine_entry_point():
 
 def test_skills_have_frontmatter_and_name_real_tools():
     tools = _server_tools()
-    assert len(tools) == 29
+    assert len(tools) == 30
     skills = sorted((PLUGIN / "skills").glob("*/SKILL.md"))
     assert {p.parent.name for p in skills} == {"init", "run", "change", "evolve", "status", "author-handoff",
                                                "agentm2m-concepts", "context", "observability", "nostr"}

@@ -148,6 +148,8 @@ def cmd_context(args: argparse.Namespace) -> int:
         elif c == "update":
             result = ws.context_update(args.context_id, args.as_agent, args.expected_version,
                                        _items_arg(args.items), _csv(args.remove), args.replace)
+        elif c == "pull":
+            result = ws.context_pull()
         elif c == "validate":
             result = ws.validate()
             result = {"ok": result["ok"], "errors": result["errors"], "warnings": result.get("warnings", []),
@@ -318,6 +320,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--items", default=None, help="JSON file with items to upsert ('-' for stdin)")
     p.add_argument("--remove", default="", help="comma-separated item ids to remove")
     p.add_argument("--replace", action="store_true", help="replace all items")
+    ctx_sub.add_parser("pull", help="apply verified context updates from the Nostr relays")
     ctx_sub.add_parser("validate", help="check context references and policies")
     p = ctx_sub.add_parser("graph", help="influence graph: context -> items -> bindings -> artifacts")
     p.add_argument("context_id", nargs="?", default=None)

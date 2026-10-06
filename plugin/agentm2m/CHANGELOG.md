@@ -20,8 +20,11 @@ Shared context and observability. Existing tools, rules and workspaces work unch
   backoff, never blocks a run, and delivers at least once. Relay results are verified before use. Agent
   identities are given as `agents.<A>.nostr` in `team.yaml`; keys live in `.agentm2m/secrets/` or
   the environment, never in YAML or state.
-- MCP: 17 new tools (`agent_identity`, `agent_directory`, `context_*`, `influence_query`,
-  `observability_events`, `nostr_*`); the 12 existing tools are unchanged.
+- Cross-machine shared context: a `visibility: relay` context version is published signed by its
+  writer's key (kind 4931). `context_sync` applies remote versions only after signature, namespace,
+  writer-pubkey, local-policy, version-continuity and content-digest checks.
+- MCP: 18 new tools (`agent_identity`, `agent_directory`, `context_*` including `context_sync`,
+  `influence_query`, `observability_events`, `nostr_*`); the 12 existing tools are unchanged.
 - CLI: `agentm2m context ...`, `agentm2m nostr ...` (including a local dev relay, `nostr serve`), and
   `agentm2m workspace events`.
 - Plugin: skills `/agentm2m:context`, `observability`, `nostr`; agent `context-curator`. The

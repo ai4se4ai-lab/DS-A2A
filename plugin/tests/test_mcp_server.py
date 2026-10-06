@@ -26,7 +26,7 @@ EXPECTED_TOOLS = {
     "next_bindings", "submit_binding", "trace_query", "team_evolve", "acceptance",
     # shared context and observability (0.3)
     "agent_identity", "agent_directory", "context_list", "context_create", "context_get", "context_snapshot",
-    "context_update", "context_attach", "context_detach", "context_search", "context_status",
+    "context_update", "context_attach", "context_detach", "context_search", "context_status", "context_sync",
     "influence_query", "observability_events", "nostr_status", "nostr_publish", "nostr_events",
     "nostr_subscribe",
 }
