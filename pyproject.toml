@@ -43,6 +43,8 @@ agentm2m = ["rules/*.lark", "templates/**/*.yaml", "templates/**/*.agentm2m", "t
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = ["slow: performance budgets (deselected by default; run with -m slow)"]
+addopts = "-m 'not slow'"
 
 [tool.uv]
 # Supply-chain cooldown: don't resolve package versions published in the last week.
