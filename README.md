@@ -72,7 +72,8 @@ plugin/scripts/release.sh          # dry run: build wheel + plugin zip + directo
 
 The engine is usable without Claude Code too: `agentm2m workspace init devteam`,
 `agentm2m workspace --llm anthropic run`, `agentm2m workspace impact`. See
-[`plugin/DEVELOPMENT_PLAN.md`](plugin/DEVELOPMENT_PLAN.md).
+[`docs/PLUGIN.md`](docs/PLUGIN.md) for how the plugin works and how to develop
+and release it, and [`plugin/DEVELOPMENT_PLAN.md`](plugin/DEVELOPMENT_PLAN.md) for the build history.
 
 ## Repository layout
 
