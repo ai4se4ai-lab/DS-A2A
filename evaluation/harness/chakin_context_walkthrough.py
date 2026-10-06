@@ -287,7 +287,11 @@ def run(out_dir: Path | None = None) -> dict:
     report["context_errors_after_revoke"] = [e.to_dict() for e in sink.events[mark:]
                                              if e.event_type == "context.error"][:1]
     report["phi_after_revoke"] = rt.acceptance_holds()
+    report["presence_after_revoke"] = derive_presence(sink.events, sorted(team.agents))
     store.set_policy("security-review", policy)
+    emitter.begin_run("run")
+    rt.run_to_fixpoint()  # access restored: the oracles are fresh again, nothing to sample
+    report["phi_after_restore"] = rt.acceptance_holds()
 
     # 8. observability views over the whole run
     all_events = [e.to_dict() for e in sink.events]

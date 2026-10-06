@@ -325,8 +325,10 @@ def apply_stochastic_binding(
         # Fail safe: a binding whose declared context cannot be resolved is
         # never sampled (no invented or empty context). Not a content
         # rejection, so nothing is cached in failed_stamps.
-        emit("context.error", context_ids=tuple(r.context_id for r in binding.context_refs),
-             payload={"error": str(exc)})
+        ctx_refs = tuple(r.context_id for r in binding.context_refs)
+        emit("context.error", context_ids=ctx_refs, payload={"error": str(exc)})
+        emit("binding.blocked" if deferred else "binding.escalated", context_ids=ctx_refs,
+             payload={"reason": f"context unavailable: {exc}", "context_unavailable": True})
         if deferred:
             raise PendingSample(prompt="", fp_digest="", blocked=True, stale=binding.name in trace_link.stamps,
                                 reason=f"context unavailable: {exc}") from None

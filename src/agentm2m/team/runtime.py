@@ -148,11 +148,33 @@ class TeamRuntime:
         for o in report.obligations:
             self.emit("obligation.discharged", handoff_id=o.handoff, target_key=o.target_key, binding=o.binding,
                       agent_id=o.agent)
+        self._emit_presence(report)
         self.emit("team.completed", payload={
             "passes": report.passes, "escalations": len(report.escalations), "pending": len(report.pending),
             "blocked": len(report.blocked), "obligations_discharged": len(report.obligations),
         })
         return report
+
+    def _emit_presence(self, report: TeamRunReport) -> None:
+        """One agent.<state> event per agent that owns a hand-off target, from
+        this run's report: presence is a projection of engine state, so it
+        must also return to idle when open items are resolved without a new
+        sample (e.g. access to a context restored)."""
+        rank = {"idle": 0, "waiting": 1, "blocked": 2, "failed": 3}
+        status: dict[str, tuple[str, dict]] = {}
+        for name, spec in self.team.handoffs.items():
+            owner = self._owner_name(spec.target_mm)
+            r = report.handoff_reports.get(name)
+            if owner is None or r is None:
+                continue
+            state = ("failed" if r.escalations else "blocked" if r.blocked else
+                     "waiting" if r.pending else "idle")
+            prev_state, counts = status.get(owner, ("idle", {"escalations": 0, "blocked": 0, "pending": 0}))
+            counts = {"escalations": counts["escalations"] + len(r.escalations),
+                      "blocked": counts["blocked"] + len(r.blocked), "pending": counts["pending"] + len(r.pending)}
+            status[owner] = (max(prev_state, state, key=rank.__getitem__), counts)
+        for agent, (state, counts) in status.items():
+            self.emit(f"agent.{state}", agent_id=agent, payload=counts)
 
     def _run_to_fixpoint(self) -> TeamRunReport:
         team_report = TeamRunReport()
