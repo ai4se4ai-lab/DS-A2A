@@ -1,0 +1,108 @@
+% ICSE NIER submission -- 10 pages main text + 2 page references.
+% The CfP mandates exactly \documentclass[10pt,conference]{IEEEtran};
+% no compsoc/compsocconf options, no spacing or font-size alterations.
+\documentclass[10pt,conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+% --- Symbols & Custom Marks ---
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\pmark}{\ding{109}} % partial coverage
+
+% --- Core Packages ---
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage[expansion=false]{microtype}
+\usepackage{booktabs, multirow}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{textcomp}
+
+% --- Visualization ---
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds,calc}
+
+% --- Algorithms & Code ---
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{listings}
+
+% --- Layout & Utility ---
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{cleveref}
+% Double-anonymous: keep PDF metadata free of author information.
+\hypersetup{hidelinks, pdfauthor={}, pdfsubject={}, pdfkeywords={}}
+
+% --- Theorem environments ---
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+% --- Listing style (view-metamodel / rule snippets) ---
+\lstdefinelanguage{ATL}{
+  morekeywords={module,create,from,rule,to,lazy,unique,helper,def,
+                context,uses,thisModule,and,or,not,in},
+  morekeywords=[2]{@llm,@check}, alsoletter={@},
+  sensitive=true, morecomment=[l]{--}, morestring=[b]'}
+\lstdefinelanguage{KM3}{
+  morekeywords={package,class,attribute,reference,container,
+                enumeration,literal,datatype,oppositeOf},
+  sensitive=true, morecomment=[l]{--}}
+\lstset{frame=single, backgroundcolor=\color{gray!5},
+        basicstyle=\ttfamily\scriptsize, breaklines=true,
+        showstringspaces=false, numbers=none, upquote=true,
+        keywordstyle=\bfseries, keywordstyle={[2]\bfseries\color{purple}},
+        commentstyle=\itshape\color{black!60},
+        captionpos=t, abovecaptionskip=2pt, belowcaptionskip=5pt, framesep=2pt,
+        aboveskip=6pt, belowskip=4pt, xleftmargin=2pt, xrightmargin=2pt}
+\renewcommand{\lstlistingname}{Listing}
+% IEEEtran's \@makecaption lets listing frames overlap the caption; use a plain one.
+\makeatletter
+\def\lst@makecaption#1#2{{\centering\footnotesize #1.\ #2\par}\vspace{4pt}}
+\makeatother
+\crefname{lstlisting}{Listing}{Listings}
+\Crefname{lstlisting}{Listing}{Listings}
+\crefname{algorithm}{Algorithm}{Algorithms}
+
+% --- Math shorthands (AgentM2M) ---
+\newcommand{\tool}{\textsc{AgentM2M}}
+\newcommand{\devteam}{\textsc{DevTeam}}
+\newcommand{\MM}{\mathit{MM}}
+\newcommand{\Mods}[1]{\mathcal{M}(#1)}
+\newcommand{\TL}{\mathit{TL}}
+\newcommand{\team}{\mathcal{T}}
+\newcommand{\str}{\mathrm{str}}
+\newcommand{\sem}{\mathrm{sem}}
+\newcommand{\Dist}[1]{\mathcal{D}(#1)}
+\newcommand{\cls}[1]{\textsf{#1}}
+\newcommand{\RC}[1]{\textbf{RC#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\step}[1]{\textcircled{\scriptsize #1}}
+\newcommand{\fp}{\mathit{fp}}
+\newcommand{\Obl}{\mathit{Obl}}
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\DeclareRobustCommand{\tracemark}{\tikz[baseline=-0.6ex]\node[draw,diamond,fill=black!70,inner sep=1.1pt]{};}
+
+\begin{document}
+
+\title{}
+
+% --- Double-anonymous review: no author block in the submission. ---
+% \author{...}
+
+\maketitle
+
+
+\begin{abstract}
+
+\end{abstract}
+
+\begin{IEEEkeywords}
+\end{IEEEkeywords}
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
