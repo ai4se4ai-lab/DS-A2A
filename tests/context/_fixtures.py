@@ -45,4 +45,5 @@ def make_ctx_workspace(project: Path, *, body_ctx: str = "['security-review']",
 def publish(ws: Workspace, *items: ContextItem, context_id: str = "security-review", as_agent: str = "Architect"):
     ws._require()  # declared contexts are synced into the store on load
     cur = ws.contexts.snapshot(context_id)
-    return ws.contexts.update(context_id, as_agent=as_agent, expected_version=cur.version, items=list(items))
+    ws.context_update(context_id, as_agent=as_agent, expected_version=cur.version, items=list(items))
+    return ws.contexts.snapshot(context_id)

@@ -233,6 +233,21 @@ def effective_stamp(footprint: Any, resolved: list[ResolvedContext]) -> tuple[st
     return effective, {"source": source, "context": digest(ctx), "effective": effective}
 
 
+def obligation_cause(trace_link: TraceLink, name: str, stamp: str, deps: dict | None) -> list[str]:
+    """Why an accepted binding went stale: its source footprint changed,
+    its pinned shared context changed, or both (compares the dependency
+    record stored at acceptance with the current one)."""
+    prev = trace_link.dependencies.get(name)
+    prev_source = prev["source"] if prev else trace_link.stamps.get(name)
+    cur_source = deps["source"] if deps else stamp
+    cause = []
+    if prev_source != cur_source:
+        cause.append("source")
+    if (prev or {}).get("context") != (deps or {}).get("context"):
+        cause.append("context")
+    return cause or ["unknown"]
+
+
 @dataclass
 class BindingStamp:
     footprint: Any
@@ -348,8 +363,10 @@ def apply_stochastic_binding(
             })
 
     if stale:
-        emit("binding.stale", payload={"footprint_version": fp_digest, "previous": trace_link.stamps[binding.name]})
-        emit("obligation.created", payload={"footprint_version": fp_digest})
+        cause = obligation_cause(trace_link, binding.name, fp_digest, bs.dependencies)
+        emit("binding.stale", context_ids=ctx_ids, payload={
+            "footprint_version": fp_digest, "previous": trace_link.stamps[binding.name], "cause": cause})
+        emit("obligation.created", context_ids=ctx_ids, payload={"footprint_version": fp_digest, "cause": cause})
     emit("binding.requested", context_ids=ctx_ids,
          payload={"footprint_version": fp_digest, "stale": stale, "deferred": deferred, "pins": pins})
 
