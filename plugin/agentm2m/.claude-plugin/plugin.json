@@ -1,6 +1,6 @@
 {
   "name": "agentm2m",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Run LLM agent teams whose hand-offs are model-to-model transformations: a deterministic engine owns structure and trace links, Claude only fills footprint-bounded values that validators accept, and changes propagate as exact obligations.",
   "author": {
     "name": "AgentM2M authors"

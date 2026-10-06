@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentm2m"
-version = "0.2.0"
+version = "0.3.0"
 description = "AgentM2M: deterministic structure for stochastic LLM-agent teams via hybrid M2M transformations"
 readme = "README.md"
 requires-python = ">=3.11"

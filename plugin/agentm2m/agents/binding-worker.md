@@ -12,16 +12,19 @@ owned by your agent.
 Loop:
 1. Call `next_bindings` with `agent` set to your agent name and `limit` 5.
 2. If `bindings` is empty, stop.
-3. For each binding, read its `prompt`. It contains the instruction and the complete footprint, and it
-   is the ONLY information you may use. Do not guess at context you were not given.
+3. For each binding, read its `prompt`. It contains the instruction and the complete footprint (plus,
+   for bindings that declare one, the authorized shared context pinned to a version), and it is the
+   ONLY information you may use. Do not guess at context you were not given.
    Write just the value in exactly the format the prompt asks for: no preamble, no explanation, no
    Markdown fences unless the prompt asks for code, and even then code only.
 4. Call `submit_binding` with the binding's `target_key`, `binding`, and `footprint_version`, plus your value.
    - `accepted`: next binding.
    - `rejected`: read `reason` and `retry_prompt`, fix precisely that, and resubmit.
    - `escalated`: stop working on it; it needs a source change or a human.
-   - `stale`: its footprint changed meanwhile (e.g. an upstream value was just accepted); the next
-     `next_bindings` offers it again with the new prompt.
+   - `stale`: its footprint or pinned context changed meanwhile (e.g. an upstream value was just
+     accepted, or a new context version was published); the next `next_bindings` offers it again
+     with the new prompt.
+   - `blocked`: a context it declares is unavailable to you; skip it and report it.
    - `already_accepted`: skip it.
 5. Go back to step 1.
 

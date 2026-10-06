@@ -62,23 +62,26 @@ def test_mcp_config_launches_the_engine_entry_point():
 
 def test_skills_have_frontmatter_and_name_real_tools():
     tools = _server_tools()
-    assert len(tools) == 12
+    assert len(tools) == 29
     skills = sorted((PLUGIN / "skills").glob("*/SKILL.md"))
-    assert {p.parent.name for p in skills} == {"init", "run", "change", "evolve", "status", "author-handoff", "agentm2m-concepts"}
+    assert {p.parent.name for p in skills} == {"init", "run", "change", "evolve", "status", "author-handoff",
+                                               "agentm2m-concepts", "context", "observability", "nostr"}
     for p in skills:
         fm = _frontmatter(p)
         assert fm["name"] == p.parent.name
         assert 40 < len(fm["description"]) < 400
         body = p.read_text()
         for used in re.findall(r"`(\w+)`", body):
-            if used.endswith(("_init", "_status", "_validate", "_show", "_edit", "_binding", "_bindings", "_query", "_evolve")):
+            if used.endswith(("_init", "_status", "_validate", "_show", "_edit", "_binding", "_bindings", "_query", "_evolve")) \
+                    or (used.startswith(("context_", "nostr_", "agent_", "observability_", "influence_"))
+                        and used not in {"context_id", "agent_id"}):  # parameter names, not tools
                 assert used in tools, f"{p.parent.name} mentions unknown tool {used}"
 
 
 def test_agents_only_allowlist_existing_tools():
     tools = _server_tools()
     agents = {p.stem: _frontmatter(p) for p in (PLUGIN / "agents").glob("*.md")}
-    assert set(agents) == {"binding-worker", "handoff-architect"}
+    assert set(agents) == {"binding-worker", "handoff-architect", "context-curator"}
     for name, fm in agents.items():
         for t in [x.strip() for x in fm["tools"].split(",")]:
             if t.startswith("mcp__"):
@@ -87,6 +90,11 @@ def test_agents_only_allowlist_existing_tools():
     # footprint discipline: the worker cannot read the repository
     worker_tools = {x.strip() for x in agents["binding-worker"]["tools"].split(",")}
     assert worker_tools == {SERVER_PREFIX + "next_bindings", SERVER_PREFIX + "submit_binding"}
+    # context arrives pinned inside the prompt: the worker never reads the context store itself,
+    # and the curator publishes knowledge but never fills bindings
+    curator = {x.strip() for x in agents["context-curator"]["tools"].split(",")}
+    assert not any(t.endswith(("_bindings", "_binding", "_edit")) for t in curator)
+    assert all(t.startswith(SERVER_PREFIX) for t in curator)
 
 
 def test_hooks_reference_executable_scripts():
@@ -155,5 +163,5 @@ def test_claude_sees_all_components():
     r = subprocess.run(["claude", "--plugin-dir", str(PLUGIN), "plugin", "details", "agentm2m"],
                        capture_output=True, text=True, timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr
-    assert "Skills (7)" in r.stdout and "Agents (2)" in r.stdout
+    assert "Skills (10)" in r.stdout and "Agents (3)" in r.stdout
     assert "Hooks (2)" in r.stdout and "MCP servers (1)" in r.stdout

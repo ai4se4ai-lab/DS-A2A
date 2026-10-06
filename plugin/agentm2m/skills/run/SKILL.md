@@ -22,7 +22,9 @@ validator passes.
      the binding's `prompt` alone, never from other files or conversation context. Then call
      `submit_binding` with the bare value and the binding's `footprint_version`. On `rejected`, fix exactly what `reason` says and resubmit.
    - Call `run` again: accepted upstream values unblock downstream bindings.
-3. Stop when `run` reports 0 pending. Blocked-but-never-ready bindings mean an upstream binding escalated.
+3. Stop when `run` reports 0 pending. Blocked-but-never-ready bindings mean an upstream binding escalated,
+   or a shared context the binding declares is missing or unreadable (`blocked_reason`; see
+   `/agentm2m:context`).
 4. Call `acceptance` and report:
    - phi (true/false), then per hand-off the elements created and bindings accepted.
    - Every escalation with its reason. Escalations are the team telling you where a human decision is

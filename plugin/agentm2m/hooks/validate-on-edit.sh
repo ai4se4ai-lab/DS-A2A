@@ -15,7 +15,7 @@ case "$file" in
 esac
 project="${CLAUDE_PROJECT_DIR:-${file%%/.agentm2m/*}}"
 command -v uvx >/dev/null 2>&1 || exit 0   # engine not installable here: stay silent
-engine="${AGENTM2M_ENGINE:-agentm2m==0.2.0}"
+engine="${AGENTM2M_ENGINE:-agentm2m==0.3.0}"
 if out=$(uvx --from "$engine" agentm2m workspace --dir "$project" validate --brief 2>&1); then
   exit 0
 fi
