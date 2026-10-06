@@ -105,6 +105,7 @@ def test_change_events_obligations(tmp_path: Path):
     ws.impact("Req", TIGHTEN_S21, "Analyst")
     assert sink.types() == ["impact.computed"]  # a preview emits no engine events
     assert sink.events[0].payload["obligations"] == 3
+    sink.events.clear()
     ws.edit("Req", TIGHTEN_S21, "Analyst")
     assert sink.types()[0] == "change.requested"
     created = [e for e in sink.events if e.event_type == "obligation.created"]

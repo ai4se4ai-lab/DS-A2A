@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import contextlib
 import copy
+import hashlib
 import json
 import os
 import shutil
@@ -36,6 +37,10 @@ from .llm.base import LLMBackend
 from .llm.factory import make_backend
 from .llm.host_backend import HostBackend
 from .nostr.identity import AgentIdentity, IdentityError, load_identities
+from .observability.emitter import Emitter, noop_emit
+from .observability.presence import derive_presence
+from .observability.sink import CompositeSink, JsonlEventSink
+from .observability.timeline import read_timeline
 from .rules.ast import Module, StochasticBinding
 from .rules.parser import parse_module_file
 from .store import dump_models, load_models
@@ -108,6 +113,8 @@ class Workspace:
         llm: LLMBackend | None = None,
         max_resamples: int | None = None,
         max_passes: int = 8,
+        event_sink: object | None = None,
+        clock: Any = None,
     ) -> None:
         self.project_dir = Path(project_dir).resolve()
         self.dir = self.project_dir / WORKSPACE_DIRNAME
@@ -122,6 +129,14 @@ class Workspace:
         self._lock = threading.RLock()
         self._loaded: _Loaded | None = None
         self._fingerprint: tuple | None = None
+        # Observability: the local timeline is always kept; `event_sink`
+        # (e.g. a NostrEventSink) is added next to it. Never authoritative.
+        self._extra_sink = event_sink
+        self.emitter = Emitter(
+            CompositeSink([JsonlEventSink(self.timeline_path), *([event_sink] if event_sink is not None else [])]),
+            workspace_id="",
+            **({"clock": clock} if clock is not None else {}),
+        )
 
     # ------------------------------------------------------------------
     # paths, locking, (re)loading
@@ -134,6 +149,23 @@ class Workspace:
     @property
     def state_path(self) -> Path:
         return self.dir / "state" / "state.json"
+
+    @property
+    def timeline_path(self) -> Path:
+        return self.dir / "state" / "observability" / "events.jsonl"
+
+    def _begin(self, operation: str) -> str:
+        return self.emitter.begin_run(operation)
+
+    def _after_op(self) -> None:
+        """Give sinks with a backlog (the Nostr outbox) a chance to drain."""
+        flush = getattr(self._extra_sink, "flush", None)
+        if flush is not None:
+            try:
+                flush()
+            except Exception as exc:  # noqa: BLE001 - observability never fails an operation
+                self.emitter.errors += 1
+                self.emitter.last_error = f"flush: {exc}"
 
     @property
     def is_host(self) -> bool:
@@ -181,13 +213,14 @@ class Workspace:
                 self._fingerprint = self._disk_fingerprint()
         return self._loaded
 
-    def _new_runtime(self, team: Team, llm: LLMBackend | None = None) -> TeamRuntime:
+    def _new_runtime(self, team: Team, llm: LLMBackend | None = None, *, observed: bool = True) -> TeamRuntime:
         return TeamRuntime(
             team,
             llm or self._llm,
             max_resamples=self.max_resamples,
             temperature=self.temperature,
             max_passes=self.max_passes,
+            emit=self.emitter.emit if observed else noop_emit,
         )
 
     def _rule_path(self, rel: str) -> Path:
@@ -208,7 +241,7 @@ class Workspace:
             raise WorkspaceError(f"{rel}: `uses {module.uses!r}` escapes the workspace directory")
         return module
 
-    def _build(self, state: dict | None, llm: LLMBackend | None = None) -> _Loaded:
+    def _build(self, state: dict | None, llm: LLMBackend | None = None, *, observed: bool = True) -> _Loaded:
         """Construct Team + runtime from team.yaml, then either the persisted
         state (models, traces, evolutions) or the spec's seed models."""
         try:
@@ -217,6 +250,7 @@ class Workspace:
             raise WorkspaceError(str(exc)) from exc
         team_name = str(spec.get("name") or "team")
         evolutions = list((state or {}).get("evolutions", []))
+        self.emitter.workspace_id = f"{team_name}-{hashlib.sha256(str(self.project_dir).encode()).hexdigest()[:8]}"
 
         team = Team()
         refs: list[_PendingRef] = []
@@ -282,7 +316,8 @@ class Workspace:
                         tm.put(TraceLink.from_dict(d))
                     team.traces[hname] = tm
 
-        return _Loaded(team=team, runtime=self._new_runtime(team, llm), spec=spec, evolutions=evolutions)
+        return _Loaded(team=team, runtime=self._new_runtime(team, llm, observed=observed), spec=spec,
+                       evolutions=evolutions)
 
     def _state_dict(self, loaded: _Loaded) -> dict:
         return {
@@ -321,7 +356,10 @@ class Workspace:
             shutil.copytree(src, self.dir, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
             self._loaded = None
             self._fingerprint = None
-            self._require()
+            self._begin("init")
+            loaded = self._require()
+            self.emitter.emit("team.loaded", payload={"template": template, "agents": sorted(loaded.team.agents),
+                                                      "handoffs": list(loaded.team.handoffs)})
             self.save()
             out = self.status()
             out["created"] = str(self.dir)
@@ -594,14 +632,20 @@ class Workspace:
         that hand-off targets are engine-owned (read-only to agents)."""
         with self._lock:
             loaded = self._require()
+            self._begin("edit")
+            self.emitter.emit("change.requested", agent_id=as_agent,
+                              payload={"view": view, "ops": len(ops) if isinstance(ops, list) else 0})
             snapshot = self._state_dict(loaded)
             try:
                 applied = self._apply_ops(loaded, view, ops, as_agent)
                 self._propagate_structure(loaded)
-            except Exception:
+            except Exception as exc:
                 self._restore(snapshot)
+                self.emitter.emit("validation.error", agent_id=as_agent,
+                                  payload={"view": view, "error": type(exc).__name__})
                 raise
             self.save()
+            self._after_op()
             open_now = [s for s in self.binding_states(loaded) if s["state"] != "fresh"]
             return {
                 "view": view,
@@ -632,7 +676,7 @@ class Workspace:
         would need (re-)sampling."""
         with self._lock:
             loaded = self._require()
-            scratch = self._build(copy.deepcopy(self._state_dict(loaded)), llm=HostBackend())
+            scratch = self._build(copy.deepcopy(self._state_dict(loaded)), llm=HostBackend(), observed=False)
             if ops:
                 if not view or not as_agent:
                     raise WorkspaceError("impact with ops needs view and as_agent")
@@ -655,6 +699,12 @@ class Workspace:
                 {"target_key": e.target_key, "binding": e.binding}
                 for e in report.escalations
             ]
+            self._begin("impact")
+            self.emitter.emit("impact.computed", agent_id=as_agent, payload={
+                "view": view, "ops": len(ops or []), "obligations": len(obligations), "new_bindings": len(new),
+                "created": len(created), "deleted": len(deleted),
+            })
+            self._after_op()
             return {
                 "obligations": obligations,
                 "new_bindings": new,
@@ -678,10 +728,13 @@ class Workspace:
             loaded = self._require()
             if max_passes:
                 loaded.runtime.max_passes = max_passes
+            run_id = self._begin("run")
             report = loaded.runtime.run_to_fixpoint()
             self.save()
+            self._after_op()
             pending = [p.to_dict() | {"agent": self._owner_for_handoff(loaded.team, p.handoff)} for p in report.pending]
             return {
+                "run_id": run_id,
                 "backend": self.backend_name,
                 "passes": report.passes,
                 "handoffs": {
@@ -713,8 +766,10 @@ class Workspace:
                     "(set AGENTM2M_LLM=host to let Claude Code fill them)"
                 )
             loaded = self._require()
+            self._begin("next_bindings")
             report = loaded.runtime.run_to_fixpoint()
             self.save()
+            self._after_op()
             items = []
             for p in report.pending:
                 owner = self._owner_for_handoff(loaded.team, p.handoff)
@@ -741,6 +796,7 @@ class Workspace:
             except KeyError as exc:
                 raise WorkspaceError(str(exc.args[0] if exc.args else exc)) from exc
             self.save()
+            self._after_op()
             return result
 
     def acceptance(self) -> dict:
@@ -877,6 +933,10 @@ class Workspace:
                 "handoff": {"name": handoff, "rule": str(rule_path.relative_to(self.dir))},
             })
             self.save()
+            self._begin("evolve")
+            self.emitter.emit("team.evolved", agent_id=agent, handoff_id=handoff, payload={"view": view})
+            self.emitter.emit("agent.registered", agent_id=agent, payload={"view": view})
+            self._after_op()
             n_matches = sum(
                 len(compute_matches(r, {sm.mm_name: team.roots[sm.mm_name] for sm in module.sources},
                                     load_helpers(module.uses, rule_path.parent)))
@@ -889,3 +949,41 @@ class Workspace:
                 "existing_matches": n_matches,
                 "next": "call run (or next_bindings in host mode): the new agent receives obligations for every existing match",
             }
+
+    # -- observability ---------------------------------------------------
+
+    def events(
+        self,
+        run_id: str | None = None,
+        agent: str | None = None,
+        handoff: str | None = None,
+        event_type: str | None = None,
+        since: float | None = None,
+        until: float | None = None,
+        limit: int = 200,
+    ) -> dict:
+        """The local execution timeline (newest `limit` matching events)."""
+        evs = read_timeline(self.timeline_path, run_id=run_id, agent=agent, handoff=handoff,
+                            event_type=event_type, since=since, until=until, limit=max(1, limit))
+        return {"events": [e.to_dict() for e in evs], "count": len(evs),
+                "emitter_errors": self.emitter.errors, "last_error": self.emitter.last_error}
+
+    def agent_directory(self) -> dict:
+        """Agents with their view, write rights, optional Nostr identity, and
+        presence derived from the event timeline."""
+        with self._lock:
+            loaded = self._require()
+            team = loaded.team
+            presence = derive_presence(read_timeline(self.timeline_path), team.agents)
+            agents = {}
+            for name, agent in team.agents.items():
+                ident = team.identities.get(name) or AgentIdentity(agent_id=name, display_name=name)
+                agents[name] = {
+                    "view": agent.view,
+                    "writes": sorted(team.write_rights.get(name, set())),
+                    "display_name": ident.display_name,
+                    "nostr": {"enabled": ident.nostr_enabled, "pubkey": ident.nostr_pubkey,
+                              "npub": ident.nostr_npub, "relays": list(ident.relay_urls)},
+                    "presence": presence[name],
+                }
+            return {"agents": agents}

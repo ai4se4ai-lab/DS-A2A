@@ -9,7 +9,6 @@ from .events import AgentM2MEvent
 
 _TRANSITIONS = {
     "binding.requested": "working",
-    "binding.prompt_prepared": "working",
     "binding.submitted": "working",
     "binding.accepted": "idle",
     "binding.rejected": "working",

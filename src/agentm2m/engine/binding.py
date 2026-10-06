@@ -13,12 +13,14 @@ is escalated, not retried forever.
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Any
 
 from pyecore.ecore import EcoreUtils
 
 from ..llm.base import LLMBackend, LLMError, PendingSample
+from ..observability.emitter import EmitFn, noop_emit
 from ..rules.ast import StochasticBinding, StructuralBinding, TargetPattern
 from .expr import Helpers, eval_expr
 from .lift import LIFT_BINDING_NAME, LiftRejected, lift_json_into_element
@@ -223,12 +225,17 @@ def apply_stochastic_binding(
     *,
     max_resamples: int,
     temperature: float,
+    emit: EmitFn = noop_emit,
 ) -> tuple[bool, Escalation | None]:
     """Returns (value_changed_this_run, escalation_or_None).
 
     With a deferred backend (`llm.deferred`, i.e. host mode) no sample is
     drawn here: a stale binding raises `PendingSample` carrying its prompt,
     and the value arrives later through `TeamRuntime.submit_binding`.
+
+    `emit` (already bound to this binding's correlation ids) reports the
+    binding's transitions; it never raises and never feeds back into the
+    decisions made here.
     """
     footprint = eval_expr(binding.footprint_expr, match.bindings, helpers)
     fp_digest = digest(footprint)
@@ -239,6 +246,7 @@ def apply_stochastic_binding(
         # prompt would just burn another k samples for the same outcome, so
         # re-report the (still open) escalation without invoking the LLM.
         # A footprint change clears this and earns a fresh budget.
+        emit("binding.escalated", payload={"footprint_version": fp_digest, "cached": True})
         return (
             False,
             Escalation(
@@ -249,10 +257,21 @@ def apply_stochastic_binding(
             ),
         )
 
-    if getattr(llm, "deferred", False):
+    stale = binding.name in trace_link.stamps
+    deferred = bool(getattr(llm, "deferred", False))
+    if stale:
+        emit("binding.stale", payload={"footprint_version": fp_digest, "previous": trace_link.stamps[binding.name]})
+        emit("obligation.created", payload={"footprint_version": fp_digest})
+    emit("binding.requested", payload={"footprint_version": fp_digest, "stale": stale, "deferred": deferred})
+
+    if deferred:
         incomplete = getattr(llm, "incomplete", set())
         blocked = _footprint_blocked(footprint, incomplete)
         prompt = "" if blocked else build_prompt(binding, match, helpers, footprint)
+        if blocked:
+            emit("binding.blocked", payload={"footprint_version": fp_digest, "waiting_on": "upstream value"})
+        else:
+            emit("binding.prompt_prepared", payload={"footprint_version": fp_digest, "prompt": prompt})
         attempts = 0
         rejection = trace_link.rejections.get(binding.name)
         if rejection and rejection.get("digest") == fp_digest:
@@ -268,23 +287,36 @@ def apply_stochastic_binding(
         )
 
     prompt = build_prompt(binding, match, helpers, footprint)
+    emit("binding.prompt_prepared", payload={"footprint_version": fp_digest, "prompt": prompt})
 
     last_reason = "no attempts made"
     any_sample_rejected = False
     attempt_prompt = prompt
-    for _attempt in range(max_resamples):
+    started = time.monotonic()
+    for attempt in range(1, max_resamples + 1):
         try:
             raw = llm.generate(attempt_prompt, temperature=temperature)
         except LLMError as exc:
             last_reason = str(exc)
+            emit("engine.error", payload={"kind": "llm_transport", "error": str(exc)[:300], "attempt": attempt})
             continue
 
         ok, reason = accept_sample(
             binding, target_var, target_obj, match, trace_link, raw, helpers,
             footprint=footprint, fp_digest=fp_digest,
         )
+        usage = llm.last_usage or (llm.count_tokens(attempt_prompt), llm.count_tokens(raw))
         if ok:
+            emit("binding.accepted", payload={
+                "footprint_version": fp_digest, "attempts": attempt, "stale": stale,
+                "duration_ms": round((time.monotonic() - started) * 1000, 1),
+                "input_tokens": usage[0], "output_tokens": usage[1], "value": raw,
+            })
             return (True, None)
+        emit("binding.rejected", payload={
+            "footprint_version": fp_digest, "attempt": attempt, "reason": reason, "value": raw,
+            "input_tokens": usage[0], "output_tokens": usage[1],
+        })
         last_reason = reason
         any_sample_rejected = True
         attempt_prompt = _retry_prompt(prompt, raw, last_reason)
@@ -294,6 +326,10 @@ def apply_stochastic_binding(
     # actually judged, so the next pass should still try it.
     if any_sample_rejected:
         trace_link.failed_stamps[binding.name] = fp_digest
+    emit("binding.escalated", payload={
+        "footprint_version": fp_digest, "attempts": max_resamples, "reason": last_reason,
+        "transport_only": not any_sample_rejected,
+    })
     return (
         False,
         Escalation(target_key=trace_link.target_key, binding=binding.name, rule=trace_link.rule, reason=last_reason),

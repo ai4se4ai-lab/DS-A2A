@@ -18,6 +18,7 @@ from typing import Any
 
 from ..llm.base import LLMBackend, PendingSample
 from ..metamodel.builder import MetamodelBuilder
+from ..observability.emitter import EmitFn, noop_emit
 from ..rules.ast import Module, StochasticBinding
 from .binding import Escalation, apply_stochastic_binding, apply_structural_bindings
 from .helpers_loader import load_helpers
@@ -98,8 +99,15 @@ def run_handoff(
     base_dir: Path,
     max_resamples: int = 3,
     temperature: float = 0.2,
+    emit: EmitFn = noop_emit,
+    agent: str | None = None,
 ) -> HandoffReport:
+    """`emit` receives observability events (correlated with this hand-off
+    and its owning `agent`); it is a pure side channel and never changes
+    what is matched, created, deleted or accepted."""
     helpers = load_helpers(module.uses, base_dir)
+    hemit = _bind(emit, handoff_id=module.name, agent_id=agent)
+    hemit("handoff.started", payload={"rules": len(module.rules)})
 
     # Rule patterns reference metamodels by name (`Req!Epic`), while callers
     # pass source models keyed by the `create ... from IN : Req;` alias;
@@ -109,6 +117,8 @@ def run_handoff(
     # Line 1: fixed match set (sources are read-only).
     matches_by_rule = {rule.name: compute_matches(rule, roots_by_mm, helpers) for rule in module.rules}
     current_keys_by_rule = {r: {m.match_key for m in ms} for r, ms in matches_by_rule.items()}
+    hemit("handoff.matching", payload={"matches": sum(len(ms) for ms in matches_by_rule.values()),
+                                        "per_rule": {r: len(ms) for r, ms in matches_by_rule.items()}})
 
     report = HandoffReport(handoff=module.name)
     target_registry = _index_existing_targets(target_root)
@@ -127,6 +137,8 @@ def run_handoff(
                 getattr(target_root, slot).append(obj)
                 target_registry[target_key] = obj
                 report.created.append(target_key)
+                hemit("handoff.target_created", rule_id=rule.name, target_key=target_key,
+                      payload={"type": tp.type_name})
                 if link is None:
                     link = TraceLink(
                         rule=rule.name,
@@ -134,6 +146,9 @@ def run_handoff(
                         source_keys={v: element_key(el) for v, el in m.bindings.items()},
                         target_key=target_key,
                     )
+                    hemit("trace.created", rule_id=rule.name, target_key=target_key,
+                          trace_id=trace_id(module.name, rule.name, m.match_key),
+                          payload={"sources": link.source_keys})
                 trace.put(link)
 
     # Line 4: delete stale links and their target elements.
@@ -146,6 +161,9 @@ def run_handoff(
                 obj.delete()
             trace.remove(link.rule, link.match_key)
             report.deleted.append(link.target_key)
+            hemit("handoff.target_deleted", rule_id=link.rule, target_key=link.target_key)
+            hemit("trace.deleted", rule_id=link.rule, target_key=link.target_key,
+                  trace_id=trace_id(module.name, link.rule, link.match_key))
 
     # Line 5: structural bindings (resolved through the now-complete trace).
     for rule in module.rules:
@@ -175,6 +193,8 @@ def run_handoff(
                                 helpers,
                                 max_resamples=max_resamples,
                                 temperature=temperature,
+                                emit=_bind(hemit, rule_id=rule.name, target_key=target_key, binding=b.name,
+                                           trace_id=trace_id(module.name, rule.name, m.match_key)),
                             )
                         except PendingSample as ps:
                             pb = PendingBinding(
@@ -197,7 +217,27 @@ def run_handoff(
                         if escalation is not None:
                             report.escalations.append(escalation)
 
+    hemit("handoff.completed", payload={
+        "created": len(report.created), "deleted": len(report.deleted), "resampled": len(report.resampled),
+        "escalations": len(report.escalations), "pending": len(report.pending), "blocked": len(report.blocked),
+    })
     return report
+
+
+def trace_id(handoff: str, rule: str, match_key: str) -> str:
+    """Observable id of a trace link: unique across the team's trace models."""
+    return f"{handoff}::{rule}::{match_key}"
+
+
+def _bind(emit: EmitFn, **corr: Any) -> EmitFn:
+    """Pre-fill correlation ids; a no-op emitter stays a no-op."""
+    if emit is noop_emit:
+        return noop_emit
+
+    def bound(event_type: str, **kw: Any) -> Any:
+        return emit(event_type, **{**corr, **kw})
+
+    return bound
 
 
 def acceptance_holds(module: Module, source_roots: dict[str, Any], trace: TraceModel, report: HandoffReport, helpers) -> bool:

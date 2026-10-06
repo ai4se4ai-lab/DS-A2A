@@ -17,8 +17,10 @@ from ..engine.binding import _retry_prompt, accept_sample, build_prompt
 from ..engine.executor import (
     HandoffReport,
     PendingBinding,
+    _bind,
     _index_existing_targets,
     run_handoff,
+    trace_id,
 )
 from ..engine.executor import (
     acceptance_holds as _handoff_acceptance_holds,
@@ -29,6 +31,7 @@ from ..engine.matcher import compute_matches
 from ..engine.obligations import Obligation, from_handoff_report
 from ..engine.trace import digest
 from ..llm.base import LLMBackend
+from ..observability.emitter import EmitFn, noop_emit
 from ..rules.ast import Module, StochasticBinding
 from ..rules.parser import parse_module_file
 from .model import Team
@@ -83,8 +86,12 @@ class TeamRuntime:
         max_resamples: int = 3,
         temperature: float = 0.2,
         max_passes: int = 5,
+        emit: EmitFn = noop_emit,
     ) -> None:
         self.team = team
+        # Observability side channel (agentm2m.observability.Emitter or a
+        # no-op); never consulted for any engine decision.
+        self.emit = emit
         self.llm = llm
         self.max_resamples = max_resamples
         self.temperature = temperature
@@ -116,11 +123,35 @@ class TeamRuntime:
             base_dir=spec.rule_path.parent,
             max_resamples=self.max_resamples,
             temperature=self.temperature,
+            emit=self.emit,
+            agent=self._owner_name(spec.target_mm),
         )
         self._last_reports[handoff_name] = report
         return report
 
+    def _owner_name(self, mm_name: str) -> str | None:
+        owner = self.team.owner_of(mm_name)
+        return owner.name if owner else None
+
     def run_to_fixpoint(self) -> TeamRunReport:
+        self.emit("team.started", payload={"handoffs": list(self.team.handoffs), "max_passes": self.max_passes,
+                                           "deferred": bool(getattr(self.llm, "deferred", False))})
+        try:
+            report = self._run_to_fixpoint()
+        except Exception as exc:
+            self.emit("engine.error", payload={"kind": type(exc).__name__, "error": str(exc)[:300]})
+            self.emit("team.failed", payload={"error": type(exc).__name__})
+            raise
+        for o in report.obligations:
+            self.emit("obligation.discharged", handoff_id=o.handoff, target_key=o.target_key, binding=o.binding,
+                      agent_id=o.agent)
+        self.emit("team.completed", payload={
+            "passes": report.passes, "escalations": len(report.escalations), "pending": len(report.pending),
+            "blocked": len(report.blocked), "obligations_discharged": len(report.obligations),
+        })
+        return report
+
+    def _run_to_fixpoint(self) -> TeamRunReport:
         team_report = TeamRunReport()
         for _pass_num in range(self.max_passes):
             team_report.passes += 1
@@ -222,6 +253,32 @@ class TeamRuntime:
         does after k in-engine samples.
         """
         handoff_name, tp, binding, link, match, target_obj, helpers = self._locate(target_key, binding_name)
+        rule_name, _var, match_key = target_key.split("::", 2)
+        emit = _bind(
+            self.emit, handoff_id=handoff_name, rule_id=rule_name, target_key=target_key, binding=binding_name,
+            agent_id=self._owner_name(self.team.handoffs[handoff_name].target_mm),
+            trace_id=trace_id(handoff_name, rule_name, match_key),
+        )
+        emit("binding.submitted", payload={"footprint_version": footprint_version, "value": value or ""})
+        was_accepted_before = link is not None and binding_name in link.stamps
+        result = self._submit(handoff_name, tp, binding, link, match, target_obj, helpers, target_key, binding_name,
+                              value, footprint_version)
+        status = result["status"]
+        event = {"accepted": "binding.accepted", "rejected": "binding.rejected", "escalated": "binding.escalated",
+                 "stale": "binding.stale"}.get(status)
+        if event:
+            payload = {"footprint_version": result.get("footprint_version") or footprint_version, "host": True}
+            if "attempts" in result:
+                payload["attempts"] = result["attempts"]
+            if status in ("rejected", "escalated") and result.get("reason"):
+                payload["reason"] = result["reason"]
+            emit(event, payload=payload)
+        if status == "accepted" and was_accepted_before:
+            emit("obligation.discharged", payload={"footprint_version": result.get("footprint_version")})
+        return result
+
+    def _submit(self, handoff_name, tp, binding, link, match, target_obj, helpers, target_key, binding_name,
+                value, footprint_version) -> dict:
         base = {"target_key": target_key, "binding": binding_name, "handoff": handoff_name}
         if link is None or match is None or target_obj is None:
             return {**base, "status": "stale", "reason": "this match no longer exists; call run again"}
@@ -242,7 +299,7 @@ class TeamRuntime:
             binding, tp.var, target_obj, match, link, value, helpers, footprint=footprint, fp_digest=fp_digest
         )
         if ok:
-            return {**base, "status": "accepted"}
+            return {**base, "status": "accepted", "footprint_version": fp_digest}
 
         prev = link.rejections.get(binding_name)
         attempts = (link.attempts.get(binding_name, 0) if prev and prev.get("digest") == fp_digest else 0) + 1
