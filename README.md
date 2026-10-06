@@ -22,6 +22,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -e .            # core engine
 pip install -e ".[eval]"    # + evaluation deps (pandas, matplotlib, datasets, swebench)
 pip install -e ".[dev]"     # + tests, MCP SDK, build tooling (plugin development)
+pip install -e ".[nostr]"   # + optional Nostr observability (coincurve, websockets)
 cp .env.example .env        # then edit LLM_PROVIDER / LLM_MODEL, see below
 ```
 
@@ -70,6 +71,12 @@ plugin/scripts/validate.sh         # manifests, templates, all tests
 plugin/scripts/release.sh          # dry run: build wheel + plugin zip + directory entry
 ```
 
+Since 0.3, agents can also share versioned, access-controlled knowledge
+(`@llm(..., context=[...])`, `/agentm2m:context`; see
+[`docs/SHARED_CONTEXT.md`](docs/SHARED_CONTEXT.md)). Every engine transition is
+observable as a typed event, which can optionally be published as signed Nostr
+events (`/agentm2m:observability`, `/agentm2m:nostr`; see [`docs/NOSTR.md`](docs/NOSTR.md)).
+
 The engine is usable without Claude Code too: `agentm2m workspace init devteam`,
 `agentm2m workspace --llm anthropic run`, `agentm2m workspace impact`. See
 [`docs/PLUGIN.md`](docs/PLUGIN.md) for how the plugin works and how to develop
@@ -80,7 +87,9 @@ and release it, and [`plugin/DEVELOPMENT_PLAN.md`](plugin/DEVELOPMENT_PLAN.md) f
 ```
 src/agentm2m/       the engine: metamodel/ (pyecore), rules/ (DSL parser),
                      engine/ (Algorithm 1, trace, validators, LLM binding),
-                     llm/ (pluggable backends), team/ (megamodel, runtime, HOT)
+                     llm/ (pluggable backends), team/ (megamodel, runtime, HOT),
+                     context/ (shared context), observability/ (events,
+                     metrics), nostr/ (optional signed-event transport)
 examples/            several worked multi-agent collaboration scenarios,
                      each self-contained with its own metamodels, rules,
                      and README explaining what it demonstrates
@@ -110,6 +119,7 @@ python -m pytest tests/ plugin/tests/ -q
 | [`04_research_team`](examples/04_research_team/) | Literature-Reviewer / Experiment-Designer / Report-Writer | A multi-source (n:m) hand-off |
 | [`05_incident_response_team`](examples/05_incident_response_team/) | Monitor / Triage / Remediation / Postmortem | `Lift` (text-to-model), an executable-oracle validator, a genuine escalation |
 | [`06_baseline_comparison`](examples/06_baseline_comparison/) | The same toy task run 3 ways | Free-text vs. shared-schema vs. AgentM2M, side by side |
+| [`07_shared_context`](examples/07_shared_context/) | A Security Reviewer (added by HOT) publishes findings | Versioned shared context consumed by Developer and Tester bindings, context-driven obligations, influence query |
 
 Each example directory has its own `README.md` explaining the scenario and
 mapping it back to specific paper mechanisms.
@@ -120,7 +130,8 @@ mapping it back to specific paper mechanisms.
 change impact, RQ3: evolution) on SWE-bench Lite, comparing free-text,
 shared-schema, and AgentM2M configurations under the same LLM and roles,
 and regenerates Table II (`tab:pilot`) as CSVs, a LaTeX snippet, and
-figures. See [`evaluation/README.md`](evaluation/README.md) for the quick
+figures. `harness/context_eval.py` adds a four-configuration matrix for shared
+context and Nostr observability. See [`evaluation/README.md`](evaluation/README.md) for the quick
 (offline, no Docker) vs. full (real SWE-bench, Docker-based official
 evaluation, opt-in) modes.
 

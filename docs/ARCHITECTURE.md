@@ -26,8 +26,28 @@ Agents"). Read `docs/DS-A2A.tex` Sec III first — this document assumes it.
 | Acceptance predicate `phi` | `agentm2m.engine.executor.acceptance_holds`, `TeamRuntime.acceptance_holds` | Every match covered by a trace link, no open obligation (no stamp mismatch), all validators passed (no escalations) on the last run, and every stochastic binding's stamp fresh for its current footprint (`TeamRuntime.stamps_fresh`). |
 | Host mode: the LLM `L` is the host (Claude Code) | `agentm2m.llm.host_backend.HostBackend`, `TeamRuntime.submit_binding` | A *deferred* backend: a stale binding is not sampled but reported as a `PendingBinding` (prompt = `prompt_b (+) den(e_b)_m`, plus the footprint digest it was built from). The host's value goes through the same `accept_sample` path as an in-engine sample (`@check`, Lift, stamping), is refused if the footprint moved since the prompt was issued, and escalates after `k` rejections on one footprint. Bindings whose footprint still reads an unfilled upstream value are reported as *blocked*, never offered with empty context. |
 | Team as data (`team.yaml`) | `agentm2m.team.spec` | View metamodels, owners (omega), seed models and hand-offs declared in YAML, built through `MetamodelBuilder`/`Team`. |
-| Persistent workspace, models@run.time across processes | `agentm2m.workspace.Workspace`, `agentm2m.store` | `.agentm2m/state/state.json` holds every view model (JSON, with cross-view references and engine target keys), every trace model, and runtime HOT evolutions. An edit re-runs `R^str` immediately (deferred backend, no sampling), so obligations are visible at once; `impact` computes `Obl(Delta)` on a scratch copy. |
+| Persistent workspace, models@run.time across processes | `agentm2m.workspace.Workspace`, `agentm2m.store` | `.agentm2m/state/state.json` (format 2; format 1 loads unchanged) holds every view model (JSON, with cross-view references and engine target keys), every trace model (with shared-context pins), and runtime HOT evolutions; `context.json`, `observability/` and the optional `config.yaml` / `secrets/` sit beside it. An edit re-runs `R^str` immediately (deferred backend, no sampling), so obligations are visible at once; `impact` computes `Obl(Delta)` on a scratch copy. |
 | Claude Code plugin | `agentm2m.mcp_server`, `plugin/agentm2m/` | MCP tools over `Workspace`; see `plugin/DEVELOPMENT_PLAN.md`. |
+| Shared context (collaboration plane, 0.3) | `agentm2m.context` (`model`, `store`, `resolver`, `nostr_sync`), `agentm2m.engine.binding.stamp_for` | Typed, versioned, content-addressed knowledge with owner/reader/writer policies. `@llm(prompt, footprint, context=[...])` adds an authorized, pinned context selection to the prompt and to the version stamp (`effective_stamp`): a context change is an ordinary obligation, and an unresolvable context blocks the binding. Context-free bindings keep the exact 0.2 stamp and prompt. See `docs/SHARED_CONTEXT.md`. |
+| Observability plane (0.3) | `agentm2m.observability` (`events`, `emitter`, `sink`, `privacy`, `presence`, `metrics`, `timeline`) | `run_handoff` / `TeamRuntime` / `Workspace` report every transition through an injected `emit` (a no-op by default), in typed `agentm2m.event` v1 envelopes with correlation ids and privacy redaction. `Emitter` never raises. Presence and metrics are derived from events, never stored. |
+| Nostr transport (0.3, optional) | `agentm2m.nostr` (`keys`, `identity`, `events`, `signer`, `verifier`, `relay`, `relay_server`, `outbox`, `publisher`), `agentm2m.workspace_collab` | Signed NIP-01 events through a durable outbox; relay data is verified before use. Agent identities live in team.yaml `agents:`, keys in `.agentm2m/secrets/`. See `docs/NOSTR.md`. |
+
+## Three planes (0.3)
+
+```
+collaboration plane   shared context: knowledge, policies, pins, provenance
+        |  authorized, pinned context joins an @llm binding's prompt and stamp
+transformation plane  hybrid M2M hand-offs, footprints, validators, traces, obligations, HOT, phi, omega
+        |  every transition is emitted (a side channel; never read back)
+observability plane   typed events -> local timeline, optional signed Nostr events
+```
+
+The non-negotiable invariant: **the transformation plane alone decides what the collaboration
+means.** Context can only add knowledge to bindings that declare it, and it changes acceptance only
+through the ordinary stamp/obligation path. Events never feed back into engine decisions. A relay is
+an eventually consistent, at-least-once projection whose failure cannot make a transformation
+incorrect: `tests/observability/test_engine_events.py` asserts byte-identical state with any sink,
+including a raising one and a down relay.
 
 ## Why isn't `Team` modeled in EMF too?
 
