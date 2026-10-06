@@ -86,9 +86,15 @@ class TraceLink:
     # prompt exactly like the in-engine resample loop's retry prompt.
     attempts: dict[str, int] = field(default_factory=dict)
     rejections: dict[str, dict] = field(default_factory=dict)
+    # Shared-context bindings only: attr -> context pins the accepted value
+    # was derived from ({context_id, version, digest, item_ids,
+    # content_digest}), and its dependency record {source, context,
+    # effective}. Empty (and not serialized) for context-free bindings.
+    context_pins: dict[str, list[dict]] = field(default_factory=dict)
+    dependencies: dict[str, dict] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "rule": self.rule,
             "match_key": self.match_key,
             "source_keys": self.source_keys,
@@ -99,6 +105,10 @@ class TraceLink:
             "rejections": self.rejections,
             "footprints": {k: _to_jsonable(v) for k, v in self.footprints.items()},
         }
+        if self.context_pins:
+            d["context_pins"] = self.context_pins
+            d["dependencies"] = self.dependencies
+        return d
 
     @classmethod
     def from_dict(cls, d: dict) -> "TraceLink":
@@ -112,6 +122,8 @@ class TraceLink:
             failed_stamps=d.get("failed_stamps", {}),
             attempts=d.get("attempts", {}),
             rejections=d.get("rejections", {}),
+            context_pins=d.get("context_pins", {}),
+            dependencies=d.get("dependencies", {}),
         )
 
 

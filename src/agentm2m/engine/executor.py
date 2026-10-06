@@ -43,9 +43,12 @@ class PendingBinding:
     fp_digest: str
     attempts: int = 0
     stale: bool = False  # True: re-sample of a previously accepted value (an obligation from a change)
+    # pinned shared-context versions the prompt includes (context bindings only)
+    context: list[dict] = field(default_factory=list)
+    reason: str | None = None  # blocked: why (e.g. a context is unavailable)
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "handoff": self.handoff,
             "rule": self.rule,
             "target_key": self.target_key,
@@ -57,6 +60,11 @@ class PendingBinding:
             # submitted for an older version is refused as stale
             "footprint_version": self.fp_digest,
         }
+        if self.context:
+            d["context"] = self.context
+        if self.reason:
+            d["blocked_reason"] = self.reason
+        return d
 
 
 @dataclass
@@ -101,6 +109,7 @@ def run_handoff(
     temperature: float = 0.2,
     emit: EmitFn = noop_emit,
     agent: str | None = None,
+    contexts: Any = None,
 ) -> HandoffReport:
     """`emit` receives observability events (correlated with this hand-off
     and its owning `agent`); it is a pure side channel and never changes
@@ -195,6 +204,8 @@ def run_handoff(
                                 temperature=temperature,
                                 emit=_bind(hemit, rule_id=rule.name, target_key=target_key, binding=b.name,
                                            trace_id=trace_id(module.name, rule.name, m.match_key)),
+                                contexts=contexts,
+                                agent=agent,
                             )
                         except PendingSample as ps:
                             pb = PendingBinding(
@@ -206,6 +217,8 @@ def run_handoff(
                                 fp_digest=ps.fp_digest,
                                 attempts=ps.attempts,
                                 stale=ps.stale,
+                                context=ps.context,
+                                reason=ps.reason,
                             )
                             (report.blocked if ps.blocked else report.pending).append(pb)
                             incomplete = getattr(llm, "incomplete", None)

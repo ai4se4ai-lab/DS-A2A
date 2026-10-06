@@ -94,14 +94,20 @@ class MemoryContextStore:
 
     @staticmethod
     def _stamp_items(items: list[ContextItem], agent: str) -> list[ContextItem]:
+        """Attribute every written item to the *authenticated* writer: a
+        caller cannot claim another agent's authorship or provenance."""
+        from dataclasses import replace
+
         out = []
         for i in items:
             if not isinstance(i, ContextItem):
                 i = ContextItem.from_dict(i)
-            if i.author is None:
-                from dataclasses import replace
-
-                i = replace(i, author=agent)
+            claimed = i.provenance.get("agent")
+            if (i.author is not None and i.author != agent) or (claimed is not None and claimed != agent):
+                raise ContextAccessDenied(
+                    f"item {i.id}: agent {agent!r} cannot write an item attributed to another agent"
+                )
+            i = replace(i, author=agent, provenance={**i.provenance, "agent": agent})
             out.append(i)
         ids = [i.id for i in out]
         if len(ids) != len(set(ids)):
@@ -143,8 +149,12 @@ class MemoryContextStore:
                 return s
         raise ContextNotFound(f"context {cid!r} has no version {version}")
 
+    # Engine-internal operations (no acting agent): snapshot, apply_snapshot,
+    # ensure, set_policy. They are never exposed through MCP/CLI directly;
+    # callers outside the engine must use the authorized methods above.
+
     def snapshot(self, context_id: str, version: int | None = None) -> ContextSnapshot:
-        """Engine-internal access (no agent): callers must authorize first."""
+        """Engine-internal read (no agent). Not an authorization path."""
         with self._txn(write=False):
             return self._version(self._entry(context_id), context_id, version)
 
@@ -231,16 +241,22 @@ class MemoryContextStore:
                 e.policy = policy
             return e.current
 
+    def _require_owner(self, e: _Entry, cid: str, agent: str, what: str) -> None:
+        if agent != e.policy.owner or e.policy.expired(self.clock()):
+            raise ContextAccessDenied(f"only the owner ({e.policy.owner}) may {what} context {cid!r}")
+
     def grant(self, context_id: str, agent: str, *, as_agent: str) -> None:
+        """Add a runtime reader. Owner only: a writer may add knowledge but
+        must not widen who can read it."""
         with self._txn(write=True):
             e = self._entry(context_id)
-            self._require(e, context_id, as_agent, "write")
+            self._require_owner(e, context_id, as_agent, "grant readers on")
             e.grants.add(agent)
 
     def revoke(self, context_id: str, agent: str, *, as_agent: str) -> None:
         with self._txn(write=True):
             e = self._entry(context_id)
-            self._require(e, context_id, as_agent, "write")
+            self._require_owner(e, context_id, as_agent, "revoke readers on")
             if agent not in e.grants:
                 raise ContextError(f"{agent} has no runtime grant on {context_id!r} (team.yaml readers are edited there)")
             e.grants.discard(agent)

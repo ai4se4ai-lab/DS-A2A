@@ -37,9 +37,12 @@ def make_ctx_workspace(project: Path, *, body_ctx: str = "['security-review']",
     if oracle_ctx:
         r2t = ws.dir / "rules/Req2Test.agentm2m"
         r2t.write_text(r2t.read_text().replace("c.text),", f"c.text, context={oracle_ctx}),"))
-    return Workspace(project, **ws_kwargs)
+    fresh = Workspace(project, **ws_kwargs)
+    fresh._require()
+    return fresh
 
 
 def publish(ws: Workspace, *items: ContextItem, context_id: str = "security-review", as_agent: str = "Architect"):
+    ws._require()  # declared contexts are synced into the store on load
     cur = ws.contexts.snapshot(context_id)
     return ws.contexts.update(context_id, as_agent=as_agent, expected_version=cur.version, items=list(items))

@@ -67,6 +67,7 @@ def load_spec_file(path: str | Path) -> dict:
     data.setdefault("views", {})
     data.setdefault("handoffs", [])
     data.setdefault("agents", {})
+    data.setdefault("contexts", {})
     if not isinstance(data["views"], dict):
         raise SpecError("'views' must be a mapping of view name -> view spec")
     if not isinstance(data["handoffs"], list):

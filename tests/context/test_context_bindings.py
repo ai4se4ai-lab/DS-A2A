@@ -154,13 +154,16 @@ def test_unauthorized_context_blocks(tmp_path: Path):
     assert "not authorized" in errs[-1]["payload"]["error"]
 
 
-def test_deleted_context_turns_accepted_binding_blocked(ws: Workspace):
+def test_deleted_context_turns_accepted_binding_blocked(tmp_path: Path):
+    from agentm2m.context.model import ContextPolicy
+
+    ws = make_ctx_workspace(tmp_path, body_ctx="['runtime-notes']", oracle_ctx=None)
+    ws.contexts.create("runtime-notes", policy=ContextPolicy(owner="Architect", readers=frozenset({"Developer"})),
+                       as_agent="Architect", items=[FINDING])
     fill_all(ws)
-    ws.contexts.delete("security-review", as_agent="Architect")
-    ws._loaded = None  # a reload would recreate the declared context; simulate an undeclared deletion
-    ws.contexts.delete("security-review", as_agent="Architect") if ws.contexts.exists("security-review") else None
-    st = _states(ws)
-    assert st[(BODY_S2, "body")] == "blocked"
+    assert ws.acceptance()["phi"] is True
+    ws.contexts.delete("runtime-notes", as_agent="Architect")
+    assert _states(ws)[(BODY_S2, "body")] == "blocked"
     assert ws.acceptance()["phi"] is False
 
 

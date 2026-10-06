@@ -41,10 +41,22 @@ class PendingSample(Exception):
     not count against the resample budget or trigger escalation.
     """
 
-    def __init__(self, *, prompt: str, fp_digest: str, attempts: int = 0, blocked: bool = False, stale: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        prompt: str,
+        fp_digest: str,
+        attempts: int = 0,
+        blocked: bool = False,
+        stale: bool = False,
+        context: list[dict] | None = None,
+        reason: str | None = None,
+    ) -> None:
         super().__init__("pending host sample")
         self.prompt = prompt
         self.fp_digest = fp_digest
         self.attempts = attempts
         self.blocked = blocked
         self.stale = stale
+        self.context = context or []  # pinned shared-context versions in the prompt
+        self.reason = reason  # why a binding is blocked, when it is not an upstream value

@@ -19,6 +19,12 @@ from typing import Any
 
 from pyecore.ecore import EcoreUtils
 
+from ..context.resolver import (
+    ContextUnavailable,
+    ResolvedContext,
+    public_pin,
+    render_context,
+)
 from ..llm.base import LLMBackend, LLMError, PendingSample
 from ..observability.emitter import EmitFn, noop_emit
 from ..rules.ast import StochasticBinding, StructuralBinding, TargetPattern
@@ -133,6 +139,8 @@ def accept_sample(
     *,
     footprint: Any,
     fp_digest: str,
+    resolved: list[ResolvedContext] | None = None,
+    dependencies: dict | None = None,
 ) -> tuple[bool, str]:
     """Judge one sampled value `raw` for `binding` and commit it if accepted.
 
@@ -180,16 +188,72 @@ def accept_sample(
             setattr(target_obj, binding.name, raw)
         trace_link.stamps[binding.name] = fp_digest
         trace_link.footprints[binding.name] = footprint
+        if resolved:
+            # the exact context versions this value was derived from
+            trace_link.context_pins[binding.name] = [rc.pin() for rc in resolved]
+            trace_link.dependencies[binding.name] = dict(dependencies or {})
+        else:
+            trace_link.context_pins.pop(binding.name, None)
+            trace_link.dependencies.pop(binding.name, None)
         trace_link.failed_stamps.pop(binding.name, None)
         trace_link.attempts.pop(binding.name, None)
         trace_link.rejections.pop(binding.name, None)
     return ok, reason
 
 
-def build_prompt(binding: StochasticBinding, match: Match, helpers: Helpers, footprint: Any) -> str:
-    """pi = prompt_b (+) den(e_b)_m: the only text a sampler ever sees."""
+def build_prompt(
+    binding: StochasticBinding,
+    match: Match,
+    helpers: Helpers,
+    footprint: Any,
+    resolved: list[ResolvedContext] | None = None,
+) -> str:
+    """pi = prompt_b (+) den(e_b)_m [(+) authorized shared context]: the only
+    text a sampler ever sees. Context-free bindings get exactly the 0.2 prompt."""
     prompt_head = eval_expr(binding.prompt_expr, match.bindings, helpers)
-    return f"{prompt_head}\n\nContext (footprint only):\n{_footprint_to_text(footprint)}"
+    prompt = f"{prompt_head}\n\nContext (footprint only):\n{_footprint_to_text(footprint)}"
+    if resolved:
+        prompt += "\n\n" + render_context(resolved)
+    return prompt
+
+
+def effective_stamp(footprint: Any, resolved: list[ResolvedContext]) -> tuple[str, dict | None]:
+    """Version stamp over the *effective* footprint.
+
+    Without context dependencies this is exactly `digest(footprint)` -- the
+    0.2 stamp, so existing state stays fresh. With them it also covers the
+    content digest of every pinned context selection (not version numbers:
+    identical content means an identical stamp).
+    Returns (stamp, dependency record or None)."""
+    source = digest(footprint)
+    if not resolved:
+        return source, None
+    ctx = [[rc.snapshot.context_id, rc.content_digest] for rc in resolved]
+    effective = digest(["agentm2m.effective-footprint/1", footprint, ctx])
+    return effective, {"source": source, "context": digest(ctx), "effective": effective}
+
+
+@dataclass
+class BindingStamp:
+    footprint: Any
+    stamp: str
+    resolved: list[ResolvedContext]
+    dependencies: dict | None
+
+
+def stamp_for(
+    binding: StochasticBinding, match: Match, helpers: Helpers, contexts: Any = None, agent: str | None = None
+) -> BindingStamp:
+    """Evaluate the footprint, resolve declared contexts for `agent`, and
+    compute the effective stamp. Raises ContextUnavailable."""
+    footprint = eval_expr(binding.footprint_expr, match.bindings, helpers)
+    resolved: list[ResolvedContext] = []
+    if binding.context_refs:
+        if contexts is None:
+            raise ContextUnavailable("no shared-context store is configured for this team")
+        resolved = contexts.resolve(binding.context_refs, agent)
+    stamp, deps = effective_stamp(footprint, resolved)
+    return BindingStamp(footprint=footprint, stamp=stamp, resolved=resolved, dependencies=deps)
 
 
 def _footprint_blocked(footprint: Any, incomplete: set[str]) -> bool:
@@ -226,6 +290,8 @@ def apply_stochastic_binding(
     max_resamples: int,
     temperature: float,
     emit: EmitFn = noop_emit,
+    contexts: Any = None,
+    agent: str | None = None,
 ) -> tuple[bool, Escalation | None]:
     """Returns (value_changed_this_run, escalation_or_None).
 
@@ -237,8 +303,21 @@ def apply_stochastic_binding(
     binding's transitions; it never raises and never feeds back into the
     decisions made here.
     """
-    footprint = eval_expr(binding.footprint_expr, match.bindings, helpers)
-    fp_digest = digest(footprint)
+    deferred = bool(getattr(llm, "deferred", False))
+    try:
+        bs = stamp_for(binding, match, helpers, contexts, agent)
+    except ContextUnavailable as exc:
+        # Fail safe: a binding whose declared context cannot be resolved is
+        # never sampled (no invented or empty context). Not a content
+        # rejection, so nothing is cached in failed_stamps.
+        emit("context.error", context_ids=tuple(r.context_id for r in binding.context_refs),
+             payload={"error": str(exc)})
+        if deferred:
+            raise PendingSample(prompt="", fp_digest="", blocked=True, stale=binding.name in trace_link.stamps,
+                                reason=f"context unavailable: {exc}") from None
+        return (False, Escalation(target_key=trace_link.target_key, binding=binding.name, rule=trace_link.rule,
+                                  reason=f"context unavailable: {exc}"))
+    footprint, fp_digest, resolved = bs.footprint, bs.stamp, bs.resolved
     if trace_link.stamps.get(binding.name) == fp_digest:
         return (False, None)  # footprint unchanged since acceptance -> no re-invocation
     if trace_link.failed_stamps.get(binding.name) == fp_digest:
@@ -258,20 +337,32 @@ def apply_stochastic_binding(
         )
 
     stale = binding.name in trace_link.stamps
-    deferred = bool(getattr(llm, "deferred", False))
+    ctx_ids = tuple(rc.snapshot.context_id for rc in resolved)
+    pins = [public_pin(rc.pin()) for rc in resolved]
+
+    def context_read() -> None:
+        for rc in resolved:
+            emit("context.read", context_ids=(rc.snapshot.context_id,), payload={
+                "version": rc.snapshot.version, "digest": rc.snapshot.digest,
+                "items": [i.id for i in rc.items], "purpose": "binding-prompt",
+            })
+
     if stale:
         emit("binding.stale", payload={"footprint_version": fp_digest, "previous": trace_link.stamps[binding.name]})
         emit("obligation.created", payload={"footprint_version": fp_digest})
-    emit("binding.requested", payload={"footprint_version": fp_digest, "stale": stale, "deferred": deferred})
+    emit("binding.requested", context_ids=ctx_ids,
+         payload={"footprint_version": fp_digest, "stale": stale, "deferred": deferred, "pins": pins})
 
     if deferred:
         incomplete = getattr(llm, "incomplete", set())
         blocked = _footprint_blocked(footprint, incomplete)
-        prompt = "" if blocked else build_prompt(binding, match, helpers, footprint)
+        prompt = "" if blocked else build_prompt(binding, match, helpers, footprint, resolved)
         if blocked:
             emit("binding.blocked", payload={"footprint_version": fp_digest, "waiting_on": "upstream value"})
         else:
-            emit("binding.prompt_prepared", payload={"footprint_version": fp_digest, "prompt": prompt})
+            context_read()
+            emit("binding.prompt_prepared", context_ids=ctx_ids,
+                 payload={"footprint_version": fp_digest, "prompt": prompt})
         attempts = 0
         rejection = trace_link.rejections.get(binding.name)
         if rejection and rejection.get("digest") == fp_digest:
@@ -284,10 +375,12 @@ def apply_stochastic_binding(
             attempts=attempts,
             blocked=blocked,
             stale=binding.name in trace_link.stamps,
+            context=pins,
         )
 
-    prompt = build_prompt(binding, match, helpers, footprint)
-    emit("binding.prompt_prepared", payload={"footprint_version": fp_digest, "prompt": prompt})
+    prompt = build_prompt(binding, match, helpers, footprint, resolved)
+    context_read()
+    emit("binding.prompt_prepared", context_ids=ctx_ids, payload={"footprint_version": fp_digest, "prompt": prompt})
 
     last_reason = "no attempts made"
     any_sample_rejected = False
@@ -303,12 +396,12 @@ def apply_stochastic_binding(
 
         ok, reason = accept_sample(
             binding, target_var, target_obj, match, trace_link, raw, helpers,
-            footprint=footprint, fp_digest=fp_digest,
+            footprint=footprint, fp_digest=fp_digest, resolved=resolved, dependencies=bs.dependencies,
         )
         usage = llm.last_usage or (llm.count_tokens(attempt_prompt), llm.count_tokens(raw))
         if ok:
-            emit("binding.accepted", payload={
-                "footprint_version": fp_digest, "attempts": attempt, "stale": stale,
+            emit("binding.accepted", context_ids=ctx_ids, payload={
+                "footprint_version": fp_digest, "attempts": attempt, "stale": stale, "pins": pins,
                 "duration_ms": round((time.monotonic() - started) * 1000, 1),
                 "input_tokens": usage[0], "output_tokens": usage[1], "value": raw,
             })

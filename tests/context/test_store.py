@@ -148,6 +148,27 @@ def test_grants_attach_and_detach(store):
         store.grant("security-review", "Analyst", as_agent="Developer")
 
 
+def test_writer_cannot_grant_readers(store):
+    policy = ContextPolicy(owner="SecurityReviewer", writers=frozenset({"Architect"}))
+    store.create("c2", policy=policy, as_agent="SecurityReviewer")
+    with pytest.raises(ContextAccessDenied):
+        store.grant("c2", "Analyst", as_agent="Architect")
+
+
+def test_authorship_and_provenance_cannot_be_forged(store):
+    _create(store)
+    forged = ContextItem(id="f-x", type="security-finding", content="x", author="Tester")
+    with pytest.raises(ContextAccessDenied):
+        store.update("security-review", as_agent="SecurityReviewer", expected_version=1, items=[forged])
+    spoof = ContextItem(id="f-y", type="security-finding", content="y", provenance={"agent": "Tester"})
+    with pytest.raises(ContextAccessDenied):
+        store.update("security-review", as_agent="SecurityReviewer", expected_version=1, items=[spoof])
+    ok = store.update("security-review", as_agent="SecurityReviewer", expected_version=1,
+                      items=[ContextItem(id="f-z", type="t", content="z", provenance={"trace": "T::r::m"})])
+    z = ok.item("f-z")
+    assert z.author == "SecurityReviewer" and z.provenance == {"trace": "T::r::m", "agent": "SecurityReviewer"}
+
+
 def test_resolve_selects_items_and_authorizes(store):
     _create(store, items=(FINDING, DECISION))
     snap, items = store.resolve("security-review", as_agent="Developer", item_ids=("decision-002",))

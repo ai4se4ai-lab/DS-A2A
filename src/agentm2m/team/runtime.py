@@ -13,7 +13,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..engine.binding import _retry_prompt, accept_sample, build_prompt
+from ..context.resolver import ContextUnavailable
+from ..engine.binding import _retry_prompt, accept_sample, build_prompt, stamp_for
 from ..engine.executor import (
     HandoffReport,
     PendingBinding,
@@ -25,11 +26,9 @@ from ..engine.executor import (
 from ..engine.executor import (
     acceptance_holds as _handoff_acceptance_holds,
 )
-from ..engine.expr import eval_expr
 from ..engine.helpers_loader import load_helpers
 from ..engine.matcher import compute_matches
 from ..engine.obligations import Obligation, from_handoff_report
-from ..engine.trace import digest
 from ..llm.base import LLMBackend
 from ..observability.emitter import EmitFn, noop_emit
 from ..rules.ast import Module, StochasticBinding
@@ -87,8 +86,11 @@ class TeamRuntime:
         temperature: float = 0.2,
         max_passes: int = 5,
         emit: EmitFn = noop_emit,
+        contexts: object | None = None,
     ) -> None:
         self.team = team
+        # ContextResolver for @llm(..., context=...) bindings (None: no store)
+        self.contexts = contexts
         # Observability side channel (agentm2m.observability.Emitter or a
         # no-op); never consulted for any engine decision.
         self.emit = emit
@@ -125,6 +127,7 @@ class TeamRuntime:
             temperature=self.temperature,
             emit=self.emit,
             agent=self._owner_name(spec.target_mm),
+            contexts=self.contexts,
         )
         self._last_reports[handoff_name] = report
         return report
@@ -265,7 +268,7 @@ class TeamRuntime:
                               value, footprint_version)
         status = result["status"]
         event = {"accepted": "binding.accepted", "rejected": "binding.rejected", "escalated": "binding.escalated",
-                 "stale": "binding.stale"}.get(status)
+                 "stale": "binding.stale", "blocked": "binding.blocked"}.get(status)
         if event:
             payload = {"footprint_version": result.get("footprint_version") or footprint_version, "host": True}
             if "attempts" in result:
@@ -283,8 +286,12 @@ class TeamRuntime:
         if link is None or match is None or target_obj is None:
             return {**base, "status": "stale", "reason": "this match no longer exists; call run again"}
 
-        footprint = eval_expr(binding.footprint_expr, match.bindings, helpers)
-        fp_digest = digest(footprint)
+        agent = self._owner_name(self.team.handoffs[handoff_name].target_mm)
+        try:
+            bs = stamp_for(binding, match, helpers, self.contexts, agent)
+        except ContextUnavailable as exc:
+            return {**base, "status": "blocked", "reason": f"context unavailable: {exc}"}
+        footprint, fp_digest, resolved = bs.footprint, bs.stamp, bs.resolved
         if footprint_version is not None and footprint_version != fp_digest:
             # The value was produced from a prompt whose footprint has since
             # changed (e.g. an upstream value accepted meanwhile). Accepting it
@@ -296,7 +303,8 @@ class TeamRuntime:
             return {**base, "status": "escalated", "reason": "escalated earlier on this footprint; change the source to retry"}
 
         ok, reason = accept_sample(
-            binding, tp.var, target_obj, match, link, value, helpers, footprint=footprint, fp_digest=fp_digest
+            binding, tp.var, target_obj, match, link, value, helpers, footprint=footprint, fp_digest=fp_digest,
+            resolved=resolved, dependencies=bs.dependencies,
         )
         if ok:
             return {**base, "status": "accepted", "footprint_version": fp_digest}
@@ -308,7 +316,7 @@ class TeamRuntime:
         if attempts >= self.max_resamples:
             link.failed_stamps[binding_name] = fp_digest
             return {**base, "status": "escalated", "reason": reason, "attempts": attempts}
-        retry = _retry_prompt(build_prompt(binding, match, helpers, footprint), value, reason)
+        retry = _retry_prompt(build_prompt(binding, match, helpers, footprint, resolved), value, reason)
         return {
             **base,
             "status": "rejected",
@@ -334,8 +342,12 @@ class TeamRuntime:
                     for tp in rule.to_clause.patterns:
                         for b in tp.bindings:
                             if isinstance(b, StochasticBinding):
-                                fp = eval_expr(b.footprint_expr, m.bindings, helpers)
-                                if link.stamps.get(b.name) != digest(fp):
+                                try:
+                                    stamp = stamp_for(b, m, helpers, self.contexts,
+                                                      self._owner_name(spec.target_mm)).stamp
+                                except ContextUnavailable:
+                                    return False
+                                if link.stamps.get(b.name) != stamp:
                                     return False
         return True
 

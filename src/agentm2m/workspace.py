@@ -28,11 +28,15 @@ from pathlib import Path
 from typing import Any
 
 from .config import LLMConfig
+from .context.errors import ContextError
+from .context.model import ContextPolicy
+from .context.resolver import ContextResolver, ContextUnavailable
+from .context.store import LocalContextStore
+from .engine.binding import stamp_for
 from .engine.executor import _TARGET_KEY_ATTR, _index_existing_targets
-from .engine.expr import eval_expr
 from .engine.helpers_loader import load_helpers
 from .engine.matcher import compute_matches
-from .engine.trace import TraceLink, TraceModel, digest, element_key
+from .engine.trace import TraceLink, TraceModel, element_key
 from .llm.base import LLMBackend
 from .llm.factory import make_backend
 from .llm.host_backend import HostBackend
@@ -62,7 +66,10 @@ from .team.spec import (
 )
 
 WORKSPACE_DIRNAME = ".agentm2m"
-STATE_VERSION = 1
+# 2: trace links may carry shared-context pins/dependencies (additive; a
+# version-1 state loads unchanged and is saved as 2).
+STATE_VERSION = 2
+_READABLE_STATE_VERSIONS = (1, 2)
 _MAX_TEXT = 2000
 
 
@@ -129,6 +136,9 @@ class Workspace:
         self._lock = threading.RLock()
         self._loaded: _Loaded | None = None
         self._fingerprint: tuple | None = None
+        # Collaboration plane: shared contexts live next to state.json.
+        self.contexts = LocalContextStore(self.dir / "state" / "context.json")
+        self.context_resolver = ContextResolver(self.contexts)
         # Observability: the local timeline is always kept; `event_sink`
         # (e.g. a NostrEventSink) is added next to it. Never authoritative.
         self._extra_sink = event_sink
@@ -221,6 +231,7 @@ class Workspace:
             temperature=self.temperature,
             max_passes=self.max_passes,
             emit=self.emitter.emit if observed else noop_emit,
+            contexts=self.context_resolver,
         )
 
     def _rule_path(self, rel: str) -> Path:
@@ -297,9 +308,10 @@ class Workspace:
             team.identities = load_identities(spec.get("agents"), team.agents)
         except IdentityError as exc:
             raise WorkspaceError(f"team.yaml: {exc}") from exc
+        self._sync_declared_contexts(spec)
 
         if state is not None:
-            if state.get("version") != STATE_VERSION:
+            if state.get("version") not in _READABLE_STATE_VERSIONS:
                 raise WorkspaceError(f"unsupported state version {state.get('version')!r}")
             try:
                 roots = load_models(state.get("models", {}), team.views)
@@ -318,6 +330,21 @@ class Workspace:
 
         return _Loaded(team=team, runtime=self._new_runtime(team, llm, observed=observed), spec=spec,
                        evolutions=evolutions)
+
+    def _sync_declared_contexts(self, spec: dict) -> None:
+        """team.yaml `contexts:` declares shared contexts and their policies.
+        Each exists in the store (empty v1 on first load); team.yaml stays
+        authoritative for the policy of a declared context."""
+        declared = spec.get("contexts") or {}
+        if not isinstance(declared, dict):
+            raise WorkspaceError("team.yaml: 'contexts' must be a mapping of context id -> policy")
+        for cid, raw in declared.items():
+            raw = raw or {}
+            try:
+                policy = ContextPolicy.from_dict(raw)
+                self.contexts.ensure(str(cid), policy, title=str(raw.get("title") or ""))
+            except ContextError as exc:
+                raise WorkspaceError(f"team.yaml: contexts.{cid}: {exc}") from exc
 
     def _state_dict(self, loaded: _Loaded) -> dict:
         return {
@@ -387,10 +414,16 @@ class Workspace:
                         for b in tp.bindings:
                             if not isinstance(b, StochasticBinding):
                                 continue
+                            try:
+                                d = stamp_for(b, m, helpers, self.context_resolver,
+                                              owner.name if owner else None).stamp
+                            except ContextUnavailable:
+                                d = None
                             if link is None:
                                 state = "uncovered"
+                            elif d is None:
+                                state = "blocked"  # a declared context cannot be resolved
                             else:
-                                d = digest(eval_expr(b.footprint_expr, m.bindings, helpers))
                                 if link.stamps.get(b.name) == d:
                                     state = "fresh"
                                 elif link.failed_stamps.get(b.name) == d:
