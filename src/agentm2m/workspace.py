@@ -35,6 +35,7 @@ from .engine.trace import TraceLink, TraceModel, digest, element_key
 from .llm.base import LLMBackend
 from .llm.factory import make_backend
 from .llm.host_backend import HostBackend
+from .nostr.identity import AgentIdentity, IdentityError, load_identities
 from .rules.ast import Module, StochasticBinding
 from .rules.parser import parse_module_file
 from .store import dump_models, load_models
@@ -257,6 +258,11 @@ class Workspace:
             if name in team.handoffs:
                 raise WorkspaceError(f"duplicate hand-off name {name!r}")
             team.add_handoff(name, self._rule_path(h["rule"]), target_mm=target)
+
+        try:
+            team.identities = load_identities(spec.get("agents"), team.agents)
+        except IdentityError as exc:
+            raise WorkspaceError(f"team.yaml: {exc}") from exc
 
         if state is not None:
             if state.get("version") != STATE_VERSION:
@@ -854,6 +860,10 @@ class Workspace:
                 refs: list[_PendingRef] = []
                 root = seed_root(mm, view, vspec.get("seed"), refs)
                 apply_hot(team, TeamChange(agent_name=agent, view=mm, view_root=root, handoff_name=handoff, rule_path=rule_path))
+                try:
+                    team.identities[agent] = AgentIdentity.from_spec(agent, (loaded.spec.get("agents") or {}).get(agent))
+                except IdentityError as exc:
+                    raise WorkspaceError(f"team.yaml: {exc}") from exc
                 resolve_refs(refs, index_elements(team.roots))
             except Exception:
                 if wrote:

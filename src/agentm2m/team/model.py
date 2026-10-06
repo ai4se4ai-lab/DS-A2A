@@ -13,6 +13,7 @@ from typing import Any
 
 from ..engine.trace import TraceModel
 from ..metamodel.builder import MetamodelBuilder
+from ..nostr.identity import AgentIdentity
 
 
 @dataclass
@@ -36,11 +37,14 @@ class Team:
     write_rights: dict[str, set[str]] = field(default_factory=dict)  # agent name -> set of MM names (omega)
     roots: dict[str, Any] = field(default_factory=dict)  # MM name -> live root model instance
     traces: dict[str, TraceModel] = field(default_factory=dict)  # handoff name -> TraceModel
+    # agent name -> optional external (Nostr) identity; public metadata only
+    identities: dict[str, AgentIdentity] = field(default_factory=dict)
 
     def add_agent(self, name: str, view: str) -> Agent:
         agent = Agent(name=name, view=view)
         self.agents[name] = agent
         self.write_rights.setdefault(name, set()).add(view)
+        self.identities.setdefault(name, AgentIdentity(agent_id=name, display_name=name))
         return agent
 
     def add_view(self, mm: MetamodelBuilder, root: Any) -> None:

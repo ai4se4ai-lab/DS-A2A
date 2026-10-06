@@ -66,10 +66,13 @@ def load_spec_file(path: str | Path) -> dict:
         raise SpecError(f"{p}: top level must be a mapping")
     data.setdefault("views", {})
     data.setdefault("handoffs", [])
+    data.setdefault("agents", {})
     if not isinstance(data["views"], dict):
         raise SpecError("'views' must be a mapping of view name -> view spec")
     if not isinstance(data["handoffs"], list):
         raise SpecError("'handoffs' must be a list")
+    if not isinstance(data["agents"] or {}, dict):
+        raise SpecError("'agents' must be a mapping of agent name -> settings (e.g. a nostr identity)")
     return data
 
 
