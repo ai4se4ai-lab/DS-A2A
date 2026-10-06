@@ -291,3 +291,38 @@ the paper's own RQ1 decision rule.
   for the unavailable human annotator: a 20% sample is re-judged by one of
   the *other two* pilot models (never self-judged), and agreement is
   reported as a limitation, not a substitute for real human validation.
+
+## Shared context and Nostr observability (AgentM2M 0.3)
+
+`harness/context_eval.py` runs a four-configuration matrix on the DevTeam
+plus a Security Reviewer, whose fixed security finding should reach the
+Developer's code and the Tester's oracles:
+
+| Configuration | Structured hand-off | Traceability | Shared context | Nostr |
+|---|---|---|---|---|
+| `free_text` | no | no | no (finding pasted by hand) | no |
+| `agentm2m` | yes | yes | no | no |
+| `agentm2m_context` | yes | yes | yes | no |
+| `agentm2m_context_nostr` | yes | yes | yes | yes (in-memory relay) |
+
+Columns:
+- `retention` and `retention_after_change`: the share of code bodies and oracles carrying the
+  finding's marker, before and after the finding is revised.
+- `change_precision` / `change_recall`: the bindings obliged by the revision, against the
+  ground-truth impact set (every body and oracle).
+- LLM calls and tokens: for the initial run and for the change.
+- `context_reuse_*` and `context_induced_obligations`.
+- `observability_coverage`: the share of engine-reported transitions that were observed as events.
+
+**Control (spec section 75).** `agentm2m_context` and `agentm2m_context_nostr` share every
+setting, and the harness fails unless both sent the same multiset of prompts. Nostr can therefore
+change observability, never task performance.
+
+```
+python -m evaluation.harness.context_eval --llm ollama --model qwen3:8b --out evaluation/results/context
+python -m evaluation.analysis.aggregate_context evaluation/results/context/context_eval.csv
+```
+
+The mock backend ignores context, so its retention is 0 everywhere and only exercises the pipeline.
+`tests/test_context_evaluation.py` checks the measurement with a test double that echoes what its
+prompt contains.
