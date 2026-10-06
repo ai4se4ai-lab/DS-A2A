@@ -283,7 +283,7 @@ def context_detach(context_id: str, agent: str, as_agent: str) -> dict:
 
 
 @mcp.tool()
-def context_search(query: str, as_agent: str, type: str | None = None, limit: int = 20) -> dict:  # noqa: A002
+def context_search(query: str, as_agent: str, type: str | None = None, limit: int = 20) -> dict:
     """Search items of the contexts as_agent may read (case-insensitive)."""
     return _call(_ws().context_search, query, as_agent, type, limit)
 
