@@ -93,7 +93,7 @@
 \newcommand{\what}[1]{\par\smallskip\noindent\textbf{#1}\quad}
 
 \title{\tool{} Explained:\\ A Step-by-Step Walkthrough on DevBench \texttt{chakin}}
-\author{Companion document to ``\tool{}: M2M Transformations for Agentic
+\author{Companion document to\\ ``\tool{}: M2M Transformations for\\ Agentic
 Collaborations in Software Engineering''}
 \date{}
 
@@ -113,8 +113,16 @@ explain what the engine does with it, one operation at a time. We cover how
 each agent's ``language'' (its view metamodel) is defined and populated, how a
 single hand-off runs, how a requirement change propagates, what happens when
 several hand-offs fire at once, and what happens when a new agent joins the
-team while it is running. All engine outputs shown were produced by running
-the prototype on \texttt{chakin}.
+team while it is running. Two further mechanisms complete the picture. With
+\emph{shared context}, one agent can publish knowledge (here: a security
+reviewer's findings) that other agents may use: explicitly, with read rights,
+pinned to a version, and with the same change tracking as requirements.
+\emph{Observability} records every state transition of the team as a typed,
+correlated event, so one can see why an agent re-did its work, who saw which
+knowledge, and who is stuck. The events can optionally be published as
+signed Nostr events, so that teams spread over several machines can be
+watched and can share context. All engine outputs shown were produced by
+running the prototype on \texttt{chakin}.
 \end{abstract}
 
 \tableofcontents
@@ -158,6 +166,18 @@ logged run. This makes every trace key, stamp and report below exactly
 reproducible. Where we quote a raw model answer that the scripted backend does
 not reproduce (e.g., the full generated function bodies), we say so and quote
 it from the log.
+
+\paragraph{Shared context and observability.} \Cref{sec:context,sec:obs,sec:nostr}
+extend the walkthrough beyond the paper's seven steps. They continue the same
+\texttt{chakin} team after the Security Reviewer has joined (\Cref{sec:hot}).
+Their outputs come from one scripted run of the prototype
+(\file{evaluation/harness/chakin\_context\_walkthrough.py}), and a test
+(\file{tests/test\_chakin\_context\_walkthrough.py}) checks that every stamp,
+digest, count and event number quoted there is what the engine produces.
+Each of the three sections starts with the problem it solves on
+\texttt{chakin}, then introduces the background concepts it needs (with a
+vocabulary table like \Cref{tab:glossary}), and only then walks through the
+mechanism.
 
 \paragraph{Prototype versus paper design.} The pilot instantiates the paper's
 design with a few simplifications. They matter for understanding the results,
@@ -287,6 +307,9 @@ HOT & A transformation whose output is a transformation (here: a new hand-off pl
 \end{tabularx}
 \end{table}
 
+The terms needed for shared context, observability and Nostr are
+introduced where they are first used, in \Cref{tab:context-glossary,tab:obs-glossary,tab:nostr-glossary}.
+
 ATL runs a module in two phases. \emph{Matching} evaluates every rule's source
 pattern and guard on the read-only source model, creates one empty target
 object per match and records a trace link. \emph{Initialisation} then
@@ -346,6 +369,12 @@ $M_{\mathit{req}}$ (\Cref{sec:seed}).
 (Step~7, \Cref{sec:step7}).
 \item \textbf{Evolution.} Add a Security Reviewer with a higher-order
 transformation (\Cref{sec:hot}).
+\item \textbf{Collaboration.} Let the Security Reviewer's findings reach the
+Developer and the Tester through a versioned shared context
+(\Cref{sec:context}).
+\item \textbf{Observation.} Record every state transition as a correlated
+event (\Cref{sec:obs}), optionally as signed Nostr events that observers on
+other machines can verify (\Cref{sec:nostr}).
 \item \textbf{Grading.} Assemble the Developer's \cls{CodeEdit} bodies into
 \file{chakin/downloader.py} and run DevBench's own tests.
 \end{enumerate}
@@ -1782,6 +1811,1017 @@ the operations that exist \emph{now}; operations added later are reviewed
 only if someone remembers to call it again.
 
 % ===========================================================================
+\section{Sharing knowledge between agents (shared context)}\label{sec:context}
+% ===========================================================================
+
+So far, everything one agent tells another travels through a hand-off: a
+rule matches source elements, creates target elements and lets an LLM fill
+in their values. This section shows a kind of information that does not fit
+that shape, explains why the obvious workarounds fail, and then walks through
+\emph{shared context}, the mechanism \tool{} uses for it. All engine outputs
+in this section and the next two come from one run of the prototype on the
+\texttt{chakin} pilot team
+(\file{evaluation/harness/chakin_context_walkthrough.py}, \Cref{sec:repro}).
+The LLM is scripted, as elsewhere in this document, so that every key, stamp
+and digest is reproducible; \file{tests/test_chakin_context_walkthrough.py}
+checks that the values quoted here are the ones the engine produces.
+
+\subsection{The problem: knowledge that has no hand-off}\label{sec:context-why}
+
+We continue where \Cref{sec:hot} ended. The Security Reviewer has joined the
+team and reviewed every operation. For \code{download} its two stochastic
+bindings produced:
+
+\begin{lstlisting}[style=llm, caption={The Security Reviewer's review of \code{download} (footprint: the signature).}, label={lst:review}]
+notes: download writes into a caller-supplied save_dir and fetches from the
+       network: path traversal and plain-http download are the risks.
+risk:  high
+\end{lstlisting}
+
+Reading this, the reviewer arrives at two concrete findings:
+\begin{enumerate}[nosep]
+\item \emph{finding-path}: \code{save_dir} comes from the caller, so the code
+must resolve the target path and refuse to write outside \code{save_dir}.
+\item \emph{finding-tls}: vectors must be fetched over https only.
+\end{enumerate}
+These findings matter to two other agents. The \textbf{Developer} must write
+\code{download} so that it honours them, and the \textbf{Tester} should write
+an oracle that checks the path rule. The question is how the findings reach
+them. Every route the walkthrough has used so far fails, for a specific
+reason:
+
+\begin{description}[leftmargin=1.2em, style=nextline]
+\item[Through a hand-off?] Hand-offs run in one direction, from the views an
+agent reads to the view it owns. \code{Arch2Sec} reads $M_{\mathit{arch}}$
+and writes $M_{\mathit{sec}}$; nothing reads $M_{\mathit{sec}}$. A new
+hand-off \code{Sec2Code} cannot help either: the \cls{CodeEdit} for
+\code{download} is already produced by \code{Arch2Code}, and the structural
+invariant of \Cref{sec:step2} allows \emph{one producer per target}. Worse,
+a finding is not an artifact that corresponds one-to-one to some element: one
+finding can concern many operations, and one operation many findings.
+\item[Into the Architect's model?] The reviewer could ask for the rule to be
+written into \code{Operation.spec}. But $\omega$ gives the reviewer write
+rights to $M_{\mathit{sec}}$ only, and \code{spec} is engine-owned anyway
+(it is computed by \code{Req2Arch}). Bypassing either would undo the
+guarantees of Steps~2--4.
+\item[Into the prompts, by hand?] This is what a free-text team does: a
+human pastes the finding into the Developer's and the Tester's prompts. It
+works once. But nothing records which code was written with which version
+of the finding, so when the reviewer revises it, nobody knows what to redo
+(problem P2 of \Cref{sec:background}, now for knowledge instead of
+requirements). And a pasted note is visible to whoever reads the prompt, with
+no notion of who is allowed to see it.
+\item[A shared memory or transcript for everyone?] Giving every agent the
+whole team history breaks the footprint discipline that \Cref{sec:tokens}
+depends on: the prompt grows with everything anyone has said, the token cost
+grows with it, and a change to any part of that history would, in principle,
+invalidate everything.
+\end{description}
+
+\noindent What is needed is a channel for \emph{knowledge} (findings,
+decisions, constraints) that keeps the properties the rest of \tool{} has for
+\emph{artifacts}:
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Requirement & Why \\
+\midrule
+R1 explicit & A binding sees a piece of knowledge only if its rule says so; nothing is added to prompts implicitly. \\
+R2 authorized & The owner of the knowledge decides who may read and who may write it. \\
+R3 versioned & Every published state of the knowledge is a numbered, immutable version, so one can say ``this code was written from version 2''. \\
+R4 change-aware & When the knowledge changes, exactly the values derived from it must be redone, through the same obligation mechanism as source changes (\Cref{sec:step6}). \\
+R5 fail-safe & If the knowledge is unavailable, a binding that needs it must stop, not proceed without it. \\
+R6 traceable & One can ask which values a given piece of knowledge influenced. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Background: the concepts of shared context}\label{sec:context-bg}
+
+\Cref{tab:context-glossary} introduces every term this section uses, each
+with its \texttt{chakin} instance. Two of them need a short explanation.
+
+\paragraph{Content digests.} A \emph{cryptographic hash} such as SHA-256 maps
+any text to a fixed-length fingerprint (64 hexadecimal characters). Equal
+texts always give equal fingerprints, and in practice different texts never
+do. \tool{} already uses this for version stamps (\Cref{sec:step4}): the
+stamp is the hash of the footprint. A context version gets the hash of its
+items, written in a canonical form (items sorted by id, keys sorted), so the
+digest depends only on the \emph{content}: not on the order in which items
+were written, not on the time, not on the version number.
+
+\paragraph{Optimistic concurrency.} Two agents may try to update the same
+context at the same time. Instead of locking the context while an agent
+thinks, every update states the version it was based on
+(\code{expected\_version}). If another update has landed in between, the
+store refuses the second one with \code{CONTEXT\_CONFLICT}, and the agent must
+re-read and reconcile. No update silently overwrites another.
+
+\begin{table}[h]
+\centering\small
+\caption{Shared-context vocabulary, each with its \texttt{chakin} instance.}
+\label{tab:context-glossary}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+Term & Meaning & \texttt{chakin} instance \\
+\midrule
+Shared context & A named, versioned collection of facts that agents publish and authorized agents consume. Not a chat log. & \code{security-review} \\
+Context item & One typed fact: \code{id}, \code{type}, \code{content}, \code{author}, \code{provenance} (where it came from). & \code{finding-path}, type \code{security-finding} \\
+Version / snapshot & An immutable state of the context; every update creates version $n{+}1$, and old versions stay readable. & v1 (empty), v2 (two findings), v3 (revised path rule) \\
+Digest & SHA-256 of the canonical items of a version. & v2: \code{47d98089c005\ldots} \\
+Policy & \code{owner}, \code{readers}, \code{writers}, \code{visibility}, \code{expiry}. & owner and writer SecurityReviewer; readers Developer, Tester \\
+Context reference & In a rule: \code{context = ['id']} for the whole context, or \code{'id\#item'} for chosen items. & Developer: the whole context; Tester: only \code{finding-path} \\
+Pin & What one accepted value was derived from: context id, version, digest, item ids. & body of \code{download}: \code{security-review} v2 \\
+Effective footprint & The source footprint plus the pinned context items; its digest is the binding's stamp. & signature + spec + both findings \\
+Context-induced obligation & An obligation whose cause is a context change rather than a source change. & 18 after v3 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Step C1: declare the context and its policy}
+
+A context is declared once, by whoever designs the team, next to the views.
+In a persistent workspace this is a \code{contexts:} entry in
+\file{team.yaml}; the walkthrough run declares the same policy in code:
+
+\begin{lstlisting}[style=model, caption={The \code{security-review} context declared for the \texttt{chakin} team.}, label={lst:ctx-decl}]
+contexts:
+  security-review:
+    title:   Security review findings
+    owner:   SecurityReviewer
+    writers: [SecurityReviewer]
+    readers: [Developer, Tester]
+    visibility: private       # 'team': every agent reads; 'relay': also synced across machines
+\end{lstlisting}
+
+\noindent The store creates version 1, with no items. The policy is the
+\emph{only} source of read and write rights for this context, and it is
+enforced inside the store for every caller: the MCP tools, the CLI, the
+engine itself, and (\Cref{sec:nostr}) updates arriving from other machines.
+
+\subsection{Step C2: the reviewer publishes its findings}
+
+\what{Raw input.} The reviewer writes its two findings as items, each naming
+where it came from: the trace link of its own review of \code{download}.
+
+\what{What happens.} The reviewer calls \code{context\_update} on
+\code{security-review}, as SecurityReviewer, with \code{expected\_version=1}
+and the two items. The store
+(1) checks that SecurityReviewer is a writer; (2) checks that version 1 is
+still current; (3) \emph{attributes every item to the writer}: \code{author}
+and \code{provenance.agent} are set to SecurityReviewer, and an item that
+claims another author is refused, so no agent can put words in another
+agent's mouth; (4) computes the digest; and (5) stores version 2:
+
+\begin{lstlisting}[style=engine, caption={Engine state: version 2 of \code{security-review}.}, label={lst:ctx-v2}]
+{ "context_id": "security-review", "version": 2, "title": "Security review findings",
+  "digest": "47d98089c005fd4f202ed3903719d29eb4298c9d1c93d6d4f66ceb0d1dbfba31",
+  "items": [
+   { "id": "finding-path", "type": "security-finding", "author": "SecurityReviewer",
+     "content": "download(): `save_dir` comes from the caller. Resolve the target path
+                 and refuse to write outside save_dir (no '..', no absolute file names).",
+     "provenance": { "agent": "SecurityReviewer", "view": "Sec",
+       "trace": "Arch2Sec::Operation2Review::op=Operation#Global_functions::download" } },
+   { "id": "finding-tls", "type": "security-finding", "author": "SecurityReviewer",
+     "content": "download(): fetch vectors over https only; never fall back to http.",
+     "provenance": { ... same trace ... } } ] }
+\end{lstlisting}
+
+\noindent Publishing changes nothing in any view: no element is created, no
+value is written. The context is knowledge that rules may now ask for.
+
+\subsection{Step C3: a binding declares what it may read}
+
+A binding reads a context only if its rule says so (R1). The \code{@llm}
+binding gets an optional third argument; the familiar two-argument form is
+unchanged and means ``no context''. The Developer's rule reads the whole
+context; the Tester's rule reads only the finding it can test:
+
+\begin{lstlisting}[language=ATL, style=model, caption={Context-aware variants of \code{Arch2Code} and \code{Req2Test} (changes in the last argument only).}, label={lst:ctx-rules}]
+body   <- @llm('Implement this operation as a complete Python function ...',
+               op.codeContext(),
+               context = ['security-review']),               -- every item
+oracle <- @llm('Write a test oracle for this acceptance criterion ...',
+               c.text,
+               context = ['security-review#finding-path']),  -- one item
+\end{lstlisting}
+
+\noindent The parser checks every reference when the rule is loaded, and
+\code{team\_validate} reports a rule that names an undeclared context, or one
+whose consuming agent is not a reader, before anything runs. Which agent is
+``consuming'' is decided by $\omega$: the owner of the binding's \emph{target
+view}. For \code{body} that is the Developer (owner of $M_{\mathit{code}}$);
+for \code{oracle}, the Tester.
+
+\subsection{Step C4: the effective footprint, the prompt and the stamp}\label{sec:context-stamp}
+
+When the engine reaches a context-aware binding in line~6 of Algorithm~1, it
+does three things before deciding whether to call an LLM.
+
+\what{C4.1: resolve.} The resolver asks the store for the current version of
+each referenced context \emph{as the consuming agent}, i.e.\ with the
+Developer's read rights, and selects the declared items. Here: version 2,
+both items.
+
+\what{C4.2: compute the stamp of the effective footprint.} The binding now
+depends on two things: its source footprint (as before) and the context items
+it will see. Its stamp therefore covers both:
+\[
+\mathit{stamp}(t,b) \;=\; H\big(\,\fp_b(m),\ [(\text{context id},\ \text{digest of the selected items})\ldots]\,\big).
+\]
+For a binding \emph{without} context references the stamp stays exactly
+$H(\fp_b(m))$, byte for byte the same as before, so every existing rule,
+trace and workspace keeps working unchanged. For the \code{download} body
+the engine records the three digests involved:
+
+\begin{lstlisting}[style=engine, caption={Dependency record of (\code{ce download}, \code{body}) after the first context-aware run.}, label={lst:deps}]
+"dependencies": { "body": { "source":    "71599f67c7a21b83",    <- signature + spec, as before
+                            "context":   "00a4f03750fa6202",    <- the pinned findings
+                            "effective": "3e0a20f81349f199" } } <- the stamp
+\end{lstlisting}
+
+\noindent Because the stamp depends on the \emph{content} of the selected
+items, a new version whose selected items are identical (for example,
+re-publishing the same text) leaves the stamp unchanged, and so does a change
+to a context the binding does not reference.
+
+\what{C4.3: build the prompt.} The prompt is the rule prompt, then the
+rendered source footprint (as in \Cref{lst:prompt-download}), then a labelled
+section with exactly the authorized items. Every item names its context,
+version and digest, so an audit can tell what the value was derived from:
+
+\begin{lstlisting}[style=llm, caption={Prompt for (\code{ce download}, \code{body}) with shared context (real engine output).}, label={lst:ctx-prompt}]
+Implement this operation as a complete Python function or method (a full "def name(...):"
+block matching this exact signature) that satisfies the specification. ...
+
+Context (footprint only):
+Signature: download(number: int, name: str, save_dir: str) -> None
+Specification:
+Implement `download(number: int, name: string, save_dir: string)` on component
+`Global_functions`. This is a free function (not a class method).
+
+Authorized shared context (read-only collaboration knowledge; use it, do not invent more):
+[context security-review v2 sha256:47d98089c005] -- Security review findings
+- finding-path (security-finding, by SecurityReviewer): download(): `save_dir` comes from
+  the caller. Resolve the target path and refuse to write outside save_dir (no '..', no
+  absolute file names).
+- finding-tls (security-finding, by SecurityReviewer): download(): fetch vectors over https
+  only; never fall back to http.
+\end{lstlisting}
+
+\noindent The Tester's prompt for the \code{download} oracle carries only
+\code{finding-path}, because that is all its rule selects.
+
+\subsection{Step C5: the first run with context}
+
+Switching \code{Arch2Code} and \code{Req2Test} to the context-aware rules
+changes their bindings' stamps: each previously accepted body and oracle was
+stamped with $H(\fp)$ alone, and now its stamp must also cover the findings.
+So the next run finds exactly these bindings stale: 9 bodies and 9 oracles,
+18 obligations. Each obligation records its \emph{cause}, computed by
+comparing the stored dependency record with the current one: the source
+footprint is unchanged, the context part is new, so the cause is
+\code{["context"]}. The 9 signatures and the reviewer's 18 \code{notes} and
+\code{risk} values do not read the context and stay fresh: no call.
+
+After acceptance, the trace link records what the value was derived from:
+
+\begin{lstlisting}[style=engine, caption={Trace link of (\code{ce download}, \code{body}) after the run: the pin.}, label={lst:pin}]
+{ "rule": "Operation2CodeEdit",
+  "target_key": "Operation2CodeEdit::ce::op=Operation#Global_functions::download",
+  "stamps": { "body": "3e0a20f81349f199" },
+  "context_pins": { "body": [ { "context_id": "security-review", "version": 2,
+                                "digest": "47d98089c005fd4f...", "item_ids": [] } ] },
+  "dependencies": { "body": { "source": "71599f67c7a21b83", "context": "00a4f03750fa6202",
+                              "effective": "3e0a20f81349f199" } } }
+\end{lstlisting}
+
+\noindent (\code{item\_ids} is empty because the Developer's rule reads the
+whole context.) The scripted Developer cites each finding it was given, so the
+effect is visible in the value:
+
+\begin{lstlisting}[style=llm, caption={Accepted body (scripted answer).}]
+def download(*args, **kwargs):
+    # honours finding-path
+    # honours finding-tls
+    return None
+\end{lstlisting}
+
+\noindent The same validators as before (\code{compiles()},
+\code{definesName}, \code{loads()}) decide acceptance. Context adds
+knowledge to a prompt; it never weakens a check.
+
+\subsection{Step C6: the reviewer revises a finding}\label{sec:context-revise}
+
+\what{Raw input.} The reviewer tightens the path rule: ``Also reject a
+\code{name} that contains a path separator.''
+
+\what{$\Delta$.} \code{context\_update(\ldots, expected\_version=2,
+items=[finding-path revised])} creates version 3 (digest
+\code{52bb563795b8\ldots}). No view model changes.
+
+\what{What happens.} On the next run, the stamp check of Algorithm~1 does the
+rest, exactly as for a requirement change in \Cref{sec:step6}:
+
+\begin{center}\small
+\begin{tabular}{@{}l l l l@{}}
+\toprule
+Binding & Reads & Stamp stored $\rightarrow$ recomputed & State \\
+\midrule
+\code{body} of \code{download} (Developer) & whole context & \code{3e0a20f8...} $\rightarrow$ \code{a78ca3bb...} & \textbf{stale}, cause \code{context} \\
+8 other bodies (Developer) & whole context & changed & \textbf{stale}, cause \code{context} \\
+9 oracles (Tester) & \code{finding-path} & changed & \textbf{stale}, cause \code{context} \\
+9 signatures (Architect) & no context & unchanged & fresh \\
+18 \code{notes}/\code{risk} (Reviewer) & no context & unchanged & fresh \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent 18 obligations, 18 LLM calls, and the 27 bindings that do not read
+the context cost nothing. Afterwards every pin says version 3, and $\varphi$
+holds again. This is requirement R4: a context change is an ordinary
+obligation, found by the ordinary stamp check; there is no second
+invalidation system to keep consistent with the first.
+
+\subsection{Step C7: choosing what to depend on}\label{sec:context-precision}
+
+Why did the revision of a finding about \code{download} oblige the bodies of
+all nine operations? Because the Developer's rule declares
+\code{context = ['security-review']} for every match of the rule, and every
+body therefore depends on every finding. Context references are declared
+\emph{per rule}, like footprints, and they have the same trade-off as
+footprints (\Cref{sec:step3}): a larger dependency costs more calls when it
+changes; a smaller one risks missing knowledge.
+
+The Tester's rule shows the other end. It selected only
+\code{finding-path}, so when the reviewer later revises \code{finding-tls}
+(``pin the server certificate''), the run finds exactly the 9 bodies stale and
+\emph{no} oracle: 9 calls instead of 18. Choosing items is how a rule author
+narrows a context dependency. What a rule cannot yet say is ``the findings
+about \emph{this} operation'', i.e., a selection that depends on the match;
+we list this as a limitation in \Cref{sec:results}.
+
+\subsection{Step C8: when the context is not available}\label{sec:context-failsafe}
+
+Suppose the reviewer removes the Tester from the readers. On the next run the
+resolver asks for the context with the Tester's rights and is refused. The engine then does \emph{not} call the LLM without the context:
+that would produce an oracle that silently ignores the finding (R5). It
+reports instead:
+
+\begin{lstlisting}[style=engine, caption={Engine output when the Tester may no longer read the context.}]
+escalation: Criterion2TestCase::tc::c=Criterion#Global_functions::load_datasets.C1  oracle
+  reason: context unavailable: agent 'Tester' may not read context 'security-review'
+          (not a reader)
+... (one per oracle)          phi: false
+\end{lstlisting}
+
+\noindent The same happens if a referenced context is missing or has
+expired. In host mode (Claude Code fills the bindings) such a binding is
+reported as \emph{blocked} and never offered to the binding worker. Unlike a
+validator rejection, this escalation is \emph{not} recorded as a failed
+stamp: nothing was judged, so as soon as access is restored the binding is
+sampled normally. $\varphi$ stays false meanwhile, because a binding whose
+context cannot be resolved has no fresh stamp.
+
+One more race needs the same care. In host mode, \code{next\_bindings} hands
+a prompt to a worker, and the worker answers later with
+\code{submit\_binding}. If a new context version lands in between, the
+answer was produced from a version that is no longer current. The
+\code{footprint\_version} the worker sends back is the \emph{effective}
+stamp, so the engine refuses the answer as \code{stale}, exactly as it does
+when a source footprint changes between prompt and answer.
+
+\subsection{Step C9: concurrent writers}
+
+Two writers that both start from version 3 and both call
+\code{context\_update(\ldots, expected\_version=3, \ldots)} cannot both win:
+the first creates version 4, the second gets
+
+\begin{lstlisting}[style=engine]
+CONTEXT_CONFLICT: security-review is at version 4, not 3; fetch the current version,
+reconcile, and retry with expected_version=4
+\end{lstlisting}
+
+\noindent This holds across operating-system processes too: the local store
+(\file{.agentm2m/state/context.json}) takes a file lock for every write and
+reloads when another process has written. The test suite races four
+processes on one expected version and checks that exactly one wins.
+
+\subsection{Step C10: following a finding through the team}\label{sec:influence}
+
+Because every accepted value records its pins, the question ``which decisions
+did finding-path influence?'' (R6) is answered from the trace models alone.
+\code{influence\_query(security-review, finding-path)} scans the pins: the 9
+bodies and 9 oracles of the run above, each with its agent and the version it
+pinned. Combined with the item's provenance, the full chain on
+\texttt{chakin} is:
+
+\begin{lstlisting}[style=engine, caption={The chain of \code{finding-path}, reconstructed from provenance, pins and trace links.}]
+UserStory Global_functions::download                    (Analyst, M_req)
+  -> Operation download       via Req2Arch trace         (Architect, M_arch)
+  -> SecurityReview of download via Arch2Sec trace        (SecurityReviewer, M_sec)
+  -> context item finding-path, provenance = that trace  (security-review v2, v3)
+  -> CodeEdit download.body,  pinned v3                  (Developer)   + 8 other bodies
+  -> TestCase download.C1.oracle, pinned v3              (Tester)      + 8 other oracles
+\end{lstlisting}
+
+\noindent \code{agentm2m context graph} draws the same chain. If an
+accepted value's pinned version is older than the current one, the query
+marks it as not current.
+
+\subsection{What shared context does not do}
+
+\begin{itemize}[nosep]
+\item It never creates, deletes or links model elements. Structure remains a
+function of the source models (\Cref{sec:step4}).
+\item It grants no write rights: reading a finding does not let the Developer
+write into $M_{\mathit{sec}}$, and $\omega$ is unchanged.
+\item It does not bypass validators or $\varphi$; it changes acceptance only
+through stamps, i.e., by creating obligations.
+\item It is not a memory of everything said. A binding sees only the items
+its rule names, in a labelled section, and the token cost of a context is
+paid only by the bindings that read it.
+\end{itemize}
+
+\begin{table}[h]
+\centering\small
+\caption{How each requirement of \Cref{sec:context-why} is met.}
+\label{tab:context-reqs}
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Requirement & Mechanism (step) \\
+\midrule
+R1 explicit & \code{context=} argument per binding; validated at load time (C3) \\
+R2 authorized & policy enforced in the store for every caller; items attributed to their writer; reader grants by the owner only (C1, C2) \\
+R3 versioned & immutable versions with content digests; old versions stay addressable (C2) \\
+R4 change-aware & context digest inside the version stamp; obligations with a recorded cause (C4--C7) \\
+R5 fail-safe & unresolvable context blocks or escalates the binding, never samples it; stale submissions refused (C8) \\
+R6 traceable & pins on trace links; \code{influence\_query}; provenance on items (C10) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ===========================================================================
+\section{Observing a team of agents}\label{sec:obs}
+% ===========================================================================
+
+\subsection{The problem: questions the models cannot answer}\label{sec:obs-why}
+
+After the runs of \Cref{sec:context}, the team lead of \texttt{chakin} has
+questions like these:
+\begin{enumerate}[nosep, label=Q\arabic*.]
+\item Why did the Developer re-implement \code{download} in the last run?
+Did a requirement change, or something else?
+\item Which agents were shown the security findings, and which version?
+\item Is anyone stuck right now, and on what?
+\item How many LLM calls did the security review cause, and how many of the
+re-derivations were caused by knowledge rather than by requirements?
+\item Did the last run end because the work was done, or because something
+failed?
+\end{enumerate}
+
+\noindent The models and trace links (\file{state.json}) describe what
+\emph{is}: the current operations, code and tests, and the current stamps.
+They do not say \emph{how the team got there}. A stamp shows that the body of
+\code{download} was accepted for footprint \code{a78ca3bb\ldots}; it does not
+show that it was re-derived in a later run because the Security Reviewer had
+just published version 3. In a single-model chatbot, the conversation is
+the record. In a team of agents, that record is missing, for reasons specific
+to multi-agent systems:
+
+\begin{itemize}[nosep]
+\item \textbf{Many small, non-deterministic steps.} The \texttt{chakin} runs
+of \Cref{sec:context} made 81 LLM calls across four agents. The same input
+may give a different value next time, so ``what happened'' cannot be
+recomputed afterwards; it must be recorded when it happens.
+\item \textbf{Causes cross agent boundaries.} The Developer's call was
+caused by the Security Reviewer's publication, which was caused by its own
+review of an operation the Architect produced. The explanation of one event
+is a chain through several agents.
+\item \textbf{Silent failure is the expensive kind.} An escalated binding, a
+blocked binding or an agent that stopped early (MAST FM-1.5, FM-3.1;
+\Cref{sec:step7}) does no visible damage; it just leaves work undone.
+\item \textbf{Agents run in different places.} Bindings may be filled by
+Claude Code subagents, by another process, or on another machine
+(\Cref{sec:nostr}). There is no single console to watch.
+\item \textbf{Prompts are sensitive.} A record of what each agent saw would
+contain source code, requirements and security findings. Logging prompts
+verbatim makes the log itself a leak.
+\end{itemize}
+
+\noindent Free-text transcripts do not solve this either: they record what
+was said, not which state transition it caused, and they are exactly the
+sensitive text one does not want to replicate. \tool{}'s answer is to record
+the engine's \emph{state transitions} as typed events.
+
+\subsection{Background: events, correlation and projections}\label{sec:obs-bg}
+
+\begin{table}[h]
+\centering\small
+\caption{Observability vocabulary, each with its \texttt{chakin} instance.}
+\label{tab:obs-glossary}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+Term & Meaning & \texttt{chakin} instance \\
+\midrule
+Event & A record that one state transition happened: its type, when, and in which context. & \code{binding.accepted} for the \code{download} body \\
+Event type & One of a fixed list (team, hand-off, binding, obligation, trace, context, error); unknown types are rejected. & \code{binding.stale}, \code{context.read}, \code{obligation.created} \\
+Correlation ids & The fields that place an event in the execution tree: run, agent, hand-off, rule, target, binding, trace link, context. & run \code{run-...-003} $\to$ \code{Arch2Code} $\to$ \code{Operation2CodeEdit} $\to$ \code{download} $\to$ \code{body} \\
+Timeline & The events of a workspace in order, kept in a local file (\file{events.jsonl}). & 677 events for the whole walkthrough run \\
+Sink & Where events go: nowhere, memory, the local timeline, a Nostr relay, or several. & timeline + relay (\Cref{sec:nostr}) \\
+Projection & A view derived from the authoritative state that may lag behind it but never changes it. & the timeline; presence; metrics \\
+Digest instead of content & A field such as a prompt is replaced by its hash and length. & \code{prompt\_digest: 6428eda1a989b23d} \\
+Presence & Each agent's current activity, derived from its latest events. & Analyst offline, Developer idle \\
+Coverage & Share of the engine's reported transitions that appear as events. & 1.0 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Authoritative state and projections.} This distinction carries the
+whole design. The \emph{authoritative} state is what the engine decides
+from: models, trace links, stamps, context versions. The events are a
+\emph{projection} of that state: a record derived from it. A projection may
+be incomplete or late (a relay may be down), but it can never make the
+authoritative state wrong, because nothing in the engine reads it.
+
+\subsection{Step O1: where events come from}
+
+The engine reports every transition of Algorithm~1 through one function,
+\code{emit}, which is passed to the runtime and, from there, to every
+hand-off and binding. With observability switched off it is a function that
+does nothing. Three rules make it safe:
+
+\begin{enumerate}[nosep]
+\item \textbf{Write-only.} The engine calls \code{emit} but never reads
+anything back from it. No decision (match, create, delete, sample, accept,
+$\varphi$) depends on an event.
+\item \textbf{One choke point that never raises.} Every event passes through
+one \code{Emitter}, which catches any error of any sink (a full disk, a
+crashed relay client), counts it, and carries on.
+\item \textbf{Checked.} The test suite runs the same team with no sink, an
+in-memory sink, a sink that raises on every event, and Nostr pointed at a
+relay that is down, and requires \file{state.json} to be \emph{byte for byte}
+identical in all four cases.
+\end{enumerate}
+
+\subsection{Step O2: anatomy of one event}
+
+Each event is a small JSON object in a fixed schema (\code{agentm2m.event},
+version 1). This is the event the engine emitted when, in the run of
+\Cref{sec:context-failsafe}, the Tester was refused the context:
+
+\begin{lstlisting}[style=engine, caption={One event (real engine output).}, label={lst:event}]
+{ "schema": "agentm2m.event", "schema_version": 1,
+  "event_type": "context.error",   "seq": 633,   "ts": 1760000159.5,
+  "workspace_id": "chakin-pilot",
+  "run_id":       "run-20251009T085557-005",    "operation": "run",
+  "agent_id":     "Tester",
+  "handoff_id":   "Req2Test",
+  "rule_id":      "Criterion2TestCase",
+  "target_key":   "Criterion2TestCase::tc::c=Criterion#Global_functions::load_datasets.C1",
+  "binding":      "oracle",
+  "trace_id":     "Req2Test::Criterion2TestCase::c=Criterion#Global_functions::load_datasets.C1",
+  "context_ids":  ["security-review"],
+  "payload": { "error": "agent 'Tester' may not read context 'security-review' (not a reader)" } }
+\end{lstlisting}
+
+\noindent The fields from \code{run\_id} to \code{context\_ids} are the
+correlation ids. They are what turns a pile of events into an answer: every
+event of one binding shares its \code{target\_key} and \code{binding}, every
+event of one run shares \code{run\_id}, and every event about one context
+shares \code{context\_ids}. \code{seq} orders events of one workspace even
+when two have the same timestamp.
+
+\subsection{Step O3: reading a timeline}\label{sec:obs-timeline}
+
+\Cref{lst:timeline} is an excerpt of the real timeline of the run in which the
+Developer first received the findings (\Cref{sec:context}, Step~C5),
+filtered to the run and to the \code{download} body.
+
+\begin{lstlisting}[style=engine, caption={Timeline excerpt: the first context-aware run, for (\code{ce download}, \code{body}).}, label={lst:timeline}]
+seq  event                    agent      hand-off   payload (abridged)
+311  team.started                                    handoffs=[Req2Arch, Arch2Code, Req2Test, Arch2Sec]
+315  handoff.started          Developer  Arch2Code
+323  binding.stale            Developer  Arch2Code  previous=71599f67..  now=3e0a20f8..  cause=[context]
+324  obligation.created       Developer  Arch2Code  cause=[context]
+325  binding.requested        Developer  Arch2Code  pins=[security-review v2]
+326  context.read             Developer  Arch2Code  version=2 items=[finding-path, finding-tls]
+                                                    purpose=binding-prompt
+327  binding.prompt_prepared  Developer  Arch2Code  prompt_digest=6428eda1a989b23d prompt_chars=1061
+328  binding.accepted         Developer  Arch2Code  attempts=1 pins=[security-review v2]
+                                                    value_digest=058a70177cf1abac
+...
+371  handoff.completed        Developer  Arch2Code  resampled=9
+383  context.read             Tester     Req2Test   version=2 items=[finding-path]
+...
+445  obligation.discharged    Developer  Arch2Code  (download, body)
+462  agent.idle               Architect             escalations=0 blocked=0 pending=0
+463  agent.idle               Developer             (same)
+464  agent.idle               Tester                (same)
+465  agent.idle               SecurityReviewer      (same)
+466  team.completed                                  passes=2 escalations=0 pending=0 blocked=0
+                                                    obligations_discharged=18
+\end{lstlisting}
+
+\noindent Read line by line, this answers Q1 and Q2 for that run. Event 323
+says the body's stamp moved from \code{71599f67\ldots} (source only) to
+\code{3e0a20f8\ldots}, and that the cause was the context, not a
+requirement. Event 326 says the Developer was shown version 2 of
+\code{security-review}, items \code{finding-path} and \code{finding-tls}.
+Event 383 says the Tester was shown version 2 too, but only
+\code{finding-path}. Events 462--466 answer Q5: every agent ended the run
+idle, and the run reached a fixpoint with no escalation and nothing pending.
+
+\subsection{Step O4: seeing without disclosing}\label{sec:obs-privacy}
+
+Event 327 does not contain the prompt of \Cref{lst:ctx-prompt}, only its
+SHA-256 digest and its length. Event 328 does not contain the code, only
+\code{value\_digest}. Likewise, the \code{context.updated} event that
+announced version 3 carries the item ids but not the findings:
+
+\begin{lstlisting}[style=engine, caption={The \code{context.updated} event for version 3 (payload).}]
+"payload": { "version": 3,
+             "digest": "52bb563795b8cc12b113764419299f455aaa64f21e65b63fcf2f3952e0242fea",
+             "items": ["finding-path", "finding-tls"],
+             "context_content_digest": "5ac378153ac571b6", "context_content_chars": 734 }
+\end{lstlisting}
+
+\noindent A digest is enough to \emph{prove} what an agent saw without
+revealing it: whoever holds the prompt (the engine can rebuild it from the
+models and the pinned context version) can hash it and compare. The
+redaction is applied by the emitter, before any sink sees the event, in one
+of three modes:
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Mode & What an event payload contains \\
+\midrule
+minimal & status, ids, digests, durations, counts \\
+standard (default) & the above, plus context pins and versions, and token counts \\
+debug & the above, plus raw prompts, values, footprints or context content, each only if its own switch is on \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent Rejection reasons count as content, because a validator's reason
+can quote the rejected value.
+
+\subsection{Step O5: answering the lead's questions}
+
+With the timeline in hand, each question of \Cref{sec:obs-why} is a query,
+not an investigation:
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+Question & Query & Answer on \texttt{chakin} \\
+\midrule
+Q1 why re-implemented & \code{binding.stale} for the target, its \code{cause}; the \code{context.updated} before it & cause \code{context}: version 3 published by SecurityReviewer \\
+Q2 who saw the findings & \code{context.read} events with \code{context\_ids = [security-review]} & Developer (both items) and Tester (\code{finding-path}), versions 2 and 3, 36 reads \\
+Q3 who is stuck & presence (Step~O6); \code{binding.blocked}, \code{context.error} & after the revocation: Tester \emph{failed}, 9 oracles, ``not a reader'' \\
+Q4 what it cost & metrics (Step~O7) & 36 re-derivations (36 LLM calls), all caused by the context \\
+Q5 done or failed & last \code{team.completed} / \code{team.failed} of the run & completed, 0 escalations \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent From Claude Code, the same queries are the MCP tool
+\code{observability\_events} (filters: run, agent, hand-off, event type, time
+range); from a shell, \code{agentm2m workspace events -{}-run <id> -{}-timeline}.
+
+\subsection{Step O6: presence}\label{sec:presence}
+
+A team lead also wants a one-word status per agent. Storing a status per
+agent would create a second state that can disagree with the first, so
+\tool{} \emph{derives} presence from each agent's latest relevant event.
+Binding events move an agent's presence during a run; at the end of every
+run the runtime also emits one \code{agent.<state>} event per agent, computed
+from the run report (any escalation: failed; else anything blocked: blocked;
+else anything awaiting a host value: waiting; else idle). That final event
+matters: without it, an agent whose only escalation disappears without a new
+sample (for example because its context access is restored) would keep
+showing ``failed''.
+
+\begin{center}\small
+\begin{tabular}{@{}l l@{}}
+\toprule
+Latest event of the agent & Presence \\
+\midrule
+none & offline \\
+\code{binding.requested} (engine samples) & working \\
+\code{binding.requested} in host mode (value awaited from Claude Code) & waiting \\
+\code{binding.accepted} & idle \\
+\code{binding.blocked} & blocked \\
+\code{binding.escalated} & failed \\
+\code{agent.idle}, \code{agent.waiting}, \code{agent.blocked}, \code{agent.failed} (end of a run) & that state \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent In the walkthrough run, right after the revocation of Step~C8,
+presence is: Tester \emph{failed} (9 escalated oracles), everyone else
+\emph{idle}, and Analyst \emph{offline}: its model is seeded by the loader,
+so it never has a binding to fill. Once access is restored, the next run
+finds the oracles' stamps fresh again (their pinned findings did not change),
+makes no LLM call, and reports the Tester \emph{idle}. In the middle of a
+host-mode run, an agent whose bindings are waiting for a Claude Code subagent
+shows as \emph{waiting}.
+
+\subsection{Step O7: metrics and coverage}\label{sec:obs-metrics}
+
+Because every event is typed and correlated, operational and research
+measures are counts over the timeline. For the whole walkthrough run:
+
+\begin{center}\small
+\begin{tabular}{@{}l r l@{}}
+\toprule
+Measure & Value & Computed from \\
+\midrule
+runs & 6 & \code{team.started} \\
+values accepted / LLM calls & 81 / 81 & \code{binding.accepted}, \code{binding.rejected} \\
+obligations created & 36 & \code{obligation.created}, de-duplicated \\
+\quad of which context-induced & 36 & cause contains \code{context} \\
+context reads & 36 & \code{context.read} \\
+context reuse & 2 agents, 18 bindings & pins in \code{binding.accepted} \\
+context amplification & 18 values per version & per (context, version) \\
+escalations & 9 (all from the revocation of Step~C8) & \code{binding.escalated}, de-duplicated \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Two of these are new research measures that only exist because
+knowledge flow is recorded: \emph{context reuse} (how many agents and values
+one context reached) and \emph{context-induced obligations} (how much
+re-work knowledge changes cause, as distinct from requirement changes).
+Re-reported items, such as an obligation seen again on a second
+\code{next\_bindings} call, are counted once, by (target, binding,
+footprint version).
+
+\paragraph{Coverage.} How do we know nothing was missed? Every
+\code{run} returns its own report (targets created and deleted, values
+sampled, escalations); \emph{coverage} is the share of those transitions that
+appear as events of the same run. It is 1.0 for every run in this document
+and in the test suite, which checks it.
+
+\paragraph{Cost.} Observability is cheap enough to leave on: writing an event
+to the local timeline takes about 18\,$\mu$s, and on a 200-story team the
+emitter accounted for 2.1\% of a run's time (\file{tests/perf}).
+
+% ===========================================================================
+\section{Observing across processes and machines (Nostr)}\label{sec:nostr}
+% ===========================================================================
+
+\subsection{The problem: a team that is not in one place}
+
+The timeline of \Cref{sec:obs} is a file inside one workspace. That is enough
+while the whole team runs in one process. It stops being enough when:
+\begin{itemize}[nosep]
+\item bindings are filled by several Claude Code subagents or by separate
+processes, and someone wants to watch all of them live;
+\item part of the team runs on another machine (say, the Security Reviewer
+runs where the security tooling lives) and its findings must reach the
+Developer's machine (\Cref{sec:context}); or
+\item an external observer (a dashboard, an auditor) needs a record it does
+not have to take on trust from whoever ran the team.
+\end{itemize}
+\noindent The last point is the subtle one. If events are shipped to a
+server as plain JSON, anyone who can write to that server can forge an event
+such as ``the Tester accepted all oracles''. What is needed is a transport
+where every event \emph{proves who sent it} and \emph{cannot be altered},
+without depending on one company's server. \tool{} uses Nostr for this, as an
+optional add-on (\code{pip install 'agentm2m[nostr]'}).
+
+\subsection{Background: Nostr in one page}\label{sec:nostr-bg}
+
+Nostr (``Notes and Other Stuff Transmitted by Relays'') is an open protocol,
+specified in short documents called NIPs. It needs only four ideas.
+
+\what{Keys.} Every participant has a \emph{key pair}: a secret key, kept
+private, and a public key derived from it, which identifies the participant
+(64 hexadecimal characters; for people it is often shown as an \code{npub1\ldots}
+string). With the secret key one can \emph{sign} a message. Anyone holding
+only the public key can check that the signature was produced by the matching
+secret key for exactly that message (Nostr uses Schnorr signatures, BIP-340).
+Changing one character of the message makes the check fail.
+
+\what{Events.} Everything in Nostr is an \emph{event}: a JSON object with the
+author's public key, a creation time, a \emph{kind} (a number that says what
+sort of event it is), a list of \emph{tags} (short labelled values used for
+searching), and a \emph{content} string. The event's \code{id} is the SHA-256
+hash of these fields, and \code{sig} is the author's signature of the
+\code{id}. So the id fixes the content, and the signature fixes the author.
+
+\what{Relays.} A \emph{relay} is a server that accepts signed events,
+stores them and sends them to subscribers. A relay cannot forge or alter an
+event without the change being detected, since the id and signature would no
+longer match. It can only drop events, or serve old ones. Anyone can run
+a relay; a client can use several at once. Relays keep \emph{regular} kinds
+(1000--9999) forever, but keep only the latest event per author for
+\emph{addressable} kinds (30000--39999) and a \code{d} tag.
+
+\what{Filters.} A client asks a relay for events by kind, author, time and
+\emph{single-letter} tags (relays index only those), and can subscribe to new
+events matching the same filter.
+
+\paragraph{Why this fits an agent team.} Signed events give exactly the
+property the last bullet above asked for: an observer can verify every event
+itself, with nothing but public keys. Relays are interchangeable and need no
+AgentM2M-specific code. And the protocol is small enough that the whole
+adapter (\file{src/agentm2m/nostr/}) is a few hundred lines. \tool{} does not
+use Nostr's social features and does not depend on any particular Nostr
+application.
+
+\paragraph{What Nostr is \emph{not} used for.} Nostr never holds the
+authoritative state. Models, trace links, stamps, $\varphi$ and $\omega$ stay
+with the engine (\Cref{sec:obs-bg}): the relay receives a \emph{copy} of the
+timeline. If the relay is down, the team works exactly as before.
+
+\begin{table}[h]
+\centering\small
+\caption{Nostr vocabulary as \tool{} uses it, with \texttt{chakin} instances.}
+\label{tab:nostr-glossary}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+Term & Meaning in \tool{} & \texttt{chakin} instance \\
+\midrule
+Agent identity & Optional public key of an agent, declared in \file{team.yaml}; the agent id stays the engine's identifier. & \code{agents: Architect: nostr: \{pubkey, identity\_ref: architect\}} \\
+Engine key & The workspace's own key, used to sign for agents without a local key. & demonstration key \code{f9308a01\ldots} \\
+Kind 4930 & Timeline events (regular kind: relays keep all). & every event of \Cref{sec:obs} \\
+Kind 34930 & Agent presence (addressable, \code{d = agent}: the latest replaces the previous). & \code{agent.idle} for the Developer \\
+Kind 4931 & Shared-context versions, for contexts marked \code{visibility: relay}. & \code{security-review} if shared across machines \\
+Outbox & Local queue of signed events not yet confirmed by a relay. & 94 events during the outage of Step~N3 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent \tool{}'s kinds are an application namespace chosen from unassigned
+numbers, not standardized NIPs, and they are configurable. They are regular
+on purpose: had the timeline used an addressable kind, relays would keep only
+the latest event per agent and silently discard the rest of the history.
+
+\subsection{Step N1: identities and keys}
+
+An agent's Nostr identity is public metadata; its secret key is a credential
+and never appears in \file{team.yaml}, \file{config.yaml} or the state files
+(the loader rejects fields such as \code{private\_key} or \code{nsec}). A key
+is created with \code{agentm2m nostr keygen architect}, which writes
+\file{.agentm2m/secrets/architect.key} with owner-only permissions and prints
+only the public key; it can also come from the environment
+(\code{AGENTM2M\_NOSTR\_KEY\_ARCHITECT}). An agent whose \code{identity\_ref}
+resolves to a local key signs its own events. Every other agent's events are
+signed by the engine key and carry the agent's public key in a \code{p} tag
+when it has one. The walkthrough run declares no agent keys, so all its
+events are signed by the engine key. For reproducibility it uses a public test
+key (BIP-340 test vector, secret key 3), whose public key is
+\code{f9308a019258\ldots}; a real workspace generates its own on first use.
+
+\subsection{Step N2: from an AgentM2M event to a signed Nostr event}
+
+\Cref{lst:nostr-event} is the Nostr event for event 328 of
+\Cref{lst:timeline}, the Developer's acceptance of the \code{download} body
+with the findings, as the relay stored it.
+
+\begin{lstlisting}[style=engine, caption={Event 328 of the timeline as a signed Nostr event (real output; \code{content} abridged).}, label={lst:nostr-event}]
+{ "id":     "ff9e0f63dde0ba564bb540c1a9cfabf3b25ca766f6741c12ba03cac42ec4cb38",
+  "pubkey": "f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9",
+  "created_at": 1760000082,   "kind": 4930,
+  "tags": [ ["t", "agentm2m"], ["t", "agentm2m-run-run-20251009T085438-003"],
+            ["type", "binding.accepted"], ["schema", "agentm2m.event/1"],
+            ["workspace", "chakin-pilot"], ["run", "run-20251009T085438-003"],
+            ["agent", "Developer"], ["handoff", "Arch2Code"], ["rule", "Operation2CodeEdit"],
+            ["target", "Operation2CodeEdit::ce::op=Operation#Global_functions::download"],
+            ["binding", "body"],
+            ["trace", "Arch2Code::Operation2CodeEdit::op=Operation#Global_functions::download"],
+            ["context", "security-review"],
+            ["alt", "AgentM2M event: binding.accepted (Developer Arch2Code body)"] ],
+  "content": "{\"event_type\":\"binding.accepted\", \"seq\":328, ...,
+               \"payload\":{\"attempts\":1, \"footprint_version\":\"3e0a20f81349f199\",
+               \"pins\":[{\"context_id\":\"security-review\",\"version\":2,...}],
+               \"value_digest\":\"058a70177cf1abac\", ...}}",
+  "sig": "a06a22d34b41bbabe2e1292c2e58b5cd459412a984c990d37933cca31dc11ab1
+          8148afaec53cf799f513bb43c213536c78504ba34510881f06c8641b9efc93f2" }
+\end{lstlisting}
+
+\noindent The mapping is mechanical:
+\begin{itemize}[nosep]
+\item \code{content} is the AgentM2M event of \Cref{sec:obs}, \emph{after}
+privacy redaction, so the code itself is not in it, only
+\code{value\_digest}.
+\item The two \code{t} tags are single-letter, so relays can filter on them:
+``all AgentM2M events'' and ``all events of this run''. The other tags repeat
+the correlation ids for clients; relays do not index them, so a client filters
+on them \emph{after} verifying the event.
+\item \code{alt} is a one-line human summary (NIP-31) for generic Nostr
+clients that do not know kind 4930.
+\item \code{id} is the hash of the event's fields and \code{sig} the engine
+key's signature of that hash.
+\end{itemize}
+
+\subsection{Step N3: publishing without slowing the team down}\label{sec:outbox}
+
+A relay may be slow or unreachable. If the engine waited for it, a network
+problem would stall the team, which the projection rule of \Cref{sec:obs-bg}
+forbids. Publishing therefore goes through an \emph{outbox}:
+
+\begin{enumerate}[nosep]
+\item The signed event is first appended to the local file
+\file{.agentm2m/state/observability/outbox.jsonl}.
+\item One attempt is made to publish it. If the relay confirms, the outbox
+entry is marked done.
+\item If the attempt fails, the entry stays, with a retry time that doubles
+after each failure, and a \emph{circuit breaker} sends the following events
+straight to the outbox until that time has passed. A dead relay therefore
+costs at most one quick failed attempt per backoff period, not one per event.
+\item After each workspace operation, and on \code{nostr\_publish} /
+\code{agentm2m nostr flush}, due entries are retried. A process that restarts
+finds its unsent events in the file.
+\end{enumerate}
+
+\noindent The walkthrough run tests this. With the relay switched off, the
+reviewer publishes a further revision of \code{finding-tls}, and the team
+runs:
+
+\begin{lstlisting}[style=engine, caption={Relay outage during a run.}]
+LLM calls: 9 (the 9 bodies; no oracle reads finding-tls)    phi: true
+outbox depth: 94 events          relay attempts while down: 5
+relay back -> flush:  published 94, failed 0, remaining 0
+\end{lstlisting}
+
+\noindent The run's result is the same as with the relay up, and every event
+arrives afterwards. Delivery is \emph{at least once}: if a confirmation is
+lost, the event is sent again, and relays discard the duplicate because its
+id is the same.
+
+\subsection{Step N4: reading events back, and why verification matters}
+
+An observer, or the \code{nostr\_events} tool, queries relays with filters
+such as ``kind 4930, with the run's \code{t} tag''. Every returned event is
+treated as untrusted until it passes four checks:
+\begin{enumerate}[nosep]
+\item the id is recomputed from the fields and the signature verified against
+the public key;
+\item the public key is the engine key or the key of an agent of this team;
+\item the content is an AgentM2M event of a schema version the reader
+understands;
+\item the event belongs to this workspace.
+\end{enumerate}
+\noindent For the walkthrough run, all 677 events published to the relay
+pass. The test suite also has a relay serve two hostile events: one altered
+after signing (rejected as \emph{invalid}) and one correctly signed by a
+stranger's key (rejected as \emph{untrusted author}). Only the 677 genuine
+ones are returned.
+
+\subsection{Step N5: sharing context across machines}\label{sec:context-sync}
+
+A shared context whose policy says \code{visibility: relay} is also
+published, one event (kind 4931) per new version. Unlike timeline events, this
+event carries the content of the version, because the receiving machine needs
+it, and it changes the receiver's state. Its rules are therefore stricter:
+
+\begin{itemize}[nosep]
+\item \textbf{Sending.} The version must be signed with the \emph{writing
+agent's own key}. The engine key cannot vouch for an agent's write. A
+machine without the reviewer's key keeps its update local and says so.
+\item \textbf{Receiving} (\code{context\_sync}). The receiving workspace
+applies a version only if, in order: the signature verifies; the schema and
+the team namespace match; the claimed writer is a known agent \emph{and} the
+signing key is that agent's key; the context exists locally and the
+\emph{local} policy lets that agent write it; the version is exactly the next
+one after the local version and was built on the local digest; the items match
+the claimed digest; and every new or changed item is attributed to the writer.
+\end{itemize}
+
+\noindent On \texttt{chakin} this means: if the Security Reviewer runs on
+machine A and the Developer on machine B, a new version of
+\code{security-review} written on A appears on B after \code{context\_sync},
+and from there the Developer's bindings become obligations exactly as in
+\Cref{sec:context-revise}. A forged version (wrong key, a writer the local
+policy does not allow, a version that skips or forks, altered content, or
+an item claiming another author) is refused with its reason; each case is a
+test in \file{tests/nostr/test\_context\_sync.py}. A relay never creates a
+context, and it never overrides the local policy. Content sent to a relay is
+not encrypted, so confidential contexts should stay \code{private}, or use
+a private relay.
+
+\begin{table}[h]
+\centering\small
+\caption{What each component may decide.}
+\label{tab:authority}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+Component & Decides & Never decides \\
+\midrule
+Engine (\Cref{sec:step4,sec:step7}) & structure, trace links, stamps, obligations, $\varphi$, $\omega$ & \\
+Shared context (\Cref{sec:context}) & what knowledge a declared binding sees; obligations through stamps & elements, write rights, acceptance by itself \\
+Local timeline (\Cref{sec:obs}) & nothing (a record) & any engine decision \\
+Nostr relay (this section) & nothing (a copy, delivered at least once) & any engine decision; any context change without verification and local authorization \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ===========================================================================
 \section{The experiments: setup, results and discussion}\label{sec:experiments}
 % ===========================================================================
 
@@ -2096,6 +3136,54 @@ configuration, and they review only the operations that exist at that moment
 on every repository with both models, because it follows from the new
 hand-off's rule, not from the LLM.
 
+\subsection{Shared context and observability: how they will be evaluated}\label{sec:ctx-eval}
+
+The experiments above were run before shared context and observability
+existed, so they do not measure them. The prototype contains the harness for
+that evaluation (\file{evaluation/harness/context\_eval.py}), but at the time
+of writing it has only been run with test backends. We therefore describe
+\emph{what it measures}, not results.
+
+\paragraph{Scenario.} The DevTeam, plus a Security Reviewer added by HOT,
+whose fixed security finding should shape the Developer's code and the
+Tester's oracles. The finding text is fixed, not generated, so every
+configuration receives the same knowledge and only the way it travels differs.
+
+\paragraph{Four configurations, same model and settings.}
+\begin{center}\small
+\begin{tabular}{@{}l c c c c@{}}
+\toprule
+Configuration & Structured hand-off & Traceability & Shared context & Nostr \\
+\midrule
+Free text (finding pasted into prompts by hand) & no & no & no & no \\
+\tool{} & yes & yes & no & no \\
+\tool{} + context & yes & yes & yes & no \\
+\tool{} + context + Nostr & yes & yes & yes & yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Measures.} \emph{Retention}: the share of code bodies and oracles
+that reflect the finding, before and after it is revised.
+\emph{Change precision and recall}: the bindings a revision obliges, against
+the set that should be redone. LLM calls and tokens, for the build and for the
+revision. \emph{Context reuse} and \emph{context-induced obligations}
+(\Cref{sec:obs-metrics}). \emph{Observability coverage}.
+
+\paragraph{Control.} \tool{}~+~context and \tool{}~+~context~+~Nostr use the
+same model, prompts, rules, footprints, context, temperature and resample
+budget, and the harness refuses to report unless both sent exactly the same
+set of prompts to the LLM. Nostr can therefore change what is observed, never
+what the team produces.
+
+\paragraph{What the mechanism already guarantees.} Some outcomes follow from
+the rules rather than from the model, as the change-impact results above did.
+Without shared context, \tool{} has no channel from the reviewer to the code,
+so a revised finding obliges nothing (recall 0). With it, the revision
+obliges exactly the bindings that declare the context (\Cref{sec:context-revise}).
+Whether the code actually honours the finding depends on the model, and that
+is what the real runs must show.
+
 \subsection{Discussion: what the results do and do not show}
 
 \paragraph{What they show.} Handing off \emph{models} instead of free text
@@ -2162,6 +3250,17 @@ lifting text into a model is invisible to every check downstream.
 function that ignores the criterion.
 \item Failure modes rooted in a single agent's reasoning (MAST FM-1.1, 2.2,
 2.6) are out of reach of a coordination layer.
+\item Context references are declared per rule, not per match: a finding
+about \code{download} obliges the bodies of all nine operations
+(\Cref{sec:context-precision}). Item selection narrows this; a selection
+that depends on the match does not exist yet.
+\item Shared context makes knowledge \emph{available} and change-tracked; like
+footprints, it cannot make a model \emph{use} it. A validator that checks a
+finding (e.g., an oracle for the path rule) is what turns it into a
+guarantee.
+\item Contexts synced over Nostr are not encrypted. Observability events are
+redacted, but their ids and digests still reveal the team's structure and
+activity to whoever can read the relay.
 \end{itemize}
 
 % ===========================================================================
@@ -2181,20 +3280,46 @@ python -m evaluation.analysis.make_two_model_figures
 # Final logs:
 evaluation/harness/logs/devbench_rq{1,2,3}_qwen2.5-coder-7b_*.jsonl
 evaluation/harness/logs/devbench_rq{1,2,3}_qwen3.8-27b_*.jsonl  # RQ2 in two files (resumed run)
+# Shared context, observability, Nostr on chakin (writes
+# evaluation/results/walkthrough/*.json), and the test of the quoted values:
+python -m evaluation.harness.chakin_context_walkthrough
+pytest tests/test_chakin_context_walkthrough.py
+# The four-configuration context evaluation:
+python -m evaluation.harness.context_eval --llm ollama --model qwen2.5-coder:7b
+# A local Nostr relay and the timeline, for a persistent workspace:
+agentm2m nostr serve --port 7777
+agentm2m workspace events --run <run id> --timeline
+agentm2m nostr events --run <run id> --timeline
 # Pre-fix logs quoted in the walkthrough:
 evaluation/harness/logs/archive_pre_fix/devbench_rq{1,2,3}_qwen3-coder-30b_20260928T193321Z.jsonl
 \end{lstlisting}
 
-Relevant sources: \file{evaluation/harness/devbench_loader.py} (seeding),
-\file{devbench_metamodels.py} (Step~1), \file{devbench_agentm2m_config.py}
-(Step~2), \file{devbench_rules/*.agentm2m} (Step~3),
-\file{src/agentm2m/engine/executor.py} and \file{binding.py} (Step~4 and the token rules),
-\file{evaluation/harness/token_meter.py} (token accounting),
-\file{evaluation/analysis/make_two_model_figures.py} (figures and per-repository data),
-\file{engine/lift.py} (Step~5), \file{engine/trace.py} and
-\file{impact_injector_devbench.py} (Step~6), \file{team/runtime.py}
-(Step~7 and fixpoint), \file{team/hot.py} and \file{hot_reviewer_rq3.py}
-(HOT).
+Relevant sources:
+{\raggedright
+\begin{itemize}[nosep]
+\item Seeding and Steps~1--3: \file{evaluation/harness/devbench_loader.py},
+\file{devbench_metamodels.py}, \file{devbench_agentm2m_config.py},
+\file{devbench_rules/*.agentm2m}.
+\item Step~4 and the token rules: \file{src/agentm2m/engine/executor.py},
+\file{binding.py}; token accounting: \file{evaluation/harness/token_meter.py};
+figures and per-repository data:
+\file{evaluation/analysis/make_two_model_figures.py}.
+\item Steps~5--7 and HOT: \file{engine/lift.py}, \file{engine/trace.py},
+\file{impact_injector_devbench.py}, \file{team/runtime.py},
+\file{team/hot.py}, \file{hot_reviewer_rq3.py}.
+\item Shared context: \file{src/agentm2m/context/} (model, store, resolver,
+Nostr sync) and \file{engine/binding.py} (\code{stamp_for}, effective
+stamps, obligation causes).
+\item Observability and Nostr: \file{src/agentm2m/observability/} (events,
+emitter, privacy, presence, metrics) and \file{src/agentm2m/nostr/} (keys,
+events, signing, relays, outbox).
+\item The runs behind \Cref{sec:context,sec:obs,sec:nostr}:
+\file{evaluation/harness/chakin_context_walkthrough.py}; the evaluation of
+\Cref{sec:ctx-eval}: \file{evaluation/harness/context_eval.py}.
+\item User-facing references: \file{docs/SHARED_CONTEXT.md},
+\file{docs/NOSTR.md}.
+\end{itemize}
+}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
