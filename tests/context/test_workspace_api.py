@@ -80,9 +80,9 @@ def test_context_create_rejects_declared_and_bad_input(ws: Workspace):
 
 def test_context_search_only_readable(ws: Workspace):
     ws.context_update("security-review", as_agent="Architect", expected_version=1, items=[FINDING, DECISION])
-    hits = ws.context_search("authentication", as_agent="Developer")["hits"]
+    hits = ws.context_search("authenticat", as_agent="Developer")["hits"]
     assert {h["item_id"] for h in hits} == {"finding-001", "decision-002"}
-    assert ws.context_search("authentication", as_agent="Analyst")["hits"] == []
+    assert ws.context_search("authenticat", as_agent="Analyst")["hits"] == []
     assert [h["item_id"] for h in ws.context_search("x", as_agent="Developer", type="design-decision")["hits"]] in (
         [], ["decision-002"])
 

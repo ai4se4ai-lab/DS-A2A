@@ -128,9 +128,9 @@ class Outbox:
         with self._locked():
             return sorted(self._records.values(), key=lambda r: (r["event"].get("created_at", 0), r["id"]))
 
-    def due(self) -> list[dict]:
+    def due(self, *, force: bool = False) -> list[dict]:
         now = self.clock()
-        return [r for r in self.pending() if r["next_try"] <= now]
+        return [r for r in self.pending() if force or r["next_try"] <= now]
 
     def depth(self) -> int:
         with self._locked():

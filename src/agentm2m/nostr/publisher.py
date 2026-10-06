@@ -125,9 +125,12 @@ class NostrEventSink:
             return PublishResult(False, nev.id, "deferred: relay backoff; queued in outbox")
         return self._attempt(nev)
 
-    def flush(self, *, max_events: int | None = None) -> dict:
+    def flush(self, *, max_events: int | None = None, force: bool = False) -> dict:
+        """Retry outbox items that are due (`force`: all of them, now)."""
+        if force:
+            self._retry_at = 0.0
         published = failed = 0
-        for rec in self.outbox.due():
+        for rec in self.outbox.due(force=force):
             if self.breaker_open or (max_events is not None and published + failed >= max_events):
                 break
             res = self._attempt(NostrEvent.from_dict(rec["event"]))

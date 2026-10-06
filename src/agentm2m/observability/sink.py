@@ -73,3 +73,30 @@ class CompositeSink:
                 first = first or exc
         if first is not None:
             raise first
+
+
+def event_category(event_type: str) -> str:
+    """Publish category of an event type (config `nostr.publish.<category>`)."""
+    if event_type.endswith(".error"):
+        return "errors"
+    prefix = event_type.split(".", 1)[0]
+    return {"agent": "agents", "binding": "bindings", "trace": "traces", "context": "contexts"}.get(prefix, "execution")
+
+
+class FilteredSink:
+    """Pass through only the event categories `allow(category)` accepts."""
+
+    enabled = True
+
+    def __init__(self, sink: object, allow) -> None:
+        self.sink = sink
+        self.allow = allow
+
+    def publish(self, ev: AgentM2MEvent) -> object:
+        if self.allow(event_category(ev.event_type)):
+            return self.sink.publish(ev)  # type: ignore[attr-defined]
+        return None
+
+    def flush(self, **kw) -> object:
+        flush = getattr(self.sink, "flush", None)
+        return flush(**kw) if flush else None

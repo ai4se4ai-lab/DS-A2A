@@ -27,7 +27,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-from .config import LLMConfig
+from .config import LLMConfig, WorkspaceConfig
 from .context.errors import ContextError
 from .context.model import ContextPolicy
 from .context.resolver import ContextResolver, ContextUnavailable
@@ -43,7 +43,7 @@ from .llm.host_backend import HostBackend
 from .nostr.identity import AgentIdentity, IdentityError, load_identities
 from .observability.emitter import Emitter, noop_emit
 from .observability.presence import derive_presence
-from .observability.sink import CompositeSink, JsonlEventSink
+from .observability.sink import CompositeSink, FilteredSink, JsonlEventSink
 from .observability.timeline import read_timeline
 from .rules.ast import Module, StochasticBinding
 from .rules.parser import parse_module_file
@@ -64,6 +64,7 @@ from .team.spec import (
     seed_root,
     set_values,
 )
+from .workspace_collab import CollaborationMixin
 
 WORKSPACE_DIRNAME = ".agentm2m"
 # 2: trace links may carry shared-context pins/dependencies (additive; a
@@ -110,7 +111,7 @@ class _Loaded:
     evolutions: list[dict] = field(default_factory=list)
 
 
-class Workspace:
+class Workspace(CollaborationMixin):
     def __init__(
         self,
         project_dir: str | Path,
@@ -136,15 +137,29 @@ class Workspace:
         self._lock = threading.RLock()
         self._loaded: _Loaded | None = None
         self._fingerprint: tuple | None = None
+        try:
+            self.config = WorkspaceConfig.load(self.dir / "config.yaml")
+        except ValueError as exc:
+            raise WorkspaceError(f".agentm2m/config.yaml: {exc}") from exc
         # Collaboration plane: shared contexts live next to state.json.
         self.contexts = LocalContextStore(self.dir / "state" / "context.json")
-        self.context_resolver = ContextResolver(self.contexts)
-        # Observability: the local timeline is always kept; `event_sink`
-        # (e.g. a NostrEventSink) is added next to it. Never authoritative.
+        self.context_resolver = ContextResolver(self.contexts) if self.config.context.enabled else None
+        # Observability plane (never authoritative): the local timeline, plus
+        # `event_sink` if given, else Nostr when config.yaml enables it.
+        self._nostr = None
+        if event_sink is None and self.config.nostr.enabled:
+            self._nostr = self._make_nostr_sink(clock)
+            event_sink = FilteredSink(self._nostr, self.config.nostr.publishes)
         self._extra_sink = event_sink
+        sinks: list[object] = []
+        if self.config.observability.timeline:
+            sinks.append(JsonlEventSink(self.timeline_path))
+        if event_sink is not None:
+            sinks.append(event_sink)
         self.emitter = Emitter(
-            CompositeSink([JsonlEventSink(self.timeline_path), *([event_sink] if event_sink is not None else [])]),
+            CompositeSink(sinks),
             workspace_id="",
+            privacy=self.config.observability.privacy,
             **({"clock": clock} if clock is not None else {}),
         )
 
@@ -169,7 +184,7 @@ class Workspace:
 
     def _after_op(self) -> None:
         """Give sinks with a backlog (the Nostr outbox) a chance to drain."""
-        flush = getattr(self._extra_sink, "flush", None)
+        flush = getattr(self._nostr or self._extra_sink, "flush", None)
         if flush is not None:
             try:
                 flush()
@@ -376,11 +391,23 @@ class Workspace:
     def init(self, template: str = "devteam", *, force: bool = False) -> dict:
         with self._lock:
             src = _template_dir(template)
+            if self.exists() and not force:
+                raise WorkspaceError(f"{self.dir} already exists; pass force=true to replace it")
+            # config.yaml and secrets/ are the user's settings and keys, not
+            # team state: they survive a (forced) re-init.
+            keep = {"config.yaml", "secrets"}
             if self.dir.exists():
-                if not force:
-                    raise WorkspaceError(f"{self.dir} already exists; pass force=true to replace it")
-                shutil.rmtree(self.dir)
-            shutil.copytree(src, self.dir, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                for child in self.dir.iterdir():
+                    if child.name in keep:
+                        continue
+                    if child.is_dir() and not child.is_symlink():
+                        shutil.rmtree(child)
+                    else:
+                        child.unlink()
+            shutil.copytree(src, self.dir, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"), dirs_exist_ok=True)
+            self.contexts = LocalContextStore(self.dir / "state" / "context.json")
+            if self.context_resolver is not None:
+                self.context_resolver = ContextResolver(self.contexts)
             self._loaded = None
             self._fingerprint = None
             self._begin("init")
@@ -481,6 +508,11 @@ class Workspace:
                 "phi": loaded.runtime.acceptance_holds() if not open_items else False,
                 "open": open_items[:25],
                 "open_total": len(open_items),
+                "contexts": [
+                    {"context_id": c, "version": self.contexts.snapshot(c).version,
+                     "owner": self.contexts.policy(c).owner}
+                    for c in self.contexts.list()
+                ],
             }
 
     def validate(self) -> dict:
@@ -518,7 +550,9 @@ class Workspace:
                     info["ok"] = False
                     errors.append(f"{hname}: {type(exc).__name__}: {exc}")
                 handoffs.append(info)
-            return {"ok": not errors, "errors": errors, "handoffs": handoffs}
+            ctx_errors, warnings = self._validate_contexts(loaded)
+            errors.extend(ctx_errors)
+            return {"ok": not errors, "errors": errors, "warnings": warnings, "handoffs": handoffs}
 
     # -- models ---------------------------------------------------------
 
