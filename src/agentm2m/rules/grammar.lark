@@ -1,5 +1,5 @@
 // Grammar for the AgentM2M hand-off DSL: ATL-flavored matched rules
-// extended with @llm(prompt, footprint) stochastic bindings and @check
+// extended with @llm(prompt, footprint[, context=...]) stochastic bindings and @check
 // validators (Definition 1 / Fig. "Running example" in docs/DS-A2A.tex).
 
 start: module_decl create_decl uses_decl? rule_decl*
@@ -29,7 +29,11 @@ binding_list: binding ("," binding)*
         | check_clause
 
 structural_binding: NAME "<-" expr
-stochastic_binding: NAME "<-" "@llm" "(" expr "," expr ")"
+stochastic_binding: NAME "<-" "@llm" "(" expr "," expr llm_context? ")"
+// Optional shared-context dependency: context = 'id' | ['id', 'id#item', ...]
+llm_context: "," "context" "=" ctx_list
+ctx_list: STRING
+        | "[" STRING ("," STRING)* "]"
 check_clause: "@check" expr
 
 // ---- OCL-subset expression grammar -----------------------------------

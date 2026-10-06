@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from lark import Lark, Transformer
@@ -8,6 +9,28 @@ from . import ast as A
 
 _GRAMMAR_PATH = Path(__file__).parent / "grammar.lark"
 _parser = Lark(_GRAMMAR_PATH.read_text(), parser="earley", start="start")
+
+
+_CTX_ID = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.:-]{0,127}$")
+
+
+def _context_refs(raw: list[str]) -> tuple[A.ContextRefSpec, ...]:
+    """'id' / 'id#item' strings -> one ContextRefSpec per context, in first-
+    mention order; a whole-context mention subsumes item selections."""
+    order: list[str] = []
+    items: dict[str, list[str] | None] = {}
+    for s in raw:
+        cid, sep, item = s.partition("#")
+        if not _CTX_ID.match(cid) or (sep and not _CTX_ID.match(item)):
+            raise ValueError(f"invalid context reference {s!r} (use 'context-id' or 'context-id#item-id')")
+        if cid not in items:
+            order.append(cid)
+            items[cid] = []
+        if not sep:
+            items[cid] = None
+        elif items[cid] is not None and item not in items[cid]:
+            items[cid].append(item)
+    return tuple(A.ContextRefSpec(cid, tuple(items[cid] or ())) for cid in order)
 
 
 class _BareCheck:
@@ -73,10 +96,18 @@ class _ToAST(Transformer):
         (expr,) = children
         return _BareCheck(expr)
 
+    def ctx_list(self, children):
+        return list(children)
+
+    def llm_context(self, children):
+        (refs,) = children
+        return _context_refs(refs)
+
     def stochastic_binding(self, children):
-        name, prompt_expr, footprint_expr = children
+        name, prompt_expr, footprint_expr = children[:3]
+        refs = children[3] if len(children) > 3 else ()
         return A.StochasticBinding(
-            name=name, prompt_expr=prompt_expr, footprint_expr=footprint_expr, check_expr=None
+            name=name, prompt_expr=prompt_expr, footprint_expr=footprint_expr, check_expr=None, context_refs=refs
         )
 
     def binding_list(self, children):

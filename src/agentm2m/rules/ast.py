@@ -35,12 +35,24 @@ class StructuralBinding:
     expr: Expr
 
 
+@dataclass(frozen=True)
+class ContextRefSpec:
+    """A declared shared-context dependency of an @llm binding:
+    `'ctx-id'` (the whole context) or `'ctx-id#item-id'` (selected items)."""
+
+    context_id: str
+    item_ids: tuple[str, ...] = ()
+
+
 @dataclass
 class StochasticBinding:
     name: str
     prompt_expr: Expr
     footprint_expr: Expr
     check_expr: Expr | None
+    # Shared contexts the binding may read (`context=` argument). Empty for
+    # every pre-context rule, which keeps their stamps and prompts unchanged.
+    context_refs: tuple[ContextRefSpec, ...] = ()
 
 
 Binding = Union[StructuralBinding, StochasticBinding]
