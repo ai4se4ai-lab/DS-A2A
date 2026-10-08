@@ -47,6 +47,10 @@ def test_metrics_host_mode_and_dedup(tmp_path: Path):
     assert m["obligations_created"] == 5
     assert m["llm_calls"] == 0  # host mode: the engine never called an LLM
     assert m["host_submissions"] == 7
+    # host-submitted values report the context versions they were derived from, so the
+    # context metrics are not blind in host mode
+    assert m["context_reuse"]["security-review"]["bindings"] == 5
+    assert m["context_amplification"]["security-review@2"] == 5
 
 
 def test_metrics_empty():

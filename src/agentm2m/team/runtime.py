@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..context.resolver import ContextUnavailable
+from ..context.resolver import ContextUnavailable, public_pin
 from ..engine.binding import _retry_prompt, accept_sample, build_prompt, stamp_for
 from ..engine.executor import (
     HandoffReport,
@@ -289,12 +289,15 @@ class TeamRuntime:
         result = self._submit(handoff_name, tp, binding, link, match, target_obj, helpers, target_key, binding_name,
                               value, footprint_version)
         status = result["status"]
+        pins = result.pop("pins", None)
         event = {"accepted": "binding.accepted", "rejected": "binding.rejected", "escalated": "binding.escalated",
                  "stale": "binding.stale", "blocked": "binding.blocked"}.get(status)
         if event:
             payload = {"footprint_version": result.get("footprint_version") or footprint_version, "host": True}
             if "attempts" in result:
                 payload["attempts"] = result["attempts"]
+            if status == "accepted" and pins is not None:
+                payload["pins"] = pins
             if status in ("rejected", "escalated") and result.get("reason"):
                 payload["reason"] = result["reason"]
             emit(event, payload=payload)
@@ -329,7 +332,11 @@ class TeamRuntime:
             resolved=resolved, dependencies=bs.dependencies,
         )
         if ok:
-            return {**base, "status": "accepted", "footprint_version": fp_digest}
+            # `pins` lets submit_binding report which context versions this value was derived from
+            # (the engine path reports them on its own binding.accepted event); it is removed again
+            # before the result is returned to the host.
+            return {**base, "status": "accepted", "footprint_version": fp_digest,
+                    "pins": [public_pin(rc.pin()) for rc in resolved]}
 
         prev = link.rejections.get(binding_name)
         attempts = (link.attempts.get(binding_name, 0) if prev and prev.get("digest") == fp_digest else 0) + 1

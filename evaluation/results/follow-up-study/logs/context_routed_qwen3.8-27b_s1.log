@@ -1,0 +1,6 @@
+writing evaluation/results/follow-up-study/raw/context_study_qwen3.8-27b_s1_20261007T015508Z.jsonl
+[2026-10-06T18:55:08] qwen3.8:27b s1 geotext / routed
+[2026-10-06T18:59:33] qwen3.8:27b s1 chakin / routed
+[2026-10-06T19:04:12] qwen3.8:27b s1 particle-swarm-optimization / routed
+[2026-10-06T19:11:22] qwen3.8:27b s1 ArXiv_digest / routed
+done

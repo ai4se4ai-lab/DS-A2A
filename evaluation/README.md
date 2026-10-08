@@ -201,25 +201,16 @@ architecture_design.md}` plus real, executable `acceptance_tests/` and
 Criterion), $M_{arch}$ (UML -> Component/Operation), and the oracles of
 $M_{test}$ (the real tests -- not a generated stand-in).
 
-**Scope of this pilot** (reported here rather than only in the paper): 6 of
-DevBench's 10 Python repos (`chakin`, `geotext`, `readtime`,
-`particle-swarm-optimization`, `Hybrid_Images`, `stocktrends`), 1 seed, 3
-configs (free-text / shared-schema / AgentM2M, same 4 DevTeam roles as
-`examples/01_devteam`), run once per model for 3 literature-anchored,
-already-pulled local Ollama models (`qwen2.5-coder:7b`, `devstral:24b`,
-`qwen3-coder:30b`). The original plan called for all 10 Python repos;
-measured per-repo latency (a single repo's AgentM2M config alone took
-5-15 minutes on this hardware, dominated by per-operation `@llm` calls) made
-that impractical within this session for 3 models, so the 4 excluded repos
-were dropped for disclosed, non-cherry-picked reasons: `TextCNN` (needs a
-full `torch`/`transformers` training pipeline, orthogonal to what this
-pilot measures), `ArXiv_digest` (its acceptance test shells out to the
-live arXiv API, making pass/fail conflate network availability with
-implementation correctness), and `hone`/`lice` (the two largest
-repositories by operation count, dropped purely to bound runtime). This is
-smaller than the paper's own aspirational protocol (22 repos x 3 languages
-x 3 seeds) -- a deliberate, disclosed trade-off for a *preliminary* pilot,
-not the "Evidence at scale" future work in `sec:future`.
+**Scope.** The NIER paper (`docs/DS-A2A.tex`) reports **8** of DevBench's 10 Python repos
+(`ArXiv_digest`, `chakin`, `geotext`, `hone`, `lice`, `particle-swarm-optimization`, `readtime`,
+`stocktrends`), 1 seed, 3 configurations (free text / shared schema / AgentM2M, the 4 DevTeam roles of
+`examples/01_devteam`) and two local Ollama models (`qwen2.5-coder:7b`, `qwen3.8:27b`). The subject rule is
+mechanical and recorded: a repo is used only if its *reference* implementation passes its own unit and
+acceptance tests in this environment (`python -m evaluation.harness.validate_references`, output
+`results/follow-up-study/csv/reference_validity.csv`). `TextCNN` (needs a Hugging Face download that fails
+offline) and `Hybrid_Images` (its reference fails 8 of its own unit tests) do not qualify. The earlier 6-repo
+pilot with `devstral:24b` and `qwen3-coder:30b` is archived in `harness/logs/archive_pre_fix/` and is *not*
+what the paper reports. The follow-up study (below) repeats the evaluation on all qualifying repos with 3 seeds.
 
 ### Fetching the data
 
@@ -232,10 +223,13 @@ python evaluation/benchmarks/fetch_devbench.py
 
 ```bash
 python -m evaluation.harness.devbench_run_all --llm mock                        # smoke test, no network
-python -m evaluation.harness.devbench_run_all --llm ollama --model qwen2.5-coder:7b
-python -m evaluation.harness.devbench_run_all --llm ollama --model devstral:24b
-python -m evaluation.harness.devbench_run_all --llm ollama --model qwen3-coder:30b
+python -m evaluation.harness.devbench_run_all --llm ollama --model qwen2.5-coder:7b \
+    --repos ArXiv_digest chakin geotext hone lice particle-swarm-optimization readtime stocktrends
+python -m evaluation.harness.devbench_run_all --llm ollama --model qwen3.8:27b --repos <same 8>
 ```
+
+`--seed N` is forwarded to Ollama (`options.seed`), so a logged seed is a real one; `--out-dir` selects where
+the three logs go. Without `--repos` all 10 repos run, including the two that fail the reference check.
 
 Each invocation writes three logs to `harness/logs/`:
 `devbench_rq1_<model>_<ts>.jsonl` (canary retention, MAST modes, real
@@ -247,15 +241,14 @@ retroactive coverage).
 ### Aggregating
 
 ```bash
-python -m evaluation.analysis.aggregate_devbench                 # pooled across all 3 models
-python -m evaluation.analysis.aggregate_devbench --model qwen2.5-coder:7b   # one model only
+python -m evaluation.analysis.make_two_model_figures             # per-repo CSV + figures of the 1-seed NIER pilot
+python -m evaluation.analysis.follow_up_aggregate --validate-legacy   # follow-up study (see below)
 ```
 
-Writes `evaluation/results/csv/devbench_raw_metrics_*.csv` and
-`devbench_summary_*.json` (the exact numbers behind `tab:prelim`), and
-prints the paired 95% bootstrap CI (percentile bootstrap over the 10
-repos) for the canary-retention AgentM2M-vs-shared-schema difference --
-the paper's own RQ1 decision rule.
+`aggregate_devbench.py` and `aggregate_devbench_per_repo.py` target the earlier 6-repo, 3-model pilot
+and are kept only for that archive; the supported aggregator is `follow_up_aggregate.py`, which also
+recomputes the NIER numbers from `harness/logs/` (`--validate-legacy`) to show it is the same
+computation.
 
 ### What's genuinely new here vs. the SWE-bench-Lite track
 
@@ -326,3 +319,32 @@ python -m evaluation.analysis.aggregate_context evaluation/results/context/conte
 The mock backend ignores context, so its retention is 0 everywhere and only exercises the pipeline.
 `tests/test_context_evaluation.py` checks the measurement with a test double that echoes what its
 prompt contains.
+
+## Follow-up study: shared context, traceability and observability (`results/follow-up-study/`)
+
+Paper: `docs/follow-up-study-DS-A2A.tex`. Everything the paper quotes is generated from the logs in
+`results/follow-up-study/raw/` by one script.
+
+```bash
+python -m evaluation.harness.validate_references            # which repos qualify (csv/reference_validity.csv)
+results/follow-up-study/run_nier_replication.sh qwen2.5-coder:7b     # RQ0: NIER evaluation, 3 seeds
+results/follow-up-study/run_nier_replication.sh qwen3.8:27b
+results/follow-up-study/run_context_study.sh qwen2.5-coder:7b "1 2 3"   # RQ1-RQ3 on real teams
+results/follow-up-study/run_context_study.sh qwen3.8:27b "1 2 3"
+python -m evaluation.analysis.follow_up_aggregate --validate-legacy       # csv/, tables/, figures/, macros.tex
+```
+
+`harness/follow_up_context_study.py` runs, per repo/model/seed, four knowledge-distribution policies on the
+DevBench team (`paste`: all items pasted into every consumer prompt, any change re-runs every consumer;
+`routed`: each finding pasted only into the consumers that need it, only those re-run, the strongest manual
+practice; `ctx`: shared context, whole-context pin; `ctxi`: item-level pins) through a schedule of five
+revisions with a known ground truth, then replays the `ctxi` run (identical prompts answered from the
+recording) to test the Nostr projection, a relay outage, event-only reconstruction and overhead, and injects
+21 faults (18 faults, 1 benign control, 2 design-limit probes that are expected to stay silent).
+`--policies routed` runs a single arm; `harness/record_environment.py` writes the server/model/hardware record. `tests/test_follow_up_context_study.py`
+checks the harness invariants on the mock backend.
+
+**Safety note.** The prototype's validators (`harness/devbench_rules/helpers.py`: `loads`, `failsOnStub`) `exec`
+model-generated code in the harness process, and the DevBench grader runs generated modules with the repository's
+tests. A generated oracle once left an empty `test.csv` in the working directory during these runs. Run the
+harness in a container or a disposable checkout, not in a directory you care about.

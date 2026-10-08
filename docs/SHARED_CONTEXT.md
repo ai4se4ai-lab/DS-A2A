@@ -18,7 +18,7 @@ validator or the acceptance predicate (phi).
 | Concept | Meaning |
 |---|---|
 | `ContextItem` | One typed fact: `id`, `type`, `content` (string or object), `author`, `provenance` (`agent`, `view`, `element`, `trace`, `handoff`, `nostr_event`), `confidence`, `scope`. Not a transcript. |
-| `ContextSnapshot` | An immutable version: items plus `digest` = sha256 of the canonical items. The digest doesn't depend on item order or time, so identical content gives an identical digest. Every version stays addressable. |
+| `ContextSnapshot` | An immutable version: items plus `digest` = sha256 of the canonical item records (id, type, content, author, provenance, confidence, scope; sorted by id, independent of time). Identical records give an identical digest, so a revision that changes only an item's author or provenance also changes the digest. Every version stays addressable. |
 | `ContextPolicy` | `owner`, `readers`, `writers`, `visibility` (`private`: listed readers; `team`: every agent may read; `relay`: also synced over Nostr), `expiry`. Runtime read grants (`context_attach`) are owner-only. |
 | `ContextReference` / pin | `(context_id, version, digest, item_ids)`: what a binding consumed. |
 

@@ -8,9 +8,9 @@ view produces one function/method body per Arch!Operation with no
 file-path knowledge, and the free-text/shared-schema baselines produce one
 undifferentiated code blob. We therefore assemble everything into a single
 module string and materialize an identical copy of it at *every* target
-file `repo_config.json`'s `code_file_DAG` names for a repo. For the 8/10
-repos with exactly one target file this is exact; for the 2 multi-file
-repos (hone, particle-swarm-optimization) and TextCNN it over-provides
+file `repo_config.json`'s `code_file_DAG` names for a repo. For the repos
+with exactly one target file this is exact; for the multi-file repos
+(hone, particle-swarm-optimization) and TextCNN it over-provides
 (each file gets every generated symbol, most of them unused) rather than
 under-providing -- generated *content* is still fully accountable to the
 LLM, only cross-file placement is not modeled.

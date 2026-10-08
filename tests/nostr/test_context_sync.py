@@ -170,3 +170,25 @@ def test_old_and_conflicting_versions_rejected():
     reasons = " ".join(r["reason"] for r in report["rejected"])
     assert report["applied"] == 0 and "old version" in reasons and "conflict" in reasons
     assert b_store.snapshot("security-review").version == 3
+
+
+def test_forked_events_for_one_version_are_both_judged():
+    """Two verified events for the same version (a fork by one writer) that arrive
+    before their predecessor must both be judged: the first valid one is applied,
+    the other is reported -- neither may silently displace the other."""
+    relay = MemoryRelay()
+    a_store, a = _node(relay)
+    b_store, b = _node(relay)
+    v1 = b_store.snapshot("security-review")
+    _publish(a_store, a, F1)
+    v2 = a_store.snapshot("security-review")
+    sr = KEYS["SecurityReviewer"]
+    good = _forge(v1, signer=sr, version=3, items=(F1, F2), previous=v2.digest)
+    fork = _forge(v1, signer=sr, version=3, items=(F1, F2.with_content("a different finding")), previous=v2.digest)
+    first_v2 = next(iter(relay.events.values()))
+    report = {"applied": 0, "duplicates": 0, "rejected": []}
+    for ev in (good, fork, first_v2):  # successor events arrive before v2
+        b.receive(ev, report)
+    assert report["applied"] == 2  # v2, then exactly one v3
+    assert len(report["rejected"]) == 1 and "old version" in report["rejected"][0]["reason"]
+    assert b_store.snapshot("security-review").version == 3

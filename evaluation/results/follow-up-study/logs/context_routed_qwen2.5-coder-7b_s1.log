@@ -1,0 +1,10 @@
+writing evaluation/results/follow-up-study/raw/context_study_qwen2.5-coder-7b_s1_20261007T033813Z.jsonl
+[2026-10-06T20:38:13] qwen2.5-coder:7b s1 ArXiv_digest / routed
+[2026-10-06T20:40:34] qwen2.5-coder:7b s1 chakin / routed
+[2026-10-06T20:41:54] qwen2.5-coder:7b s1 geotext / routed
+[2026-10-06T20:43:15] qwen2.5-coder:7b s1 hone / routed
+[2026-10-06T20:47:01] qwen2.5-coder:7b s1 lice / routed
+[2026-10-06T20:51:07] qwen2.5-coder:7b s1 particle-swarm-optimization / routed
+[2026-10-06T20:52:51] qwen2.5-coder:7b s1 readtime / routed
+[2026-10-06T20:56:01] qwen2.5-coder:7b s1 stocktrends / routed
+done

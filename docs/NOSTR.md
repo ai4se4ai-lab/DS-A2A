@@ -116,7 +116,8 @@ Rejections are counted by reason.
 For a context with `visibility: relay`, each new version is published as one kind-4931 event,
 **signed by the writing agent's own key**. The engine key cannot vouch for an agent's write. A
 receiving workspace (`context_sync`, `agentm2m context pull`) applies an event only after all of
-these pass, in order:
+these pass. Checks 1-4 and 6 run at decode time, 5 and 7 when the event is applied, so the content
+digest (6) is verified before version continuity (5):
 
 1. structure, id, signature
 2. schema `agentm2m.context-snapshot` v1, kind, team namespace (`nostr.namespace`, default: team name)
@@ -124,9 +125,13 @@ these pass, in order:
 4. the context already exists locally and the **local** policy lets that agent write it (a relay
    never creates contexts)
 5. version continuity: exactly local+1, built on the local digest (older gives a duplicate or "old
-   version"; another base gives a conflict)
+   version"; another base gives a conflict; a later version waits for its predecessors)
 6. the snapshot digest matches its items (tamper check)
-7. every new or changed item is attributed to the writer
+7. every new or changed item is attributed to the writer (removals are not attributed: a permitted
+   writer may remove any item)
+
+Two valid events for the same version (a fork) are both judged; the first one applied wins and the
+other is reported. There is no general convergence guarantee with several writers per context.
 
 Content leaves the machine only for `visibility: relay` contexts. There is no NIP-44 encryption
 yet, so use a private relay for confidential context.

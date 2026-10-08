@@ -1,0 +1,26 @@
+writing evaluation/results/follow-up-study/raw/context_study_qwen2.5-coder-7b_s1_20261006T220609Z.jsonl
+[2026-10-06T15:06:09] qwen2.5-coder:7b s1 ArXiv_digest / paste
+[2026-10-06T15:31:52] qwen2.5-coder:7b s1 ArXiv_digest / ctx
+[2026-10-06T15:53:33] qwen2.5-coder:7b s1 ArXiv_digest / ctxi
+[2026-10-06T16:04:39] qwen2.5-coder:7b s1 chakin / paste
+[2026-10-06T16:15:12] qwen2.5-coder:7b s1 chakin / ctx
+[2026-10-06T16:37:31] qwen2.5-coder:7b s1 chakin / ctxi
+[2026-10-06T16:41:17] qwen2.5-coder:7b s1 readtime / paste
+[2026-10-06T17:18:40] qwen2.5-coder:7b s1 readtime / ctx
+[2026-10-06T17:41:21] qwen2.5-coder:7b s1 readtime / ctxi
+[2026-10-06T17:55:18] qwen2.5-coder:7b s1 hone / paste
+[2026-10-06T18:39:50] qwen2.5-coder:7b s1 hone / ctx
+[2026-10-06T19:13:03] qwen2.5-coder:7b s1 hone / ctxi
+[2026-10-06T19:27:55] qwen2.5-coder:7b s1 stocktrends / paste
+[2026-10-06T19:39:52] qwen2.5-coder:7b s1 stocktrends / ctx
+[2026-10-06T19:50:31] qwen2.5-coder:7b s1 stocktrends / ctxi
+[2026-10-06T19:55:24] qwen2.5-coder:7b s1 geotext / paste
+[2026-10-06T19:58:23] qwen2.5-coder:7b s1 geotext / ctx
+[2026-10-06T20:01:14] qwen2.5-coder:7b s1 geotext / ctxi
+[2026-10-06T20:02:36] qwen2.5-coder:7b s1 lice / paste
+[2026-10-06T20:11:21] qwen2.5-coder:7b s1 lice / ctx
+[2026-10-06T20:23:27] qwen2.5-coder:7b s1 lice / ctxi
+[2026-10-06T20:27:31] qwen2.5-coder:7b s1 particle-swarm-optimization / paste
+[2026-10-06T20:31:50] qwen2.5-coder:7b s1 particle-swarm-optimization / ctx
+[2026-10-06T20:35:54] qwen2.5-coder:7b s1 particle-swarm-optimization / ctxi
+done

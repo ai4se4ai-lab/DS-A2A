@@ -1,0 +1,18 @@
+writing evaluation/results/follow-up-study/raw/context_study_qwen3.8-27b_s2_20261007T054052Z.jsonl
+[2026-10-06T22:40:52] qwen3.8:27b s2 geotext / paste
+[2026-10-06T22:48:43] qwen3.8:27b s2 geotext / routed
+[2026-10-06T22:52:17] qwen3.8:27b s2 geotext / ctx
+[2026-10-06T23:01:53] qwen3.8:27b s2 geotext / ctxi
+[2026-10-06T23:06:23] qwen3.8:27b s2 chakin / paste
+[2026-10-06T23:14:24] qwen3.8:27b s2 chakin / routed
+[2026-10-06T23:18:13] qwen3.8:27b s2 chakin / ctx
+[2026-10-06T23:28:33] qwen3.8:27b s2 chakin / ctxi
+[2026-10-06T23:32:34] qwen3.8:27b s2 particle-swarm-optimization / paste
+[2026-10-06T23:45:42] qwen3.8:27b s2 particle-swarm-optimization / routed
+[2026-10-06T23:51:46] qwen3.8:27b s2 particle-swarm-optimization / ctx
+[2026-10-07T00:05:06] qwen3.8:27b s2 particle-swarm-optimization / ctxi
+[2026-10-07T00:10:33] qwen3.8:27b s2 ArXiv_digest / paste
+[2026-10-07T00:25:35] qwen3.8:27b s2 ArXiv_digest / routed
+[2026-10-07T00:33:22] qwen3.8:27b s2 ArXiv_digest / ctx
+[2026-10-07T00:49:31] qwen3.8:27b s2 ArXiv_digest / ctxi
+done

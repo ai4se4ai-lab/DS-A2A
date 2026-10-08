@@ -1,12 +1,13 @@
-"""Driver for the DevBench pilot (10 Python repos x 3 configs x 1 seed,
-run once per model -- see evaluation/README.md "DevBench pilot" section
+"""Driver for the DevBench evaluation (Python repos x 3 configs x seeds,
+run once per model and seed -- see evaluation/README.md "DevBench pilot" section
 and docs/DS-A2A.tex Sec V). Structurally mirrors run_all_configs.py (the
 SWE-bench-Lite track, left untouched) but adds the `model` field the older
 schema never had, and threads MAST annotation + canary retention +
 DevBench's own real acceptance/unit tests through every record.
 
 Usage:
-    python -m evaluation.harness.devbench_run_all --llm ollama --model qwen2.5-coder:7b
+    python -m evaluation.harness.devbench_run_all --llm ollama --model qwen2.5-coder:7b \\
+        --seed 1 --out-dir evaluation/results/follow-up-study/raw
     python -m evaluation.harness.devbench_run_all --llm mock          # smoke test
 """
 from __future__ import annotations
@@ -108,7 +109,7 @@ def run_all(repos: list[str], *, llm, model: str, seed: int = 0, temperature: fl
     return records
 
 
-def run_rq2_all(repos: list[str], *, llm, model: str, temperature: float, log_fh) -> None:
+def run_rq2_all(repos: list[str], *, llm, model: str, temperature: float, log_fh, seed: int = 0) -> None:
     for repo in repos:
         task = load_devbench_task(repo)
         print(f"[RQ2] {model} / {repo} ...", flush=True)
@@ -119,7 +120,7 @@ def run_rq2_all(repos: list[str], *, llm, model: str, temperature: float, log_fh
         ):
             for res in results:
                 record = {
-                    "repo": repo, "config": kind, "model": model,
+                    "repo": repo, "config": kind, "model": model, "seed": seed,
                     "change_kind": res.change.kind, "target_op": res.change.target_op,
                     "predicted": sorted(res.predicted), "oracle": sorted(res.oracle),
                     "precision": res.precision, "recall": res.recall, "tokens": res.tokens,
@@ -131,19 +132,19 @@ def run_rq2_all(repos: list[str], *, llm, model: str, temperature: float, log_fh
         log_fh.flush()
 
 
-def run_rq3_all(repos: list[str], *, llm, model: str, temperature: float, log_fh) -> None:
+def run_rq3_all(repos: list[str], *, llm, model: str, temperature: float, log_fh, seed: int = 0) -> None:
     for repo in repos:
         task = load_devbench_task(repo)
         print(f"[RQ3] {model} / {repo} ...", flush=True)
         try:
             res = run_rq3(task, llm, temperature=temperature)
             record = {
-                "repo": repo, "model": model, "n_ops_before": res.n_ops_before,
+                "repo": repo, "model": model, "seed": seed, "n_ops_before": res.n_ops_before,
                 "n_reviews_after": res.n_reviews_after, "retroactive_coverage": res.retroactive_coverage,
                 "tokens": res.tokens,
             }
         except Exception as exc:  # noqa: BLE001
-            record = {"repo": repo, "model": model, "error": f"{type(exc).__name__}: {exc}"}
+            record = {"repo": repo, "model": model, "seed": seed, "error": f"{type(exc).__name__}: {exc}"}
         log_fh.write(json.dumps(record) + "\n")
         log_fh.flush()
 
@@ -155,7 +156,8 @@ def main() -> int:
     parser.add_argument("--model", default=None, help="model tag; required for --llm ollama/openai/anthropic")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--temperature", type=float, default=0.2)
-    parser.add_argument("--out", default=None)
+    parser.add_argument("--out", default=None, help="explicit path for the RQ1 log (legacy)")
+    parser.add_argument("--out-dir", default=None, help="directory for the rq1/rq2/rq3 logs (default: harness/logs)")
     parser.add_argument("--skip-rq1", action="store_true", help="resume a run whose RQ1 log is already complete")
     parser.add_argument("--skip-rq2", action="store_true")
     parser.add_argument("--skip-rq3", action="store_true")
@@ -164,13 +166,16 @@ def main() -> int:
     cfg = LLMConfig.from_env()
     llm = make_backend(cfg, override_provider=args.llm, override_model=args.model)
     model_tag = args.model or cfg.model
+    if hasattr(llm, "seed"):
+        llm.seed = args.seed  # forwarded to Ollama options.seed so the logged seed is real
 
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    logs_dir = Path(args.out_dir) if args.out_dir else LOGS_DIR
+    logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    tag = model_tag.replace(":", "-")
-    rq1_path = Path(args.out) if args.out else LOGS_DIR / f"devbench_rq1_{tag}_{stamp}.jsonl"
-    rq2_path = LOGS_DIR / f"devbench_rq2_{tag}_{stamp}.jsonl"
-    rq3_path = LOGS_DIR / f"devbench_rq3_{tag}_{stamp}.jsonl"
+    tag = f"{model_tag.replace(':', '-')}_s{args.seed}"
+    rq1_path = Path(args.out) if args.out else logs_dir / f"devbench_rq1_{tag}_{stamp}.jsonl"
+    rq2_path = logs_dir / f"devbench_rq2_{tag}_{stamp}.jsonl"
+    rq3_path = logs_dir / f"devbench_rq3_{tag}_{stamp}.jsonl"
 
     print(f"Using LLM backend: {llm.name} ({model_tag})", flush=True)
 
@@ -182,12 +187,12 @@ def main() -> int:
     if not args.skip_rq2:
         print(f"=== RQ2: writing to {rq2_path} ===", flush=True)
         with rq2_path.open("w") as fh:
-            run_rq2_all(args.repos, llm=llm, model=model_tag, temperature=args.temperature, log_fh=fh)
+            run_rq2_all(args.repos, llm=llm, model=model_tag, temperature=args.temperature, log_fh=fh, seed=args.seed)
 
     if not args.skip_rq3:
         print(f"=== RQ3: writing to {rq3_path} ===", flush=True)
         with rq3_path.open("w") as fh:
-            run_rq3_all(args.repos, llm=llm, model=model_tag, temperature=args.temperature, log_fh=fh)
+            run_rq3_all(args.repos, llm=llm, model=model_tag, temperature=args.temperature, log_fh=fh, seed=args.seed)
 
     print(f"Done. RQ1={rq1_path} RQ2={rq2_path} RQ3={rq3_path}")
     return 0

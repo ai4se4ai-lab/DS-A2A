@@ -1,0 +1,7 @@
+model,config,repos,seeds,canaries_mean,canaries_total,canaries_sd,truncated_modules,build_k,mast_p1,mast_p2,accept_pass,unit_pass,n_runs,precision,recall,change_k,n_changes
+Small,free_text,8,1,5.0,40.0,,0,8.25675,0.0,0.0,0,0,8,0.7308712121212121,0.875,8.270874999999998,24.0
+Small,shared_schema,8,1,0.0,40.0,,0,4.1865,0.0,0.0,0,0,8,0.136029588603118,1.0,4.243541666666666,24.0
+Small,agentm2m,8,1,40.0,40.0,,0,11.738375,0.25,0.0,0,0,8,1.0,1.0,0.484875,24.0
+Large,free_text,5,1,10.0,25.0,,1,15.1428,0.6,0.0,0,0,5,,,,
+Large,shared_schema,5,1,0.0,25.0,,0,5.9134,0.4,0.6,0,0,5,,,,
+Large,agentm2m,5,1,25.0,25.0,,0,12.100999999999999,0.0,1.0,0,0,5,,,,

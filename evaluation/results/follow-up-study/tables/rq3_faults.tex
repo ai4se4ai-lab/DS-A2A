@@ -1,0 +1,27 @@
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Injected fault & Family & n & Surfaced & Silent \\
+\midrule
+unrelated context changed & benign control & 32 & 100\% & 0\% \\
+concurrent writers & context access & 32 & 100\% & 0\% \\
+context expired & context access & 32 & 100\% & 0\% \\
+context missing & context access & 32 & 100\% & 0\% \\
+forged item author & context access & 32 & 100\% & 0\% \\
+reader access revoked & context access & 32 & 100\% & 0\% \\
+write by non-writer & context access & 32 & 100\% & 0\% \\
+rule prompt edited (undeclared dependency) & design limit & 20 & 0\% & 30\% \\
+wrong knowledge from an authorized writer & design limit & 20 & 0\% & 100\% \\
+LLM output rejected & llm & 32 & 100\% & 0\% \\
+LLM transport failure & llm & 32 & 100\% & 0\% \\
+relay offline & nostr availability & 32 & 100\% & 0\% \\
+bad signature & nostr integrity & 32 & 100\% & 0\% \\
+duplicate delivery & nostr integrity & 32 & 100\% & 0\% \\
+forked version base & nostr integrity & 32 & 100\% & 0\% \\
+tampered snapshot & nostr integrity & 32 & 100\% & 0\% \\
+unauthorized writer & nostr integrity & 32 & 100\% & 0\% \\
+unknown agent & nostr integrity & 32 & 100\% & 0\% \\
+unknown context & nostr integrity & 32 & 100\% & 0\% \\
+wrong team namespace & nostr integrity & 32 & 100\% & 0\% \\
+wrong signing key & nostr integrity & 32 & 100\% & 0\% \\
+\bottomrule
+\end{tabular}

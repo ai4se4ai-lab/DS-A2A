@@ -1,0 +1,10 @@
+{
+ "Small_free_text_canaries": 7,
+ "Small_shared_schema_canaries": 0,
+ "Small_agentm2m_canaries": 40,
+ "Small_agentm2m_build_k": 11.71725,
+ "Large_free_text_canaries": 25,
+ "Large_shared_schema_canaries": 5,
+ "Large_agentm2m_canaries": 40,
+ "Large_agentm2m_build_k": 12.53325
+}

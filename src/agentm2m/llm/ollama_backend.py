@@ -37,6 +37,7 @@ class OllamaBackend(LLMBackend):
         max_tokens: int = 4096,
         system: str | None = DEFAULT_SYSTEM_PROMPT,
         think: bool | None = False,
+        seed: int | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
@@ -64,6 +65,10 @@ class OllamaBackend(LLMBackend):
         # answer. Off for every configuration alike; a no-op for models
         # without thinking. None leaves the model's default.
         self.think = think
+        # Sampling seed forwarded to Ollama's `options.seed`. Without it every
+        # call draws a fresh seed, so a "seed" recorded in an evaluation log
+        # would be a label only. None keeps Ollama's default (unseeded).
+        self.seed = seed
         if auto_pull:
             self._ensure_model_available()
 
@@ -113,6 +118,8 @@ class OllamaBackend(LLMBackend):
             "stream": False,
             "options": {"temperature": temperature, "num_predict": self.max_tokens},
         }
+        if self.seed is not None:
+            payload["options"]["seed"] = self.seed
         if self.system is not None:
             payload["system"] = self.system
         if self.think is not None:

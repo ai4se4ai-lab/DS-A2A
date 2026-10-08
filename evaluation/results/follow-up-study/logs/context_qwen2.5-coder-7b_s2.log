@@ -1,0 +1,37 @@
+writing evaluation/results/follow-up-study/raw/context_study_qwen2.5-coder-7b_s2_20261007T035919Z.jsonl
+[2026-10-06T20:59:19] qwen2.5-coder:7b s2 ArXiv_digest / paste
+[2026-10-06T21:04:26] qwen2.5-coder:7b s2 ArXiv_digest / routed
+[2026-10-06T21:06:44] qwen2.5-coder:7b s2 ArXiv_digest / ctx
+[2026-10-06T21:11:40] qwen2.5-coder:7b s2 ArXiv_digest / ctxi
+[2026-10-06T21:14:03] qwen2.5-coder:7b s2 chakin / paste
+[2026-10-06T21:17:03] qwen2.5-coder:7b s2 chakin / routed
+[2026-10-06T21:18:23] qwen2.5-coder:7b s2 chakin / ctx
+[2026-10-06T21:21:14] qwen2.5-coder:7b s2 chakin / ctxi
+[2026-10-06T21:22:38] qwen2.5-coder:7b s2 geotext / paste
+[2026-10-06T21:25:28] qwen2.5-coder:7b s2 geotext / routed
+[2026-10-06T21:26:48] qwen2.5-coder:7b s2 geotext / ctx
+[2026-10-06T21:29:38] qwen2.5-coder:7b s2 geotext / ctxi
+[2026-10-06T21:31:00] qwen2.5-coder:7b s2 hone / paste
+<unknown>:5: SyntaxWarning: invalid escape sequence '\ '
+<unknown>:5: SyntaxWarning: invalid escape sequence '\ '
+<string>:5: SyntaxWarning: invalid escape sequence '\ '
+[2026-10-06T21:40:18] qwen2.5-coder:7b s2 hone / routed
+[2026-10-06T21:43:56] qwen2.5-coder:7b s2 hone / ctx
+[2026-10-06T21:52:10] qwen2.5-coder:7b s2 hone / ctxi
+[2026-10-06T21:55:39] qwen2.5-coder:7b s2 lice / paste
+[2026-10-06T22:04:28] qwen2.5-coder:7b s2 lice / routed
+[2026-10-06T22:08:21] qwen2.5-coder:7b s2 lice / ctx
+[2026-10-06T22:17:02] qwen2.5-coder:7b s2 lice / ctxi
+[2026-10-06T22:20:45] qwen2.5-coder:7b s2 particle-swarm-optimization / paste
+[2026-10-06T22:24:43] qwen2.5-coder:7b s2 particle-swarm-optimization / routed
+[2026-10-06T22:26:31] qwen2.5-coder:7b s2 particle-swarm-optimization / ctx
+[2026-10-06T22:30:30] qwen2.5-coder:7b s2 particle-swarm-optimization / ctxi
+[2026-10-06T22:32:19] qwen2.5-coder:7b s2 readtime / paste
+[2026-10-06T22:38:45] qwen2.5-coder:7b s2 readtime / routed
+[2026-10-06T22:42:09] qwen2.5-coder:7b s2 readtime / ctx
+[2026-10-06T22:53:07] qwen2.5-coder:7b s2 readtime / ctxi
+[2026-10-06T22:57:51] qwen2.5-coder:7b s2 stocktrends / paste
+[2026-10-06T23:11:30] qwen2.5-coder:7b s2 stocktrends / routed
+[2026-10-06T23:17:30] qwen2.5-coder:7b s2 stocktrends / ctx
+[2026-10-06T23:30:25] qwen2.5-coder:7b s2 stocktrends / ctxi
+done

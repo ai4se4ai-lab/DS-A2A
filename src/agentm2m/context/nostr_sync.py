@@ -5,16 +5,25 @@ the local policy stays the authority. Outbound, a new version of a context
 whose policy says `visibility: relay` is published as one signed event,
 signed by the *writing agent's own key* (the engine key cannot vouch for an
 agent's write). Inbound, an event changes the local store only after every
-check passes, in this order:
+check below passes. Checks 1-4 and 6 run when the event is decoded; 5 and 7 run
+when it is applied (so the content digest is verified *before* version continuity):
 
     1. NIP-01 structure, id and BIP-340 signature
     2. schema `agentm2m.context-snapshot` v1, kind, namespace (same team)
     3. the claimed writer is a known agent and the signing pubkey is *its* key
     4. the context exists locally and the local policy lets that agent write
-    5. version continuity: exactly local+1 on top of the local digest
-       (older/equal -> duplicate or "old version"; other base -> conflict)
     6. content integrity: the snapshot digest matches its items
-    7. every new or changed item is attributed to the writer
+    5. version continuity: exactly local+1 on top of the local digest
+       (older/equal -> duplicate or "old version"; other base -> conflict;
+       a later version is held until its predecessors arrive)
+    7. every item that is new or changed relative to the local snapshot is
+       attributed to the writer (removals are not attributed: a permitted
+       writer may remove any item)
+
+Two valid events for the same version (a fork) are both judged; the first one
+applied wins and the other is reported. There is no general convergence
+guarantee across more than one writer; the discipline is single writer per
+context with version continuity.
 
 Content leaves the machine only for `visibility: relay` contexts; use a
 private relay for anything confidential (no NIP-44 encryption yet).
@@ -57,7 +66,9 @@ class NostrContextSync:
         self.signer_for = signer_for
         self.kind = kind
         self.on_event = on_event or (lambda _kind, _info: None)
-        self._pending: dict[tuple[str, int], tuple[ContextSnapshot, dict]] = {}
+        # keyed by event id too: two verified events for the same version (a fork) must
+        # both be judged and reported, never silently displace one another
+        self._pending: dict[tuple[str, int, str], tuple[ContextSnapshot, dict]] = {}
         self._lock = threading.RLock()
 
     @property
@@ -160,7 +171,7 @@ class NostrContextSync:
             return report
         snap, meta = decoded
         with self._lock:
-            self._pending[(snap.context_id, snap.version)] = (snap, meta)
+            self._pending[(snap.context_id, snap.version, meta["event_id"])] = (snap, meta)
             self._drain(report)
         return report
 
@@ -168,7 +179,7 @@ class NostrContextSync:
         progress = True
         while progress:
             progress = False
-            for key in sorted(self._pending, key=lambda k: (k[0], k[1])):
+            for key in sorted(self._pending, key=lambda k: (k[0], k[1], k[2])):
                 snap, meta = self._pending[key]
                 outcome = self._apply(snap, meta)
                 if outcome == "pending":
@@ -195,7 +206,7 @@ class NostrContextSync:
         for raw in sorted(raws, key=lambda d: (d.get("created_at", 0) if isinstance(d, dict) else 0)):
             self.receive(raw, report)
         with self._lock:
-            for (cid, version), (_snap, meta) in sorted(self._pending.items()):
+            for (cid, version, _eid), (_snap, meta) in sorted(self._pending.items()):
                 report["rejected"].append({"event_id": meta["event_id"],
                                            "reason": f"conflict: missing versions before {cid} v{version}"})
             self._pending.clear()
