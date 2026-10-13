@@ -41,7 +41,8 @@ CONFIG_RUNNERS = {
 }
 CONFIG_NAMES = tuple(CONFIG_RUNNERS.keys())
 
-LOGS_DIR = Path(__file__).resolve().parent / "logs"
+# HPC: jobs write into $DEVBENCH_LOGS_DIR (scratch); default unchanged.
+LOGS_DIR = Path(os.environ.get("DEVBENCH_LOGS_DIR") or Path(__file__).resolve().parent / "logs")
 
 
 def run_one(config_name: str, repo: str, task, llm, *, model: str, seed: int, temperature: float) -> dict:
@@ -156,6 +157,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--temperature", type=float, default=0.2)
     parser.add_argument("--out", default=None)
+    parser.add_argument("--stamp", default=None, help="fixed log-name suffix (default: UTC timestamp); makes reruns overwrite, not duplicate")
     parser.add_argument("--skip-rq1", action="store_true", help="resume a run whose RQ1 log is already complete")
     parser.add_argument("--skip-rq2", action="store_true")
     parser.add_argument("--skip-rq3", action="store_true")
@@ -166,7 +168,7 @@ def main() -> int:
     model_tag = args.model or cfg.model
 
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = args.stamp or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     tag = model_tag.replace(":", "-")
     rq1_path = Path(args.out) if args.out else LOGS_DIR / f"devbench_rq1_{tag}_{stamp}.jsonl"
     rq2_path = LOGS_DIR / f"devbench_rq2_{tag}_{stamp}.jsonl"

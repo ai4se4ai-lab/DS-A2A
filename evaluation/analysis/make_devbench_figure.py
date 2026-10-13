@@ -10,6 +10,7 @@ non-monotonic RQ2 precision; AgentM2M's token premium).
 """
 from __future__ import annotations
 
+import os
 import csv
 import json
 from pathlib import Path
@@ -19,8 +20,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-CSV_DIR = Path(__file__).resolve().parents[1] / "results" / "csv"
-OUT_DIR = Path(__file__).resolve().parents[1] / "results" / "figures"
+_OUT = Path(os.environ["EVAL_OUT_DIR"]) if os.environ.get("EVAL_OUT_DIR") else Path(__file__).resolve().parents[1] / "results"
+CSV_DIR = _OUT / "csv"
+OUT_DIR = _OUT / "figures"
 
 # model key -> (csv suffix, json suffix, short axis label)
 MODELS = [

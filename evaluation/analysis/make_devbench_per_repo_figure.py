@@ -10,6 +10,7 @@ aggregate_devbench_per_repo.py.
 """
 from __future__ import annotations
 
+import os
 import json
 from pathlib import Path
 
@@ -18,8 +19,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-CSV_DIR = Path(__file__).resolve().parents[1] / "results" / "csv"
-OUT_DIR = Path(__file__).resolve().parents[1] / "results" / "figures"
+_OUT = Path(os.environ["EVAL_OUT_DIR"]) if os.environ.get("EVAL_OUT_DIR") else Path(__file__).resolve().parents[1] / "results"
+CSV_DIR = _OUT / "csv"
+OUT_DIR = _OUT / "figures"
 
 MODELS = [
     ("qwen2.5-coder:7b", "qwen2.5-coder:7b"),

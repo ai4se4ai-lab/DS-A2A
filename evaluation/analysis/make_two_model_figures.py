@@ -14,6 +14,7 @@ Usage:
 """
 from __future__ import annotations
 
+import os
 import ast
 import csv
 import json
@@ -28,9 +29,11 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-LOGS_DIR = ROOT / "harness" / "logs"
-FIG_DIR = ROOT / "results" / "figures"
-CSV_DIR = ROOT / "results" / "csv"
+# HPC: $DEVBENCH_LOGS_DIR / $EVAL_OUT_DIR redirect inputs and outputs; defaults unchanged.
+_OUT = Path(os.environ["EVAL_OUT_DIR"]) if os.environ.get("EVAL_OUT_DIR") else ROOT / "results"
+LOGS_DIR = Path(os.environ.get("DEVBENCH_LOGS_DIR") or ROOT / "harness" / "logs")
+FIG_DIR = _OUT / "figures"
+CSV_DIR = _OUT / "csv"
 
 MODELS = [("qwen2.5-coder-7b", "qwen2.5-coder:7b"), ("qwen3.8-27b", "qwen3.8:27b")]
 
@@ -445,7 +448,7 @@ def main() -> int:
                        "Change cost vs. module size"), "devbench_two_model_line_change_vs_size", outputs, report)
 
     for p in outputs:
-        print(p.relative_to(ROOT.parent))
+        print(p)
     bad = {k: v for k, v in report.items() if v}
     print("text-overlap check:", "all figures clean" if not bad else "")
     for k, v in bad.items():
