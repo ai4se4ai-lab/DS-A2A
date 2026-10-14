@@ -10,10 +10,11 @@ and writes:
   evaluation/results/csv/devbench_two_model_per_repo.csv             the plotted data
 
 Usage:
-    python -m evaluation.analysis.make_two_model_figures
+    python -m evaluation.analysis.make_two_model_figures [--models qwen2.5-coder:7b llama3.1:8b ...]
 """
 from __future__ import annotations
 
+import os
 import ast
 import csv
 import json
@@ -28,9 +29,11 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-LOGS_DIR = ROOT / "harness" / "logs"
-FIG_DIR = ROOT / "results" / "figures"
-CSV_DIR = ROOT / "results" / "csv"
+# HPC: $DEVBENCH_LOGS_DIR / $EVAL_OUT_DIR redirect inputs and outputs; defaults unchanged.
+_OUT = Path(os.environ["EVAL_OUT_DIR"]) if os.environ.get("EVAL_OUT_DIR") else ROOT / "results"
+LOGS_DIR = Path(os.environ.get("DEVBENCH_LOGS_DIR") or ROOT / "harness" / "logs")
+FIG_DIR = _OUT / "figures"
+CSV_DIR = _OUT / "csv"
 
 MODELS = [("qwen2.5-coder-7b", "qwen2.5-coder:7b"), ("qwen3.8-27b", "qwen3.8:27b")]
 
@@ -259,8 +262,10 @@ def _summary(key: str, model: str, repos: list[str], bundle: dict) -> str:
 
     a, f, s = mean("agentm2m"), mean("free_text"), mean("shared_schema")
     if key == "canary":
-        tot = lambda c: sum(per[c][r]["canary"] for r in repos)  # noqa: E731
-        return f"total of 40:  A {tot('agentm2m')} · F {tot('free_text')} · S {tot('shared_schema')}"
+        tot = lambda c: sum(per[c][r]["canary"] for r in repos if "canary" in per[c].get(r, {}))  # noqa: E731
+        missing = sum(1 for r in repos if any("canary" not in per[c].get(r, {}) for c in per))
+        gap = f"  ({missing} repo(s) without data)" if missing else ""
+        return f"total of 40:  A {tot('agentm2m')} · F {tot('free_text')} · S {tot('shared_schema')}{gap}"
     if key == "build_k":
         return f"mean:  A {a:.1f}k · F {f:.1f}k · S {s:.1f}k"
     if key == "change_k":
@@ -305,7 +310,7 @@ def bar_figure(aspects, repos, bundle, *, height_per_row: float, note: str | Non
 
 def _mean_over(repos, per, c, key):
     vals = [per[c][r][key] for r in repos if key in per[c].get(r, {})]
-    return st.mean(vals)
+    return st.mean(vals) if vals else float("nan")  # a model with no finished cell plots as a gap
 
 
 def _direct_labels(ax, ends: list[tuple[str, float, str]], *, log: bool) -> None:
@@ -386,6 +391,8 @@ def line_scaling(repos, bundle, key: str, ylabel: str, log: bool, head: str) -> 
     of equal size are averaged, so the x values are distinct and ordered."""
     _base_style()
     fig, axes = plt.subplots(1, len(MODELS), figsize=(FIG_WIDTH, 3.0), facecolor=SURFACE)
+    repos = [r for r in repos if r in bundle["n_ops"]]  # a repo whose RQ3 runs all failed has no size
+    repos = [r for r in repos if r in bundle["n_ops"]]  # a repo whose RQ3 runs all failed has no size
     sizes = sorted({bundle["n_ops"][r] for r in repos})
     by_size = {n: [r for r in repos if bundle["n_ops"][r] == n] for n in sizes}
     all_ys: list[float] = []
@@ -415,6 +422,7 @@ def line_scaling(repos, bundle, key: str, ylabel: str, log: bool, head: str) -> 
         ax._ends = ends  # labelled after limits are final
     axes[0].set_ylabel(ylabel, fontsize=FS_LABEL, color=INK_2)
     # one common scale from both models' data, set before labels are placed
+    all_ys = [y for y in all_ys if y == y] or [1.0]  # drop NaN gaps (cells without data)
     lo, hi = (min(all_ys) / 1.5, max(all_ys) * 1.5) if log else (0.0, max(all_ys) * 1.08)
     for a in axes:
         a.set_ylim(lo, hi)
@@ -425,6 +433,14 @@ def line_scaling(repos, bundle, key: str, ylabel: str, log: bool, head: str) -> 
 
 
 def main() -> int:
+    global MODELS, FIG_WIDTH
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--models", nargs="+", help="Ollama tags, one figure column each (default: the two-model pilot)")
+    a = ap.parse_args()
+    if a.models:
+        MODELS = [(m.replace(":", "-"), m) for m in a.models]
+        FIG_WIDTH *= max(1.0, len(MODELS) / 2)  # keep each column at the two-model print width
     repos, bundle = collect()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     outputs = [write_csv(repos, bundle)]
@@ -445,13 +461,19 @@ def main() -> int:
                        "Change cost vs. module size"), "devbench_two_model_line_change_vs_size", outputs, report)
 
     for p in outputs:
-        print(p.relative_to(ROOT.parent))
+        print(p)
     bad = {k: v for k, v in report.items() if v}
     print("text-overlap check:", "all figures clean" if not bad else "")
     for k, v in bad.items():
         print(f"  {k}: {len(v)} problem(s)")
         for msg in v[:12]:
             print("    -", msg)
+    # empty panels (a model x repo cell without data) cannot lay out cleanly: warn, but only fail on complete data
+    incomplete = [(m, r) for _t, m in MODELS for r in repos
+                  if any(r not in bundle["data"].get(m, {}).get(c, {}) for c, *_ in CONFIGS)]
+    if bad and incomplete:
+        print(f"layout problems are warnings only: {len(incomplete)} model x repo cell(s) without data: {incomplete}")
+        return 0
     return 1 if bad else 0
 
 

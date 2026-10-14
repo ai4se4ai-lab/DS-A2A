@@ -7,6 +7,7 @@ decision rule).
 """
 from __future__ import annotations
 
+import os
 import argparse
 import csv
 import json
@@ -14,8 +15,10 @@ import random
 from pathlib import Path
 from statistics import mean
 
-LOGS_DIR = Path(__file__).resolve().parents[1] / "harness" / "logs"
-RESULTS_CSV_DIR = Path(__file__).resolve().parents[1] / "results" / "csv"
+_EVAL = Path(__file__).resolve().parents[1]
+# HPC: $DEVBENCH_LOGS_DIR / $EVAL_OUT_DIR redirect inputs and outputs; defaults unchanged.
+LOGS_DIR = Path(os.environ.get("DEVBENCH_LOGS_DIR") or _EVAL / "harness" / "logs")
+RESULTS_CSV_DIR = Path(os.environ["EVAL_OUT_DIR"]) / "csv" if os.environ.get("EVAL_OUT_DIR") else _EVAL / "results" / "csv"
 
 CONFIG_COLUMNS = [("free_text", "Free text"), ("shared_schema", "Shared schema"), ("agentm2m", "AgentM2M")]
 ROW_ORDER = [

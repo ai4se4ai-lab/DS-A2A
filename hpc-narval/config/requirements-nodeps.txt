@@ -1,0 +1,2 @@
+# Installed with --no-deps after requirements.txt (staged wheels in PIP_FIND_LINKS whose metadata pins newer deps than the wheelhouse has)
+pyquery
