@@ -1,0 +1,100 @@
+{
+  "rq1": {
+    "free_text": {
+      "canary_retention_pct": 27.500000000000004,
+      "p1_per_trace": 1.125,
+      "acceptance_pct": 0.0,
+      "tokens_k": 9.664333333333333,
+      "n": 48,
+      "canary_retention_by_repo": {
+        "ArXiv_digest": 0.0,
+        "chakin": 0.0,
+        "geotext": 0.8,
+        "hone": 0.0,
+        "lice": 0.0,
+        "particle-swarm-optimization": 0.0,
+        "readtime": 0.0,
+        "stocktrends": 0.0
+      }
+    },
+    "shared_schema": {
+      "canary_retention_pct": 2.083333333333333,
+      "p1_per_trace": 1.1875,
+      "acceptance_pct": 0.0,
+      "tokens_k": 5.128395833333333,
+      "n": 48,
+      "canary_retention_by_repo": {
+        "ArXiv_digest": 0.0,
+        "chakin": 0.0,
+        "geotext": 0.0,
+        "hone": 0.0,
+        "lice": 0.0,
+        "particle-swarm-optimization": 0.0,
+        "readtime": 0.0,
+        "stocktrends": 0.0
+      }
+    },
+    "agentm2m": {
+      "canary_retention_pct": 100.0,
+      "p1_per_trace": 0.9166666666666666,
+      "acceptance_pct": 0.0,
+      "tokens_k": 12.587791666666666,
+      "n": 48,
+      "canary_retention_by_repo": {
+        "ArXiv_digest": 1.0,
+        "chakin": 1.0,
+        "geotext": 1.0,
+        "hone": 1.0,
+        "lice": 1.0,
+        "particle-swarm-optimization": 1.0,
+        "readtime": 1.0,
+        "stocktrends": 1.0
+      }
+    }
+  },
+  "rq2": {
+    "free_text": {
+      "recall": 0.7986111111111112,
+      "precision": 0.542798369590649,
+      "tokens_k": 9.937027777777777,
+      "identification_tokens_k": 0.18320833333333333,
+      "propagation_tokens_k": 9.753819444444446,
+      "build_tokens_k": 0.0,
+      "n": 144
+    },
+    "shared_schema": {
+      "recall": 1.0,
+      "precision": 0.136029588603118,
+      "tokens_k": 5.070229166666667,
+      "identification_tokens_k": 0.0,
+      "propagation_tokens_k": 5.070229166666667,
+      "build_tokens_k": 0.0,
+      "n": 144
+    },
+    "agentm2m": {
+      "recall": 1.0,
+      "precision": 1.0,
+      "tokens_k": 0.4609166666666667,
+      "identification_tokens_k": 0.0,
+      "propagation_tokens_k": 0.4609166666666667,
+      "build_tokens_k": 12.533513888888889,
+      "n": 144
+    }
+  },
+  "rq3": {
+    "retroactive_coverage_pct": 100.0,
+    "glue_lines_agentm2m": 7,
+    "glue_lines_manual": 22,
+    "n": 48
+  },
+  "bootstrap": {
+    "available": true,
+    "n_repos": 8,
+    "point": 100.0,
+    "lo95": 100.0,
+    "hi95": 100.0,
+    "supported": true
+  }
+}
+
+Wrote /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/csv/devbench_summary_pooled.json

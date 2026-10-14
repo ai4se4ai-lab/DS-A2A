@@ -1,0 +1,12 @@
+
+===== 2026-10-14 03:22:50 job 5520987 task 32 restart 0 host ng10609 =====
+$ M=$(echo phi4-14b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos ArXiv_digest --seed 0 --temperature 0.2 --stamp ArXiv_digest --skip-rq2 --skip-rq3
+Using LLM backend: ollama (phi4:14b)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_phi4-14b_ArXiv_digest.jsonl ===
+[2026-10-14T03:22:50] phi4:14b / ArXiv_digest / free_text ...
+    -> success=False p1=0 tokens=8490 elapsed=121.8s error=None
+[2026-10-14T03:24:58] phi4:14b / ArXiv_digest / shared_schema ...
+    -> success=False p1=0 tokens=5411 elapsed=79.6s error=None
+[2026-10-14T03:26:32] phi4:14b / ArXiv_digest / agentm2m ...
+    -> success=False p1=0 tokens=8790 elapsed=85.5s error=None
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_phi4-14b_ArXiv_digest.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_phi4-14b_ArXiv_digest.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_phi4-14b_ArXiv_digest.jsonl

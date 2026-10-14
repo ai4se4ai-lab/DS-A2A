@@ -1,0 +1,214 @@
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+ agentm2m-devbench — run audit am-20261014-012059   2026-10-14 04:55:57   commit c73230257f
+ results /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+ cells  ✔ OK 50   (total 50)
+ steps  153/153 ok, 0 failed     requeues 0     records ████████████████████ 100% 624/624
+
+   STAGE[cell]   CELL                                STATE  GPU            NODE     RUN / LIMIT     WAIT  STEPS  PROGRESS               CURRENT / FAILED  DETAIL  
+─  ────────────  ──────────────────────────────────  ─────  ─────────────  ───────  ──────────────  ────  ─────  ─────────────────────  ────────────────  ────────
+✔  setup[0]      -                                   OK     a100:1         ng31305  12m45s / 3h00m  -     5/5    -                      -                 finished
+      └ check_gpu                  OK          0m00s    
+      └ pull_models                OK          0m04s    
+      └ verify_reference           OK          5m45s    
+      └ ping_models                OK          5m49s    
+      └ preflight_mock             OK          0m05s    
+
+✔  devbench[0]   repo=chakin,model=qwen2.5-coder-7b  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m06s  ██████████ 100% 3/3  
+      └ rq2                        OK          9m18s  ██████████ 100% 9/9  
+      └ rq3                        OK          1m54s  ██████████ 100% 1/1  
+✔  devbench[1]   repo=chakin,model=llama3.1-8b       OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          8m11s  ██████████ 100% 3/3  
+      └ rq2                        OK         12m41s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m01s  ██████████ 100% 1/1  
+✔  devbench[2]   repo=chakin,model=phi4-14b          OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m21s  ██████████ 100% 3/3  
+      └ rq2                        OK         15m02s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m22s  ██████████ 100% 1/1  
+✔  devbench[3]   repo=chakin,model=deepseek-coder-v  OK     a100:1         ng30707  18m40s / 8h00m  -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          6m45s  ██████████ 100% 3/3  
+      └ rq2                        OK          9m21s  ██████████ 100% 9/9  
+      └ rq3                        OK          2m02s  ██████████ 100% 1/1  
+✔  devbench[4]   repo=chakin,model=devstral-24b      OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m39s  ██████████ 100% 3/3  
+      └ rq2                        OK         11m12s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m00s  ██████████ 100% 1/1  
+✔  devbench[5]   repo=chakin,model=gemma3-27b        OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          6m45s  ██████████ 100% 3/3  
+      └ rq2                        OK         17m12s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m03s  ██████████ 100% 1/1  
+✔  devbench[6]   repo=geotext,model=qwen2.5-coder-7  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          3m33s  ██████████ 100% 3/3  
+      └ rq2                        OK          9m45s  ██████████ 100% 9/9  
+      └ rq3                        OK          1m01s  ██████████ 100% 1/1  
+✔  devbench[7]   repo=geotext,model=llama3.1-8b      OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m07s  ██████████ 100% 3/3  
+      └ rq2                        OK         13m17s  ██████████ 100% 9/9  
+      └ rq3                        OK          1m33s  ██████████ 100% 1/1  
+✔  devbench[8]   repo=geotext,model=phi4-14b         OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m31s  ██████████ 100% 3/3  
+      └ rq2                        OK         15m25s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m18s  ██████████ 100% 1/1  
+✔  devbench[9]   repo=geotext,model=deepseek-coder-  OK     a100:1         ng30707  13m32s / 8h00m  -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          2m14s  ██████████ 100% 3/3  
+      └ rq2                        OK          7m37s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m10s  ██████████ 100% 1/1  
+✔  devbench[10]  repo=geotext,model=devstral-24b     OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          3m58s  ██████████ 100% 3/3  
+      └ rq2                        OK         10m25s  ██████████ 100% 9/9  
+      └ rq3                        OK          2m33s  ██████████ 100% 1/1  
+✔  devbench[11]  repo=geotext,model=gemma3-27b       OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          8m08s  ██████████ 100% 3/3  
+      └ rq2                        OK         22m28s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m10s  ██████████ 100% 1/1  
+✔  devbench[12]  repo=particle-swarm-optimization,m  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          2m45s  ██████████ 100% 3/3  
+      └ rq2                        OK          5m57s  ██████████ 100% 9/9  
+      └ rq3                        OK          0m52s  ██████████ 100% 1/1  
+✔  devbench[13]  repo=particle-swarm-optimization,m  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          2m51s  ██████████ 100% 3/3  
+      └ rq2                        OK          7m18s  ██████████ 100% 9/9  
+      └ rq3                        OK          1m06s  ██████████ 100% 1/1  
+✔  devbench[14]  repo=particle-swarm-optimization,m  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          6m44s  ██████████ 100% 3/3  
+      └ rq2                        OK         17m03s  ██████████ 100% 9/9  
+      └ rq3                        OK          4m01s  ██████████ 100% 1/1  
+✔  devbench[15]  repo=particle-swarm-optimization,m  OK     a100:1         ng20202  18m01s / 8h00m  -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          3m11s  ██████████ 100% 3/3  
+      └ rq2                        OK         10m18s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m44s  ██████████ 100% 1/1  
+✔  devbench[16]  repo=particle-swarm-optimization,m  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m51s  ██████████ 100% 3/3  
+      └ rq2                        OK         11m51s  ██████████ 100% 9/9  
+      └ rq3                        OK          2m59s  ██████████ 100% 1/1  
+✔  devbench[17]  repo=particle-swarm-optimization,m  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK         10m56s  ██████████ 100% 3/3  
+      └ rq2                        OK         23m53s  ██████████ 100% 9/9  
+      └ rq3                        OK          4m30s  ██████████ 100% 1/1  
+✔  devbench[18]  repo=readtime,model=qwen2.5-coder-  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m33s  ██████████ 100% 3/3  
+      └ rq2                        OK          9m44s  ██████████ 100% 9/9  
+      └ rq3                        OK          1m52s  ██████████ 100% 1/1  
+✔  devbench[19]  repo=readtime,model=llama3.1-8b     OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m54s  ██████████ 100% 3/3  
+      └ rq2                        OK         13m32s  ██████████ 100% 9/9  
+      └ rq3                        OK          2m28s  ██████████ 100% 1/1  
+✔  devbench[20]  repo=readtime,model=phi4-14b        OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          7m38s  ██████████ 100% 3/3  
+      └ rq2                        OK         12m57s  ██████████ 100% 9/9  
+      └ rq3                        OK          4m24s  ██████████ 100% 1/1  
+✔  devbench[21]  repo=readtime,model=deepseek-coder  OK     a100:1         ng20202  21m35s / 8h00m  -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          3m33s  ██████████ 100% 3/3  
+      └ rq2                        OK         12m06s  ██████████ 100% 9/9  
+      └ rq3                        OK          5m07s  ██████████ 100% 1/1  
+✔  devbench[22]  repo=readtime,model=devstral-24b    OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          7m13s  ██████████ 100% 3/3  
+      └ rq2                        OK         21m27s  ██████████ 100% 9/9  
+      └ rq3                        OK          6m37s  ██████████ 100% 1/1  
+✔  devbench[23]  repo=readtime,model=gemma3-27b      OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          9m10s  ██████████ 100% 3/3  
+      └ rq2                        OK         24m09s  ██████████ 100% 9/9  
+      └ rq3                        OK          5m26s  ██████████ 100% 1/1  
+✔  devbench[24]  repo=stocktrends,model=qwen2.5-cod  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m02s  ██████████ 100% 3/3  
+      └ rq2                        OK          8m56s  ██████████ 100% 9/9  
+      └ rq3                        OK          1m50s  ██████████ 100% 1/1  
+✔  devbench[25]  repo=stocktrends,model=llama3.1-8b  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          3m51s  ██████████ 100% 3/3  
+      └ rq2                        OK          9m52s  ██████████ 100% 9/9  
+      └ rq3                        OK          2m16s  ██████████ 100% 1/1  
+✔  devbench[26]  repo=stocktrends,model=phi4-14b     OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          6m15s  ██████████ 100% 3/3  
+      └ rq2                        OK         16m32s  ██████████ 100% 9/9  
+      └ rq3                        OK          5m16s  ██████████ 100% 1/1  
+✔  devbench[27]  repo=stocktrends,model=deepseek-co  OK     a100:1         ng20302  26m03s / 8h00m  -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m00s  ██████████ 100% 3/3  
+      └ rq2                        OK         12m38s  ██████████ 100% 9/9  
+      └ rq3                        OK          7m55s  ██████████ 100% 1/1  
+✔  devbench[28]  repo=stocktrends,model=devstral-24  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          6m07s  ██████████ 100% 3/3  
+      └ rq2                        OK         16m13s  ██████████ 100% 9/9  
+      └ rq3                        OK          6m00s  ██████████ 100% 1/1  
+✔  devbench[29]  repo=stocktrends,model=gemma3-27b   OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK         11m08s  ██████████ 100% 3/3  
+      └ rq2                        OK         30m51s  ██████████ 100% 9/9  
+      └ rq3                        OK          8m40s  ██████████ 100% 1/1  
+✔  devbench[30]  repo=ArXiv_digest,model=qwen2.5-co  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          2m51s  ██████████ 100% 3/3  
+      └ rq2                        OK          9m42s  ██████████ 100% 9/9  
+      └ rq3                        OK          1m10s  ██████████ 100% 1/1  
+✔  devbench[31]  repo=ArXiv_digest,model=llama3.1-8  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m13s  ██████████ 100% 3/3  
+      └ rq2                        OK         10m14s  ██████████ 100% 9/9  
+      └ rq3                        OK          1m25s  ██████████ 100% 1/1  
+✔  devbench[32]  repo=ArXiv_digest,model=phi4-14b    OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m18s  ██████████ 100% 3/3  
+      └ rq2                        OK         13m50s  ██████████ 100% 9/9  
+      └ rq3                        OK          6m10s  ██████████ 100% 1/1  
+✔  devbench[33]  repo=ArXiv_digest,model=deepseek-c  OK     a100:1         ng10701  22m58s / 8h00m  -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m07s  ██████████ 100% 3/3  
+      └ rq2                        OK         12m29s  ██████████ 100% 9/9  
+      └ rq3                        OK          4m41s  ██████████ 100% 1/1  
+✔  devbench[34]  repo=ArXiv_digest,model=devstral-2  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m23s  ██████████ 100% 3/3  
+      └ rq2                        OK         15m39s  ██████████ 100% 9/9  
+      └ rq3                        OK          3m33s  ██████████ 100% 1/1  
+✔  devbench[35]  repo=ArXiv_digest,model=gemma3-27b  OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK         12m08s  ██████████ 100% 3/3  
+      └ rq2                        OK         38m03s  ██████████ 100% 9/9  
+      └ rq3                        OK          7m05s  ██████████ 100% 1/1  
+✔  devbench[36]  repo=hone,model=qwen2.5-coder-7b    OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          3m56s  ██████████ 100% 3/3  
+      └ rq2                        OK         10m13s  ██████████ 100% 9/9  
+      └ rq3                        OK          2m03s  ██████████ 100% 1/1  
+✔  devbench[37]  repo=hone,model=llama3.1-8b         OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m29s  ██████████ 100% 3/3  
+      └ rq2                        OK         14m45s  ██████████ 100% 9/9  
+      └ rq3                        OK          2m47s  ██████████ 100% 1/1  
+✔  devbench[38]  repo=hone,model=phi4-14b            OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m54s  ██████████ 100% 3/3  
+      └ rq2                        OK         16m12s  ██████████ 100% 9/9  
+      └ rq3                        OK          5m50s  ██████████ 100% 1/1  
+✔  devbench[39]  repo=hone,model=deepseek-coder-v2-  OK     a100:1         ng10707  29m13s / 8h00m  -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m33s  ██████████ 100% 3/3  
+      └ rq2                        OK         15m30s  ██████████ 100% 9/9  
+      └ rq3                        OK          7m28s  ██████████ 100% 1/1  
+✔  devbench[40]  repo=hone,model=devstral-24b        OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK         10m36s  ██████████ 100% 3/3  
+      └ rq2                        OK         27m56s  ██████████ 100% 9/9  
+      └ rq3                        OK         10m08s  ██████████ 100% 1/1  
+✔  devbench[41]  repo=hone,model=gemma3-27b          OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK         16m16s  ██████████ 100% 3/3  
+      └ rq2                        OK         39m39s  ██████████ 100% 9/9  
+      └ rq3                        OK         12m16s  ██████████ 100% 1/1  
+✔  devbench[42]  repo=lice,model=qwen2.5-coder-7b    OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m26s  ██████████ 100% 3/3  
+      └ rq2                        OK         11m53s  ██████████ 100% 9/9  
+      └ rq3                        OK          4m41s  ██████████ 100% 1/1  
+✔  devbench[43]  repo=lice,model=llama3.1-8b         OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m06s  ██████████ 100% 3/3  
+      └ rq2                        OK         11m33s  ██████████ 100% 9/9  
+      └ rq3                        OK          2m35s  ██████████ 100% 1/1  
+✔  devbench[44]  repo=lice,model=phi4-14b            OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          9m54s  ██████████ 100% 3/3  
+      └ rq2                        OK         23m10s  ██████████ 100% 9/9  
+      └ rq3                        OK          9m12s  ██████████ 100% 1/1  
+✔  devbench[45]  repo=lice,model=deepseek-coder-v2-  OK     a100:1         ng10711  23m18s / 8h00m  -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          4m55s  ██████████ 100% 3/3  
+      └ rq2                        OK         11m55s  ██████████ 100% 9/9  
+      └ rq3                        OK          5m50s  ██████████ 100% 1/1  
+✔  devbench[46]  repo=lice,model=devstral-24b        OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK          5m24s  ██████████ 100% 3/3  
+      └ rq2                        OK         13m09s  ██████████ 100% 9/9  
+      └ rq3                        OK          6m10s  ██████████ 100% 1/1  
+✔  devbench[47]  repo=lice,model=gemma3-27b          OK     a100:1         -        -               -     3/3    ██████████ 100% 13/13  -                 finished
+      └ rq1                        OK         10m11s  ██████████ 100% 3/3  
+      └ rq2                        OK         29m27s  ██████████ 100% 9/9  
+      └ rq3                        OK          9m38s  ██████████ 100% 1/1  
+
+✔  collect[0]    -                                   OK     a100_1g.5gb:1  ng20304  1m30s / 1h00m   -     4/4    -                      -                 finished
+      └ paper_table                OK          0m08s    
+      └ aggregate                  OK          0m00s    
+      └ figures                    OK          0m17s    
+      └ collect                    OK          0m41s    

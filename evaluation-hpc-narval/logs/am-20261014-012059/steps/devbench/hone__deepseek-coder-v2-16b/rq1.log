@@ -1,0 +1,12 @@
+
+===== 2026-10-14 03:37:01 job 5521128 task 39 restart 0 host ng10707 =====
+$ M=$(echo deepseek-coder-v2-16b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos hone --seed 0 --temperature 0.2 --stamp hone --skip-rq2 --skip-rq3
+Using LLM backend: ollama (deepseek-coder-v2:16b)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_deepseek-coder-v2-16b_hone.jsonl ===
+[2026-10-14T03:37:01] deepseek-coder-v2:16b / hone / free_text ...
+    -> success=False p1=2 tokens=10332 elapsed=76.5s error=None
+[2026-10-14T03:38:21] deepseek-coder-v2:16b / hone / shared_schema ...
+    -> success=False p1=2 tokens=6530 elapsed=52.5s error=None
+[2026-10-14T03:39:16] deepseek-coder-v2:16b / hone / agentm2m ...
+    -> success=False p1=2 tokens=24693 elapsed=195.9s error=None
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_deepseek-coder-v2-16b_hone.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_deepseek-coder-v2-16b_hone.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_deepseek-coder-v2-16b_hone.jsonl

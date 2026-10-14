@@ -1,0 +1,7 @@
+
+===== 2026-10-14 02:56:08 job 5519199 task 7 restart 0 host ng31301 =====
+$ M=$(echo llama3.1-8b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos geotext --seed 0 --temperature 0.2 --stamp geotext --skip-rq1 --skip-rq2
+Using LLM backend: ollama (llama3.1:8b)
+=== RQ3: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_llama3.1-8b_geotext.jsonl ===
+[RQ3] llama3.1:8b / geotext ...
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_llama3.1-8b_geotext.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_llama3.1-8b_geotext.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_llama3.1-8b_geotext.jsonl

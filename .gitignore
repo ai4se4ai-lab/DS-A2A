@@ -8,8 +8,5 @@ dist/
 
 .env
 
-
-
 .ruff_cache/
-evaluation/benchmarks/cache/devbench/python/geotext/geotext/data_file/*
-evaluation/benchmarks/cache/devbench/python/lice/templates/*
+

@@ -1,0 +1,6 @@
+timestamp, index, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB], power.draw [W], temperature.gpu
+2026/10/14 03:00:21.390, 0, 0 %, 0 %, 0 MiB, 40960 MiB, 52.55 W, 27
+2026/10/14 03:01:21.397, 0, 0 %, 0 %, 17691 MiB, 40960 MiB, 70.90 W, 30
+2026/10/14 03:02:21.399, 0, 0 %, 0 %, 17691 MiB, 40960 MiB, 70.82 W, 30
+2026/10/14 03:03:21.401, 0, 0 %, 0 %, 17691 MiB, 40960 MiB, 71.06 W, 30
+2026/10/14 03:04:21.403, 0, 0 %, 0 %, 17691 MiB, 40960 MiB, 70.90 W, 30

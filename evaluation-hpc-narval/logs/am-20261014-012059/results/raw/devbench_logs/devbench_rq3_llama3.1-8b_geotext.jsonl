@@ -1,0 +1,1 @@
+{"repo": "geotext", "model": "llama3.1:8b", "n_ops_before": 9, "n_reviews_after": 9, "retroactive_coverage": 1.0, "tokens": 8719}

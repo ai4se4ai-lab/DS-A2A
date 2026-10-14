@@ -1,0 +1,7 @@
+model,n,retroactive_coverage_mean,tokens_mean,repo_count
+deepseek-coder-v2:16b,8,1.0,28776.75,8
+devstral:24b,8,1.0,17773.875,8
+gemma3:27b,8,1.0,20057.375,8
+llama3.1:8b,8,1.0,15779.25,8
+phi4:14b,8,1.0,19949.0,8
+qwen2.5-coder:7b,8,1.0,15498.375,8

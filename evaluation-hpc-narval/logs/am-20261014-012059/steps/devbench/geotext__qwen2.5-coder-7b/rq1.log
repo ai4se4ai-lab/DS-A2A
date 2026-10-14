@@ -1,0 +1,12 @@
+
+===== 2026-10-14 02:38:40 job 5519198 task 6 restart 0 host ng31203 =====
+$ M=$(echo qwen2.5-coder-7b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos geotext --seed 0 --temperature 0.2 --stamp geotext --skip-rq2 --skip-rq3
+Using LLM backend: ollama (qwen2.5-coder:7b)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_qwen2.5-coder-7b_geotext.jsonl ===
+[2026-10-14T02:38:41] qwen2.5-coder:7b / geotext / free_text ...
+    -> success=False p1=0 tokens=6924 elapsed=121.4s error=None
+[2026-10-14T02:40:44] qwen2.5-coder:7b / geotext / shared_schema ...
+    -> success=False p1=0 tokens=2727 elapsed=47.8s error=None
+[2026-10-14T02:41:33] qwen2.5-coder:7b / geotext / agentm2m ...
+    -> success=False p1=0 tokens=5832 elapsed=39.1s error=None
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_qwen2.5-coder-7b_geotext.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_qwen2.5-coder-7b_geotext.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_qwen2.5-coder-7b_geotext.jsonl

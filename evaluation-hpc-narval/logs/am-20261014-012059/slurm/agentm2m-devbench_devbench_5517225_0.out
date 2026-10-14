@@ -1,0 +1,18 @@
+[2026-10-14 02:35:15] [INFO]  ================================================================
+[2026-10-14 02:35:15] [INFO]  run am-20261014-012059   stage devbench   cell 0   job 5519124   restart 0
+[2026-10-14 02:35:15] [INFO]  nodes ng31204 (1)   cpus 6   gpus 0
+[2026-10-14 02:35:15] [INFO]  repo /lustre06/project/6108124/mbabaei/DS-A2A @ c732302
+[2026-10-14 02:35:15] [INFO]  results /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results   logs /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059
+[2026-10-14 02:35:15] [INFO]  ================================================================
+[gpu] 0, NVIDIA A100-SXM4-40GB, 40960 MiB, 580.178.04
+[2026-10-14 02:35:31] [INFO]  hook /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/slurm/hooks/all.sh
+[2026-10-14 02:36:13] [INFO]  ollama ready on GPU at http://127.0.0.1:39217 (models: /scratch/mbabaei/agentm2m_devbench/ollama_models; binary: /localscratch/mbabaei.5519124.0/ollama)
+=== stage devbench cell 0 [repo=chakin,model=qwen2.5-coder-7b]: 3 steps
+--- 2026-10-14 02:36:13 step rq1   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__qwen2.5-coder-7b/rq1.log
+    rc=0  246s
+--- 2026-10-14 02:40:19 step rq2   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__qwen2.5-coder-7b/rq2.log
+    rc=0  558s
+--- 2026-10-14 02:49:38 step rq3   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__qwen2.5-coder-7b/rq3.log
+    rc=0  114s
+=== stage devbench cell 0 finished; failed: none
+[2026-10-14 02:51:32] [INFO]  job devbench_5517225_0 end

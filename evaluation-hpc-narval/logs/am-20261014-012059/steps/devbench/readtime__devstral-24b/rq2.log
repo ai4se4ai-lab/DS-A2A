@@ -1,0 +1,7 @@
+
+===== 2026-10-14 03:12:55 job 5520537 task 22 restart 0 host ng31003 =====
+$ M=$(echo devstral-24b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos readtime --seed 0 --temperature 0.2 --stamp readtime --skip-rq1 --skip-rq3
+Using LLM backend: ollama (devstral:24b)
+=== RQ2: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_devstral-24b_readtime.jsonl ===
+[RQ2] devstral:24b / readtime ...
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_devstral-24b_readtime.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_devstral-24b_readtime.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_devstral-24b_readtime.jsonl

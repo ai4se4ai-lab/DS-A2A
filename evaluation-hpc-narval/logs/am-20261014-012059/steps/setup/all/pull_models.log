@@ -1,0 +1,3 @@
+
+===== 2026-10-14 01:25:08 job 5517224 task - restart 0 host ng31305 =====
+$ mkdir -p /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup && for m in qwen2.5-coder:7b llama3.1:8b phi4:14b deepseek-coder-v2:16b devstral:24b gemma3:27b; do ollama show $m >/dev/null || { echo "model $m missing from $OLLAMA_MODELS: stage it from the login node" >&2; exit 1; }; done && curl -sf $OLLAMA_BASE_URL/api/tags > /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/models.json

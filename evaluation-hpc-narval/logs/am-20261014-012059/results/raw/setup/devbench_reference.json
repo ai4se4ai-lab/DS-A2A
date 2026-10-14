@@ -1,0 +1,102 @@
+{
+ "TextCNN": {
+  "unit_pass": false,
+  "acceptance_pass": false,
+  "n_operations": 12,
+  "n_criteria": 2,
+  "required": false,
+  "network_bound": false,
+  "unit_tail": "s/test_output_shape.py\nERROR unit_tests/test_param.py\nERROR unit_tests/test_random_seed.py\nERROR unit_tests/test_save_best_checkpoints.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 6 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 6 errors in 0.22s ===============================\n",
+  "acceptance_tail": "test_test.py::TestTextCNN::test_testing_metric - File...\nFAILED acceptance_tests/test_train.py::TestTextCNN::test_testing_metric - Fil...\nFAILED acceptance_tests/test_train.py::TestTextCNN::test_training_metric - Fi...\n============================== 3 failed in 0.27s ===============================\n"
+ },
+ "ArXiv_digest": {
+  "unit_pass": true,
+  "acceptance_pass": false,
+  "n_operations": 7,
+  "n_criteria": 4,
+  "required": true,
+  "network_bound": true,
+  "unit_tail": "t.json\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file unit_test_cov.json\n============================== 38 passed in 0.24s ==============================\n",
+  "acceptance_tail": "TIMEOUT after 300s"
+ },
+ "chakin": {
+  "unit_pass": true,
+  "acceptance_pass": true,
+  "n_operations": 4,
+  "n_criteria": 2,
+  "required": true,
+  "network_bound": false,
+  "unit_tail": "----------------\nchakin/__init__.py         1      0   100%\nchakin/downloader.py      36      8    78%   23, 29, 43, 56-61\n----------------------------------------------------\nTOTAL                     37      8    78%\n============================== 1 passed in 0.44s ===============================\n",
+  "acceptance_tail": "Test:   0% |/                                        | ETA:  --:--:--   0.0 s/B\nTest: 100% ||                                      | Time:  0:00:00   3.3 GiB/s\n.\n----------------------------------------------------------------------\nRan 1 test in 0.004s\n\nOK\n"
+ },
+ "readtime": {
+  "unit_pass": true,
+  "acceptance_pass": true,
+  "n_operations": 11,
+  "n_criteria": 3,
+  "required": true,
+  "network_bound": false,
+  "unit_tail": "t.json\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file unit_test_cov.json\n============================== 8 passed in 0.27s ===============================\n",
+  "acceptance_tail": "\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file acceptance_test_cov.json\n============================== 4 passed in 0.26s ===============================\n"
+ },
+ "hone": {
+  "unit_pass": true,
+  "acceptance_pass": true,
+  "n_operations": 17,
+  "n_criteria": 2,
+  "required": true,
+  "network_bound": false,
+  "unit_tail": " 100%\nhone/utils/json_utils.py       9      9     0%   5-18\nhone/utils/test_utils.py      12      3    75%   22-24\n--------------------------------------------------------\nTOTAL                        188     25    87%\n============================== 7 passed in 0.08s ===============================\n",
+  "acceptance_tail": ".....\n----------------------------------------------------------------------\nRan 5 tests in 0.002s\n\nOK\n"
+ },
+ "stocktrends": {
+  "unit_pass": true,
+  "acceptance_pass": true,
+  "n_operations": 13,
+  "n_criteria": 2,
+  "required": true,
+  "network_bound": false,
+  "unit_tail": "t.json\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file unit_test_cov.json\n============================== 7 passed in 0.68s ===============================\n",
+  "acceptance_tail": "\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file acceptance_test_cov.json\n============================== 2 passed in 0.67s ===============================\n"
+ },
+ "geotext": {
+  "unit_pass": true,
+  "acceptance_pass": true,
+  "n_operations": 4,
+  "n_criteria": 2,
+  "required": true,
+  "network_bound": false,
+  "unit_tail": "t.json\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file unit_test_cov.json\n============================== 4 passed in 0.12s ===============================\n",
+  "acceptance_tail": "\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file acceptance_test_cov.json\n============================== 5 passed in 0.12s ===============================\n"
+ },
+ "lice": {
+  "unit_pass": true,
+  "acceptance_pass": true,
+  "n_operations": 17,
+  "n_criteria": 6,
+  "required": true,
+  "network_bound": false,
+  "unit_tail": "y       4      2    50%   5-6\nlice/core.py         166     29    83%   120, 125, 170, 261-265, 271-287, 312, 321-325, 349-353, 366\n------------------------------------------------\nTOTAL                170     31    82%\n============================== 25 passed in 0.19s ==============================\n",
+  "acceptance_tail": "calscratch/mbabaei.5517224.0/venv/lib/python3.11/site-packages/coverage/control.py:958: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.13.4/messages.html#warning-no-data-collected\n  self._warn(\"No data was collected.\", slug=\"no-data-collected\")\n"
+ },
+ "particle-swarm-optimization": {
+  "unit_pass": true,
+  "acceptance_pass": true,
+  "n_operations": 5,
+  "n_criteria": 3,
+  "required": true,
+  "network_bound": false,
+  "unit_tail": "t.json\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file unit_test_cov.json\n============================== 5 passed in 0.07s ===============================\n",
+  "acceptance_tail": "\n================================ tests coverage ================================\n_______________ coverage: platform linux, python 3.11.5-final-0 ________________\n\nCoverage JSON written to file acceptance_test_cov.json\n============================== 1 passed in 0.05s ===============================\n"
+ },
+ "Hybrid_Images": {
+  "unit_pass": false,
+  "acceptance_pass": false,
+  "n_operations": 6,
+  "n_criteria": 6,
+  "required": false,
+  "network_bound": false,
+  "unit_tail": " to: unit_test_report.json\n=========================== short test summary info ============================\nERROR unit_tests/unit_test.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.18s ===============================\n",
+  "acceptance_tail": "st_report.json\n=========================== short test summary info ============================\nERROR acceptance_tests/acceptance_test.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.17s ===============================\n"
+ }
+}

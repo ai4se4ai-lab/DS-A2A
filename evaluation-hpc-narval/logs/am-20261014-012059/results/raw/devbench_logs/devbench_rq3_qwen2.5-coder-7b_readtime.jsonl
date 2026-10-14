@@ -1,0 +1,1 @@
+{"repo": "readtime", "model": "qwen2.5-coder:7b", "n_ops_before": 16, "n_reviews_after": 16, "retroactive_coverage": 1.0, "tokens": 16877}

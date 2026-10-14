@@ -1,0 +1,12 @@
+
+===== 2026-10-14 03:32:00 job 5521066 task 36 restart 0 host ng30601 =====
+$ M=$(echo qwen2.5-coder-7b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos hone --seed 0 --temperature 0.2 --stamp hone --skip-rq2 --skip-rq3
+Using LLM backend: ollama (qwen2.5-coder:7b)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_qwen2.5-coder-7b_hone.jsonl ===
+[2026-10-14T03:32:01] qwen2.5-coder:7b / hone / free_text ...
+    -> success=False p1=0 tokens=10880 elapsed=88.4s error=None
+[2026-10-14T03:33:32] qwen2.5-coder:7b / hone / shared_schema ...
+    -> success=False p1=0 tokens=5582 elapsed=54.7s error=None
+[2026-10-14T03:34:28] qwen2.5-coder:7b / hone / agentm2m ...
+    -> success=False p1=0 tokens=19081 elapsed=87.3s error=None
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_qwen2.5-coder-7b_hone.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_qwen2.5-coder-7b_hone.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_qwen2.5-coder-7b_hone.jsonl

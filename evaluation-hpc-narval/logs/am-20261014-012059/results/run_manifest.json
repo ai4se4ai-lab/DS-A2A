@@ -1,0 +1,50 @@
+{
+ "run_id": "am-20261014-012059",
+ "created": "2026-10-14 01:20:59 EDT",
+ "submissions": [
+  "2026-10-14 01:20:59",
+  "2026-10-14 03:28:33"
+ ],
+ "submit_host": "narval3",
+ "git": {
+  "commit": "c73230257f52ad2ec199677103a7c9d54d694158",
+  "branch": "hpc",
+  "dirty": [
+   "M docs/references.bib",
+   " M evaluation/analysis/make_two_model_figures.py",
+   " M hpc-narval/README.md",
+   " M hpc-narval/config/experiments.json",
+   " M hpc-narval/docs/hpc-guide.md",
+   " M hpc-narval/scripts/manifest.py",
+   " M hpc-narval/scripts/paper_table.py",
+   " M hpc-narval/slurm/hooks/all.sh",
+   " M hpc-narval/slurm/submit.py"
+  ],
+  "diff_sha256": "32d4ee1f664493e2"
+ },
+ "content_sha256": {
+  "src": "06a117e683460564",
+  "evaluation/harness": "e6c6a4f84aaaabb8",
+  "evaluation/analysis": "cfeb807501b3e568",
+  "hpc-narval/config": "ca12d7086e4597c0"
+ },
+ "cluster_env": {
+  "SRC_DIRS": "src",
+  "OLLAMA_MODELS": "/scratch/mbabaei/agentm2m_devbench/ollama_models",
+  "MAIL_TYPE": "FAIL",
+  "OLLAMA_MAX_LOADED_MODELS": "1",
+  "ACCOUNT": "def-mbabaei_gpu",
+  "GPU_MONITOR_SECS": "60",
+  "PREFLIGHT_MODEL": "qwen2.5-coder:7b",
+  "OLLAMA_PREFIX": "/scratch/mbabaei/autom2m_hpc/opt/ollama-0.40.0",
+  "WORK": "/scratch/mbabaei/agentm2m_devbench",
+  "MODULES": "StdEnv/2023 python/3.11",
+  "OLLAMA_NUM_PARALLEL": "1",
+  "RESULTS_DEST": "",
+  "CODE_HASH_DIRS": "src evaluation/harness evaluation/analysis",
+  "MAX_REQUEUES": "20",
+  "PIP_FIND_LINKS": "/scratch/mbabaei/agentm2m_devbench/wheels",
+  "REQUEUE_SIGNAL_SECS": "900"
+ },
+ "experiments_sha256": "319bf8825b78f1b4"
+}

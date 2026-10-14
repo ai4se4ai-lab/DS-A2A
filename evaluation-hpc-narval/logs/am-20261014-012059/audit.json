@@ -1,0 +1,2964 @@
+{
+ "run_id": "am-20261014-012059",
+ "time": "2026-10-14 04:55:57",
+ "smoke": false,
+ "project": "agentm2m-devbench",
+ "commit": "c73230257f",
+ "results": "/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results",
+ "rows": [
+  {
+   "stage": "setup",
+   "cell_id": 0,
+   "cell": "-",
+   "job": "5517224",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng31305",
+   "elapsed": 765,
+   "limit": 10800,
+   "steps_ok": 5,
+   "steps_total": 5,
+   "current": null,
+   "failed": [],
+   "progress": null,
+   "steps": [
+    {
+     "step": "check_gpu",
+     "status": "OK",
+     "seconds": 0.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/check_gpu.log"
+    },
+    {
+     "step": "pull_models",
+     "status": "OK",
+     "seconds": 4.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/pull_models.log"
+    },
+    {
+     "step": "verify_reference",
+     "status": "OK",
+     "seconds": 345.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/verify_reference.log"
+    },
+    {
+     "step": "ping_models",
+     "status": "OK",
+     "seconds": 349.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/ping_models.log"
+    },
+    {
+     "step": "preflight_mock",
+     "status": "OK",
+     "seconds": 5.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/preflight_mock.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 0,
+   "cell": "repo=chakin,model=qwen2.5-coder-7b",
+   "job": "5521050_0",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 246.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__qwen2.5-coder-7b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 558.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__qwen2.5-coder-7b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 114.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__qwen2.5-coder-7b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 1,
+   "cell": "repo=chakin,model=llama3.1-8b",
+   "job": "5521050_1",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 491.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__llama3.1-8b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 761.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__llama3.1-8b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 181.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__llama3.1-8b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 2,
+   "cell": "repo=chakin,model=phi4-14b",
+   "job": "5521050_2",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 321.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__phi4-14b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 902.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__phi4-14b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 202.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__phi4-14b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 3,
+   "cell": "repo=chakin,model=deepseek-coder-v2-16b",
+   "job": "5521050_3",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng30707",
+   "elapsed": 1120,
+   "limit": 28800,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 405.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__deepseek-coder-v2-16b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 561.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__deepseek-coder-v2-16b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 122.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__deepseek-coder-v2-16b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 4,
+   "cell": "repo=chakin,model=devstral-24b",
+   "job": "5521050_4",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 279.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__devstral-24b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 672.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__devstral-24b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 180.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__devstral-24b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 5,
+   "cell": "repo=chakin,model=gemma3-27b",
+   "job": "5521050_5",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 405.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__gemma3-27b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1032.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__gemma3-27b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 183.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/chakin__gemma3-27b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 6,
+   "cell": "repo=geotext,model=qwen2.5-coder-7b",
+   "job": "5521050_6",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 213.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__qwen2.5-coder-7b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 585.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__qwen2.5-coder-7b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 61.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__qwen2.5-coder-7b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 7,
+   "cell": "repo=geotext,model=llama3.1-8b",
+   "job": "5521050_7",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 247.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__llama3.1-8b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 797.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__llama3.1-8b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 93.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__llama3.1-8b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 8,
+   "cell": "repo=geotext,model=phi4-14b",
+   "job": "5521050_8",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 331.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__phi4-14b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 925.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__phi4-14b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 198.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__phi4-14b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 9,
+   "cell": "repo=geotext,model=deepseek-coder-v2-16b",
+   "job": "5521050_9",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng30707",
+   "elapsed": 812,
+   "limit": 28800,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 134.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__deepseek-coder-v2-16b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 457.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__deepseek-coder-v2-16b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 190.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__deepseek-coder-v2-16b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 10,
+   "cell": "repo=geotext,model=devstral-24b",
+   "job": "5521050_10",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 238.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__devstral-24b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 625.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__devstral-24b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 153.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__devstral-24b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 11,
+   "cell": "repo=geotext,model=gemma3-27b",
+   "job": "5521050_11",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 488.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__gemma3-27b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1348.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__gemma3-27b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 190.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/geotext__gemma3-27b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 12,
+   "cell": "repo=particle-swarm-optimization,model=qwen2.5-coder-7b",
+   "job": "5521050_12",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 165.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__qwen2.5-coder-7b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 357.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__qwen2.5-coder-7b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 52.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__qwen2.5-coder-7b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 13,
+   "cell": "repo=particle-swarm-optimization,model=llama3.1-8b",
+   "job": "5521050_13",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 171.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__llama3.1-8b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 438.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__llama3.1-8b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 66.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__llama3.1-8b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 14,
+   "cell": "repo=particle-swarm-optimization,model=phi4-14b",
+   "job": "5521050_14",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 404.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__phi4-14b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1023.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__phi4-14b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 241.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__phi4-14b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 15,
+   "cell": "repo=particle-swarm-optimization,model=deepseek-coder-v2-16b",
+   "job": "5521050_15",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng20202",
+   "elapsed": 1081,
+   "limit": 28800,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 191.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__deepseek-coder-v2-16b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 618.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__deepseek-coder-v2-16b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 224.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__deepseek-coder-v2-16b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 16,
+   "cell": "repo=particle-swarm-optimization,model=devstral-24b",
+   "job": "5521050_16",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 291.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__devstral-24b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 711.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__devstral-24b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 179.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__devstral-24b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 17,
+   "cell": "repo=particle-swarm-optimization,model=gemma3-27b",
+   "job": "5521050_17",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 656.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__gemma3-27b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1433.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__gemma3-27b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 270.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/particle-swarm-optimization__gemma3-27b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 18,
+   "cell": "repo=readtime,model=qwen2.5-coder-7b",
+   "job": "5521050_18",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 333.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__qwen2.5-coder-7b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 584.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__qwen2.5-coder-7b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 112.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__qwen2.5-coder-7b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 19,
+   "cell": "repo=readtime,model=llama3.1-8b",
+   "job": "5521050_19",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 294.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__llama3.1-8b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 812.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__llama3.1-8b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 148.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__llama3.1-8b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 20,
+   "cell": "repo=readtime,model=phi4-14b",
+   "job": "5521050_20",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 458.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__phi4-14b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 777.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__phi4-14b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 264.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__phi4-14b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 21,
+   "cell": "repo=readtime,model=deepseek-coder-v2-16b",
+   "job": "5521050_21",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng20202",
+   "elapsed": 1295,
+   "limit": 28800,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 213.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__deepseek-coder-v2-16b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 726.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__deepseek-coder-v2-16b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 307.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__deepseek-coder-v2-16b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 22,
+   "cell": "repo=readtime,model=devstral-24b",
+   "job": "5521050_22",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 433.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__devstral-24b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1287.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__devstral-24b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 397.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__devstral-24b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 23,
+   "cell": "repo=readtime,model=gemma3-27b",
+   "job": "5521050_23",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 550.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__gemma3-27b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1449.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__gemma3-27b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 326.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/readtime__gemma3-27b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 24,
+   "cell": "repo=stocktrends,model=qwen2.5-coder-7b",
+   "job": "5521050_24",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 242.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__qwen2.5-coder-7b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 536.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__qwen2.5-coder-7b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 110.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__qwen2.5-coder-7b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 25,
+   "cell": "repo=stocktrends,model=llama3.1-8b",
+   "job": "5521050_25",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 231.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__llama3.1-8b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 592.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__llama3.1-8b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 136.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__llama3.1-8b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 26,
+   "cell": "repo=stocktrends,model=phi4-14b",
+   "job": "5521050_26",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 375.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__phi4-14b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 992.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__phi4-14b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 316.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__phi4-14b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 27,
+   "cell": "repo=stocktrends,model=deepseek-coder-v2-16b",
+   "job": "5521050_27",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng20302",
+   "elapsed": 1563,
+   "limit": 28800,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 300.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__deepseek-coder-v2-16b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 758.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__deepseek-coder-v2-16b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 475.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__deepseek-coder-v2-16b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 28,
+   "cell": "repo=stocktrends,model=devstral-24b",
+   "job": "5521050_28",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 367.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__devstral-24b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 973.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__devstral-24b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 360.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__devstral-24b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 29,
+   "cell": "repo=stocktrends,model=gemma3-27b",
+   "job": "5521050_29",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 668.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__gemma3-27b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1851.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__gemma3-27b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 520.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/stocktrends__gemma3-27b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 30,
+   "cell": "repo=ArXiv_digest,model=qwen2.5-coder-7b",
+   "job": "5521050_30",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 171.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__qwen2.5-coder-7b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 582.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__qwen2.5-coder-7b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 70.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__qwen2.5-coder-7b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 31,
+   "cell": "repo=ArXiv_digest,model=llama3.1-8b",
+   "job": "5521050_31",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 253.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__llama3.1-8b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 614.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__llama3.1-8b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 85.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__llama3.1-8b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 32,
+   "cell": "repo=ArXiv_digest,model=phi4-14b",
+   "job": "5521050_32",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 318.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__phi4-14b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 830.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__phi4-14b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 370.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__phi4-14b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 33,
+   "cell": "repo=ArXiv_digest,model=deepseek-coder-v2-16b",
+   "job": "5521050_33",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng10701",
+   "elapsed": 1378,
+   "limit": 28800,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 307.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__deepseek-coder-v2-16b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 749.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__deepseek-coder-v2-16b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 281.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__deepseek-coder-v2-16b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 34,
+   "cell": "repo=ArXiv_digest,model=devstral-24b",
+   "job": "5521050_34",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 323.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__devstral-24b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 939.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__devstral-24b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 213.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__devstral-24b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 35,
+   "cell": "repo=ArXiv_digest,model=gemma3-27b",
+   "job": "5521050_35",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 728.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__gemma3-27b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 2283.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__gemma3-27b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 425.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__gemma3-27b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 36,
+   "cell": "repo=hone,model=qwen2.5-coder-7b",
+   "job": "5521050_36",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 236.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__qwen2.5-coder-7b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 613.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__qwen2.5-coder-7b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 123.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__qwen2.5-coder-7b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 37,
+   "cell": "repo=hone,model=llama3.1-8b",
+   "job": "5521050_37",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 329.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__llama3.1-8b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 885.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__llama3.1-8b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 167.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__llama3.1-8b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 38,
+   "cell": "repo=hone,model=phi4-14b",
+   "job": "5521050_38",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 354.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__phi4-14b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 972.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__phi4-14b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 350.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__phi4-14b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 39,
+   "cell": "repo=hone,model=deepseek-coder-v2-16b",
+   "job": "5521050_39",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng10707",
+   "elapsed": 1753,
+   "limit": 28800,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 333.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__deepseek-coder-v2-16b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 930.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__deepseek-coder-v2-16b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 448.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__deepseek-coder-v2-16b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 40,
+   "cell": "repo=hone,model=devstral-24b",
+   "job": "5521050_40",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 636.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__devstral-24b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1676.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__devstral-24b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 608.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__devstral-24b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 41,
+   "cell": "repo=hone,model=gemma3-27b",
+   "job": "5521050_41",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 976.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__gemma3-27b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 2379.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__gemma3-27b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 736.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/hone__gemma3-27b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 42,
+   "cell": "repo=lice,model=qwen2.5-coder-7b",
+   "job": "5521050_42",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 266.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__qwen2.5-coder-7b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 713.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__qwen2.5-coder-7b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 281.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__qwen2.5-coder-7b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 43,
+   "cell": "repo=lice,model=llama3.1-8b",
+   "job": "5521050_43",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 246.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__llama3.1-8b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 693.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__llama3.1-8b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 155.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__llama3.1-8b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 44,
+   "cell": "repo=lice,model=phi4-14b",
+   "job": "5521050_44",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 594.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__phi4-14b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1390.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__phi4-14b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 552.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__phi4-14b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 45,
+   "cell": "repo=lice,model=deepseek-coder-v2-16b",
+   "job": "5521050_45",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng10711",
+   "elapsed": 1398,
+   "limit": 28800,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 295.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__deepseek-coder-v2-16b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 715.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__deepseek-coder-v2-16b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 350.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__deepseek-coder-v2-16b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 46,
+   "cell": "repo=lice,model=devstral-24b",
+   "job": "5521050_46",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 324.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__devstral-24b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 789.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__devstral-24b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 370.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__devstral-24b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "devbench",
+   "cell_id": 47,
+   "cell": "repo=lice,model=gemma3-27b",
+   "job": "5521050_47",
+   "state": "OK",
+   "slurm_state": "",
+   "reason": "",
+   "node": "-",
+   "elapsed": null,
+   "limit": null,
+   "steps_ok": 3,
+   "steps_total": 3,
+   "current": null,
+   "failed": [],
+   "progress": [
+    13,
+    13.0
+   ],
+   "steps": [
+    {
+     "step": "rq1",
+     "status": "OK",
+     "seconds": 611.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      3,
+      3.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__gemma3-27b/rq1.log"
+    },
+    {
+     "step": "rq2",
+     "status": "OK",
+     "seconds": 1767.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      9,
+      9.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__gemma3-27b/rq2.log"
+    },
+    {
+     "step": "rq3",
+     "status": "OK",
+     "seconds": 578.0,
+     "rc": "0",
+     "note": "",
+     "progress": [
+      1,
+      1.0
+     ],
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/lice__gemma3-27b/rq3.log"
+    }
+   ],
+   "gpu": "a100:1"
+  },
+  {
+   "stage": "collect",
+   "cell_id": 0,
+   "cell": "-",
+   "job": "5517227",
+   "state": "OK",
+   "slurm_state": "COMPLETED",
+   "reason": "",
+   "node": "ng20304",
+   "elapsed": 90,
+   "limit": 3600,
+   "steps_ok": 4,
+   "steps_total": 4,
+   "current": null,
+   "failed": [],
+   "progress": null,
+   "steps": [
+    {
+     "step": "paper_table",
+     "status": "OK",
+     "seconds": 8.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/collect/all/paper_table.log"
+    },
+    {
+     "step": "aggregate",
+     "status": "OK",
+     "seconds": 0.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/collect/all/aggregate.log"
+    },
+    {
+     "step": "figures",
+     "status": "OK",
+     "seconds": 17.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/collect/all/figures.log"
+    },
+    {
+     "step": "collect",
+     "status": "OK",
+     "seconds": 41.0,
+     "rc": "0",
+     "note": "",
+     "progress": null,
+     "log": "/lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/collect/all/collect.log"
+    }
+   ],
+   "gpu": "a100_1g.5gb:1"
+  }
+ ],
+ "requeues": 0
+}

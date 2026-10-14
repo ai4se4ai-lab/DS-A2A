@@ -1,0 +1,50 @@
+{
+ "qwen2.5-coder:7b": {
+  "available": true,
+  "n_repos": 8,
+  "point": 100.0,
+  "lo95": 100.0,
+  "hi95": 100.0,
+  "supported": true
+ },
+ "llama3.1:8b": {
+  "available": true,
+  "n_repos": 8,
+  "point": 100.0,
+  "lo95": 100.0,
+  "hi95": 100.0,
+  "supported": true
+ },
+ "phi4:14b": {
+  "available": true,
+  "n_repos": 8,
+  "point": 100.0,
+  "lo95": 100.0,
+  "hi95": 100.0,
+  "supported": true
+ },
+ "deepseek-coder-v2:16b": {
+  "available": true,
+  "n_repos": 8,
+  "point": 100.0,
+  "lo95": 100.0,
+  "hi95": 100.0,
+  "supported": true
+ },
+ "devstral:24b": {
+  "available": true,
+  "n_repos": 8,
+  "point": 100.0,
+  "lo95": 100.0,
+  "hi95": 100.0,
+  "supported": true
+ },
+ "gemma3:27b": {
+  "available": true,
+  "n_repos": 8,
+  "point": 87.5,
+  "lo95": 62.5,
+  "hi95": 100.0,
+  "supported": true
+ }
+}

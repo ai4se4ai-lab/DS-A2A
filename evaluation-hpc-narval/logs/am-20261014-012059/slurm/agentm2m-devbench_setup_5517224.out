@@ -1,0 +1,24 @@
+[2026-10-14 01:24:15] [INFO]  ================================================================
+[2026-10-14 01:24:15] [INFO]  run am-20261014-012059   stage setup   cell 0   job 5517224   restart 0
+[2026-10-14 01:24:15] [INFO]  nodes ng31305 (1)   cpus 6   gpus 0
+[2026-10-14 01:24:15] [INFO]  repo /lustre06/project/6108124/mbabaei/DS-A2A @ c732302
+[2026-10-14 01:24:15] [INFO]  results /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results   logs /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059
+[2026-10-14 01:24:15] [INFO]  ================================================================
+[gpu] 0, NVIDIA A100-SXM4-40GB, 40960 MiB, 580.178.04
+[2026-10-14 01:24:33] [INFO]  hook /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/slurm/hooks/all.sh
+[2026-10-14 01:25:08] [INFO]  ollama ready on GPU at http://127.0.0.1:36863 (models: /scratch/mbabaei/agentm2m_devbench/ollama_models; binary: /localscratch/mbabaei.5517224.0/ollama)
+=== stage setup cell 0 [-]: 5 steps
+--- 2026-10-14 01:25:08 step check_gpu   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/check_gpu.log
+    index, name, memory.total [MiB], memory.used [MiB], utilization.gpu [%]
+0, NVIDIA A100-SXM4-40GB, 40960 MiB, 0 MiB, 0 %
+    rc=0  0s
+--- 2026-10-14 01:25:08 step pull_models   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/pull_models.log
+    rc=0  4s
+--- 2026-10-14 01:25:12 step verify_reference   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/verify_reference.log
+    rc=0  345s
+--- 2026-10-14 01:31:03 step ping_models   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/ping_models.log
+    rc=0  349s
+--- 2026-10-14 01:36:52 step preflight_mock   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/setup/all/preflight_mock.log
+    rc=0  5s
+=== stage setup cell 0 finished; failed: none
+[2026-10-14 01:36:57] [INFO]  job setup_5517224 end

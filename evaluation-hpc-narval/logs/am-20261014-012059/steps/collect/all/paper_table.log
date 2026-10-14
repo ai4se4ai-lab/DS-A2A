@@ -1,0 +1,83 @@
+
+===== 2026-10-14 04:54:14 job 5517227 task - restart 0 host ng20304 =====
+$ python hpc-narval/scripts/paper_table.py --logs /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs --out /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis --models qwen2.5-coder:7b llama3.1:8b phi4:14b deepseek-coder-v2:16b devstral:24b gemma3:27b
+| Metric | Model | F | S | A |
+|---|---|---|---|---|
+| RQ1 canaries in code | qwen2.5-coder:7b | 4 | 0 | 40 |
+| RQ1 canaries total | qwen2.5-coder:7b | 40 | 40 | 40 |
+| RQ1 acceptance passed | qwen2.5-coder:7b | 0 | 0 | 0 |
+| RQ1 repos run | qwen2.5-coder:7b | 8 | 8 | 8 |
+| RQ1 MAST P1 per trace | qwen2.5-coder:7b | 0 | 0 | 0 |
+| RQ1 MAST P2 per trace | qwen2.5-coder:7b | 0 | 0 | 0.12 |
+| RQ1 build tokens (k) | qwen2.5-coder:7b | 8.48 | 4.1 | 11.44 |
+| RQ2 impact precision | qwen2.5-coder:7b | 0.65 | 0.14 | 1.0 |
+| RQ2 impact recall | qwen2.5-coder:7b | 0.75 | 1.0 | 1.0 |
+| RQ2 tokens per change (k) | qwen2.5-coder:7b | 8.7 | 4.07 | 0.45 |
+| RQ2 changes | qwen2.5-coder:7b | 24 | 24 | 24 |
+| RQ3 retroactive coverage (%) | qwen2.5-coder:7b | - | - | 100.0 |
+| RQ3 glue lines | qwen2.5-coder:7b | 22 | 22 | 7 |
+| RQ1 canaries in code | llama3.1:8b | 18 | 0 | 40 |
+| RQ1 canaries total | llama3.1:8b | 40 | 40 | 40 |
+| RQ1 acceptance passed | llama3.1:8b | 0 | 0 | 0 |
+| RQ1 repos run | llama3.1:8b | 8 | 8 | 8 |
+| RQ1 MAST P1 per trace | llama3.1:8b | 2 | 2 | 1.88 |
+| RQ1 MAST P2 per trace | llama3.1:8b | 0 | 0 | 0 |
+| RQ1 build tokens (k) | llama3.1:8b | 10.15 | 5.5 | 11.82 |
+| RQ2 impact precision | llama3.1:8b | 0.25 | 0.14 | 1.0 |
+| RQ2 impact recall | llama3.1:8b | 0.79 | 1.0 | 1.0 |
+| RQ2 tokens per change (k) | llama3.1:8b | 10.47 | 5.31 | 0.46 |
+| RQ2 changes | llama3.1:8b | 24 | 24 | 24 |
+| RQ3 retroactive coverage (%) | llama3.1:8b | - | - | 100.0 |
+| RQ3 glue lines | llama3.1:8b | 22 | 22 | 7 |
+| RQ1 canaries in code | phi4:14b | 7 | 0 | 40 |
+| RQ1 canaries total | phi4:14b | 40 | 40 | 40 |
+| RQ1 acceptance passed | phi4:14b | 0 | 0 | 0 |
+| RQ1 repos run | phi4:14b | 8 | 8 | 8 |
+| RQ1 MAST P1 per trace | phi4:14b | 0.5 | 1 | 0.38 |
+| RQ1 MAST P2 per trace | phi4:14b | 0 | 0 | 0.25 |
+| RQ1 build tokens (k) | phi4:14b | 8.68 | 5.23 | 12.81 |
+| RQ2 impact precision | phi4:14b | 0.62 | 0.14 | 1.0 |
+| RQ2 impact recall | phi4:14b | 0.92 | 1.0 | 1.0 |
+| RQ2 tokens per change (k) | phi4:14b | 9.02 | 5.18 | 0.48 |
+| RQ2 changes | phi4:14b | 24 | 24 | 24 |
+| RQ3 retroactive coverage (%) | phi4:14b | - | - | 100.0 |
+| RQ3 glue lines | phi4:14b | 22 | 22 | 7 |
+| RQ1 canaries in code | deepseek-coder-v2:16b | 0 | 0 | 40 |
+| RQ1 canaries total | deepseek-coder-v2:16b | 40 | 40 | 40 |
+| RQ1 acceptance passed | deepseek-coder-v2:16b | 0 | 0 | 0 |
+| RQ1 repos run | deepseek-coder-v2:16b | 8 | 8 | 8 |
+| RQ1 MAST P1 per trace | deepseek-coder-v2:16b | 2 | 2 | 2 |
+| RQ1 MAST P2 per trace | deepseek-coder-v2:16b | 0 | 0 | 0 |
+| RQ1 build tokens (k) | deepseek-coder-v2:16b | 9.65 | 5.34 | 15.54 |
+| RQ2 impact precision | deepseek-coder-v2:16b | 0.37 | 0.14 | 1.0 |
+| RQ2 impact recall | deepseek-coder-v2:16b | 0.71 | 1.0 | 1.0 |
+| RQ2 tokens per change (k) | deepseek-coder-v2:16b | 9.69 | 5.27 | 0.53 |
+| RQ2 changes | deepseek-coder-v2:16b | 24 | 24 | 24 |
+| RQ3 retroactive coverage (%) | deepseek-coder-v2:16b | - | - | 100.0 |
+| RQ3 glue lines | deepseek-coder-v2:16b | 22 | 22 | 7 |
+| RQ1 canaries in code | devstral:24b | 24 | 0 | 40 |
+| RQ1 canaries total | devstral:24b | 40 | 40 | 40 |
+| RQ1 acceptance passed | devstral:24b | 0 | 0 | 0 |
+| RQ1 repos run | devstral:24b | 8 | 8 | 8 |
+| RQ1 MAST P1 per trace | devstral:24b | 2 | 1.12 | 1 |
+| RQ1 MAST P2 per trace | devstral:24b | 0 | 0.12 | 0 |
+| RQ1 build tokens (k) | devstral:24b | 8.96 | 4.06 | 11.02 |
+| RQ2 impact precision | devstral:24b | 0.8 | 0.14 | 1.0 |
+| RQ2 impact recall | devstral:24b | 0.96 | 1.0 | 1.0 |
+| RQ2 tokens per change (k) | devstral:24b | 9.36 | 3.85 | 0.41 |
+| RQ2 changes | devstral:24b | 24 | 24 | 24 |
+| RQ3 retroactive coverage (%) | devstral:24b | - | - | 100.0 |
+| RQ3 glue lines | devstral:24b | 22 | 22 | 7 |
+| RQ1 canaries in code | gemma3:27b | 13 | 5 | 40 |
+| RQ1 canaries total | gemma3:27b | 40 | 40 | 40 |
+| RQ1 acceptance passed | gemma3:27b | 0 | 0 | 0 |
+| RQ1 repos run | gemma3:27b | 8 | 8 | 8 |
+| RQ1 MAST P1 per trace | gemma3:27b | 0.25 | 1 | 0.25 |
+| RQ1 MAST P2 per trace | gemma3:27b | 0 | 0 | 0 |
+| RQ1 build tokens (k) | gemma3:27b | 12.06 | 6.53 | 12.9 |
+| RQ2 impact precision | gemma3:27b | 0.57 | 0.14 | 1.0 |
+| RQ2 impact recall | gemma3:27b | 0.67 | 1.0 | 1.0 |
+| RQ2 tokens per change (k) | gemma3:27b | 12.37 | 6.75 | 0.44 |
+| RQ2 changes | gemma3:27b | 24 | 24 | 24 |
+| RQ3 retroactive coverage (%) | gemma3:27b | - | - | 100.0 |
+| RQ3 glue lines | gemma3:27b | 22 | 22 | 7 |

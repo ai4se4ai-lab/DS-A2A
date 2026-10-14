@@ -1,0 +1,16 @@
+
+===== 2026-10-14 01:36:52 job 5517224 task - restart 0 host ng31305 =====
+$ DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/preflight python -m evaluation.harness.devbench_run_all --llm mock --model mock --repos chakin --stamp preflight
+Using LLM backend: mock (mock)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/preflight/devbench_rq1_mock_preflight.jsonl ===
+[2026-10-14T01:36:53] mock / chakin / free_text ...
+    -> success=False p1=0 tokens=2054 elapsed=1.4s error=None
+[2026-10-14T01:36:55] mock / chakin / shared_schema ...
+    -> success=False p1=0 tokens=850 elapsed=1.1s error=None
+[2026-10-14T01:36:56] mock / chakin / agentm2m ...
+    -> success=False p1=0 tokens=7013 elapsed=1.2s error=None
+=== RQ2: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/preflight/devbench_rq2_mock_preflight.jsonl ===
+[RQ2] mock / chakin ...
+=== RQ3: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/preflight/devbench_rq3_mock_preflight.jsonl ===
+[RQ3] mock / chakin ...
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/preflight/devbench_rq1_mock_preflight.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/preflight/devbench_rq2_mock_preflight.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/preflight/devbench_rq3_mock_preflight.jsonl

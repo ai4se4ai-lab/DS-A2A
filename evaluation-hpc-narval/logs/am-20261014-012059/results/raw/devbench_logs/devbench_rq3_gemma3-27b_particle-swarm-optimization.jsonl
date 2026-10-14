@@ -1,0 +1,1 @@
+{"repo": "particle-swarm-optimization", "model": "gemma3:27b", "n_ops_before": 10, "n_reviews_after": 10, "retroactive_coverage": 1.0, "tokens": 12876}

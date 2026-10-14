@@ -1,0 +1,7 @@
+
+===== 2026-10-14 03:50:36 job 5521124 task 15 restart 0 host ng20202 =====
+$ M=$(echo deepseek-coder-v2-16b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos particle-swarm-optimization --seed 0 --temperature 0.2 --stamp particle-swarm-optimization --skip-rq1 --skip-rq2
+Using LLM backend: ollama (deepseek-coder-v2:16b)
+=== RQ3: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl ===
+[RQ3] deepseek-coder-v2:16b / particle-swarm-optimization ...
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl

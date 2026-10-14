@@ -1,0 +1,22 @@
+
+===== 2026-10-14 03:00:31 job 5520362 task 15 restart 0 host ng10502 =====
+$ M=$(echo deepseek-coder-v2-16b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos particle-swarm-optimization --seed 0 --temperature 0.2 --stamp particle-swarm-optimization --skip-rq2 --skip-rq3
+Using LLM backend: ollama (deepseek-coder-v2:16b)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl ===
+[2026-10-14T03:00:31] deepseek-coder-v2:16b / particle-swarm-optimization / free_text ...
+    -> success=None p1=None tokens=None elapsed=Nones error=LLMError: Ollama generate() failed: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+[2026-10-14T03:05:06] deepseek-coder-v2:16b / particle-swarm-optimization / shared_schema ...
+    -> success=None p1=None tokens=None elapsed=Nones error=LLMError: Ollama generate() failed: HTTPConnectionPool(host='127.0.0.1', port=54651): Max retries exceeded with url: /api/generate (Caused by NewConnectionError("HTTPConnection(host='127.0.0.1', port=54651): Failed to establish a new connection: [Errno 111] Connection refused"))
+[2026-10-14T03:05:06] deepseek-coder-v2:16b / particle-swarm-optimization / agentm2m ...
+
+===== 2026-10-14 03:37:07 job 5521124 task 15 restart 0 host ng20202 =====
+$ M=$(echo deepseek-coder-v2-16b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos particle-swarm-optimization --seed 0 --temperature 0.2 --stamp particle-swarm-optimization --skip-rq2 --skip-rq3
+Using LLM backend: ollama (deepseek-coder-v2:16b)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl ===
+[2026-10-14T03:37:08] deepseek-coder-v2:16b / particle-swarm-optimization / free_text ...
+    -> success=False p1=2 tokens=9317 elapsed=114.5s error=None
+[2026-10-14T03:39:05] deepseek-coder-v2:16b / particle-swarm-optimization / shared_schema ...
+    -> success=False p1=2 tokens=3037 elapsed=24.7s error=None
+[2026-10-14T03:39:32] deepseek-coder-v2:16b / particle-swarm-optimization / agentm2m ...
+    -> success=False p1=2 tokens=8311 elapsed=44.8s error=None
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_deepseek-coder-v2-16b_particle-swarm-optimization.jsonl
