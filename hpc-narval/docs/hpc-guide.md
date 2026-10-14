@@ -15,19 +15,19 @@ The study compares three hand-off configurations, all run inside every cell:
 - **shared schema** (PatchBoard-style);
 - **AgentM2M**.
 
-They run with identical roles, prompts and LLM, across **2 models × 8 repositories = 16 cells**. Each cell writes 13 records:
+They run with identical roles, prompts and LLM, across **6 models × 8 repositories = 48 cells**. Each cell writes 13 records:
 
 - RQ1: 3 build runs (one per configuration);
 - RQ2: 9 changes (3 injected changes × 3 configurations);
 - RQ3: 1 HOT-added Security Reviewer run.
 
-The full study therefore writes 208 records.
+The full study therefore writes 624 records.
 
 ```
 setup (1 job, a100:1, afterok gate)                   checks staged models, verifies DevBench references,
-  │                                                    pings both models on the GPU, mock pre-flight
+  │                                                    pings all 6 models on the GPU, mock pre-flight
   ▼ afterok
-devbench (array 0-15 %8, a100:1 each, requeue)        cell = repo × model; steps rq1 → rq2 → rq3
+devbench (array 0-47 %12, a100:1 each, requeue)      cell = repo × model; steps rq1 → rq2 → rq3
   │                                                    (devbench_run_all, one RQ per step)
   ▼ afterany
 collect (1 job, a100_1g.5gb:1 MIG slice)              paper table + RQ1 decision rule, aggregate, figures,
@@ -36,7 +36,8 @@ collect (1 job, a100_1g.5gb:1 MIG slice)              paper table + RQ1 decision
 
 **Scale (measured in the smoke runs, 2026-10-13).** The `chakin` × qwen3.8:27b cell takes about 21 min on one A100,
 including model load (9 operations including 5 canaries). Cell time grows roughly with the number of operations.
-The 8 repositories total 118 operations, so the full study is about 2 × 118/9 × 21 min ≈ **9–10 GPU-hours**.
+The 8 repositories total 118 operations, so each model costs about 118/9 × 21 min ≈ 4.5 GPU-hours at 27B and less
+for the smaller models; the six-model study is about **20–30 GPU-hours**.
 Add up to about 1 h of ArXiv_digest acceptance-test timeouts (§11). With 8 cells in parallel, the wall time is the
 largest cells (hone and lice, 22 operations, about 1 h) plus the queue wait. A100 queue waits on Narval were 1–2 h
 on the day of testing.
@@ -51,8 +52,8 @@ on the day of testing.
 | `evaluation/benchmarks/cache/devbench/python/` | DevBench Python subset (fetched by `evaluation/benchmarks/fetch_devbench.py`) |
 | `evaluation/analysis/aggregate_devbench.py` | `collect/aggregate` |
 | `evaluation/analysis/make_two_model_figures.py` | `collect/figures` |
-| `hpc/scripts/paper_table.py` | `collect/paper_table`: Table `tab:prelim` and the RQ1 decision rule |
-| `hpc/scripts/verify_devbench.py`, `llm_ping.py` | `setup` gates |
+| `hpc-narval/scripts/paper_table.py` | `collect/paper_table`: Table `tab:prelim` and the RQ1 decision rule |
+| `hpc-narval/scripts/verify_devbench.py`, `llm_ping.py` | `setup` gates |
 
 Outputs are redirected into `$RESULTS` with environment variables, without changing the code:
 
@@ -61,14 +62,14 @@ Outputs are redirected into `$RESULTS` with environment variables, without chang
 - `--stamp {repo}` gives each cell its own, stable log name, so reruns overwrite instead of duplicating.
 
 The models are reached through `OLLAMA_BASE_URL`, which points to a private Ollama server on the job's own GPU
-(`hpc/slurm/hooks/all.sh`).
+(`hpc-narval/slurm/hooks/all.sh`).
 
 ## 3. From the document's experimental design to jobs
 
 | Design element | Where configured |
 |---|---|
 | Subjects: 8 DevBench Python repos whose reference passes its own tests | `experiments.json` → `devbench.matrix.repo`, `vars.REQUIRE_REPOS` |
-| Models: `qwen2.5-coder:7b`, `qwen3.8:27b` | `devbench.matrix.model`, `vars.MODELS_TO_PULL` |
+| Models: `qwen2.5-coder:7b`, `llama3.1:8b`, `phi4:14b`, `deepseek-coder-v2:16b`, `devstral:24b`, `gemma3:27b` (one per family; §11) | `devbench.matrix.model`, `vars.MODELS_TO_PULL` (also passed to `paper_table.py` and the figures as `--models`) |
 | Configurations: free text / shared schema / AgentM2M | inside the harness (all three per cell) |
 | Seed 0, temperature 0.2 | `vars.SEED`, `vars.TEMP` |
 | 5 canaries per repo, 3 injected changes, 1 HOT reviewer | the harness (`devbench_run_all`) |
@@ -128,7 +129,7 @@ The models are reached through `OLLAMA_BASE_URL`, which points to a private Olla
 
 | Technique | Where | What it buys |
 |---|---|---|
-| Job array with throttle (`--array=0-15%8`) | devbench | one cell per task, bounded share of the queue |
+| Job array with throttle (`--array=0-47%12`) | devbench | one cell per task, bounded share of the queue |
 | `afterok` gate / `afterany` collection | dependencies | no wasted GPU-hours; collection even after failures |
 | `--requeue --signal=B:USR1@900`, up to 20 requeues | devbench | long cells survive the 8 h limit; finished steps are skipped |
 | Full A100 for the LLM stages, MIG `a100_1g.5gb` for collect | resources | 27B (17 GB plus KV cache) fits fully on the GPU; collect uses the smallest slice |
@@ -149,7 +150,7 @@ To look at a running job's GPU: `srun --jobid <JOBID> --overlap --pty watch -n 3
 - **Gates:** `setup/devbench_reference.json`, `setup/models.json`, `setup/llm_ping.json`.
 - **Jobs and steps:** `jobs.tsv`, `steps.tsv`, `steps/<stage>/<cell>/<step>.log`, `slurm/*.out|err`.
 - **Resources:** `gpu/gpu_<stage>_<job>_r<n>.csv`.
-- **Live view:** `bash hpc/status.sh <RUN_ID>`, with `--only failed` or `--steps` for detail.
+- **Live view:** `bash hpc-narval/status.sh <RUN_ID>`, with `--only failed` or `--steps` for detail.
 
 ## 8. Reproducibility and integrity controls
 
@@ -161,7 +162,7 @@ To look at a running job's GPU: `srun --jobid <JOBID> --overlap --pty watch -n 3
 
 ## 9. How results are collected
 
-`$RESULTS` = `$WORK/runs/<RUN_ID>/results` on scratch. `collect` copies the following to `hpc/logs/<RUN_ID>/results/`
+`$RESULTS` = `$WORK/runs/<RUN_ID>/results` on scratch. `collect` copies the following to `hpc-narval/logs/<RUN_ID>/results/`
 on `/project`:
 
 ```
@@ -193,20 +194,34 @@ pip download --no-deps -d $WORK/wheels pyecore future-fstrings pytest-json-repor
 Then:
 
 ```bash
-bash hpc/scripts/selftest.sh
-python3 hpc/slurm/submit.py --dry-run
-python3 hpc/slurm/submit.py --smoke                          # must reach collect with every cell OK
-python3 hpc/slurm/submit.py                                  # full study
-bash hpc/status.sh <RUN_ID> [--only failed]
-python3 hpc/slurm/submit.py --run-id <RUN_ID> --only devbench,collect   # repair; finished steps are skipped
-python3 hpc/slurm/submit.py --run-id <RUN_ID> --only collect            # refresh results
+bash hpc-narval/scripts/selftest.sh
+python3 hpc-narval/slurm/submit.py --dry-run
+python3 hpc-narval/slurm/submit.py --smoke                          # must reach collect with every cell OK
+python3 hpc-narval/slurm/submit.py                                  # full study
+bash hpc-narval/status.sh <RUN_ID> [--only failed]
+python3 hpc-narval/slurm/submit.py --run-id <RUN_ID> --only devbench,collect   # repair; finished steps are skipped
+python3 hpc-narval/slurm/submit.py --run-id <RUN_ID> --only collect            # refresh results
 ```
 
 ## 11. Limitations and open points
 
-- **Models differ from the paper.** The paper names qwen2.5-coder:7b, devstral:24b and qwen3-coder:30b. This
-  configuration runs qwen2.5-coder:7b and qwen3.8:27b, matching the code's two-model figures. To add a model,
-  extend `matrix.model` and `MODELS_TO_PULL`, and stage the weights.
+- **Models.** Six open-weight models, one per family, spanning size (7B–27B), architecture (dense and MoE) and
+  specialization (code, general, agentic SWE): qwen2.5-coder:7b (Qwen2.5-Coder, arXiv 2409.12186), llama3.1:8b
+  (Llama 3, arXiv 2407.21783), phi4:14b (Phi-4, arXiv 2412.08905), deepseek-coder-v2:16b (DeepSeek-Coder-V2 Lite,
+  MoE with 2.4B active parameters, arXiv 2406.11931), devstral:24b (Devstral, arXiv 2509.25193) and gemma3:27b
+  (Gemma 3, arXiv 2503.19786). The earlier two-model run (qwen2.5-coder:7b, qwen3.8:27b) is run
+  am-20261013-214417; qwen3.8 was dropped as a second Qwen model. To add a model, extend `matrix.model` and
+  `MODELS_TO_PULL`, and stage the weights.
+- **Flash attention and deepseek-coder-v2.** With `OLLAMA_FLASH_ATTENTION=1`, deepseek-coder-v2's MLA attention
+  (K 192 / V 128 heads) falls back to the CPU: 0.2–0.3 tok/s and 0% GPU utilization, so long calls hit the
+  harness's 300 s timeout. `hooks/all.sh` therefore turns flash attention off for the models listed in
+  `OLLAMA_NO_FLASH_MODELS` (matrix tags; default `deepseek-coder-v2-16b`), giving 40–60 tok/s on the GPU
+  (test job 5520691). This changes speed only. In run am-20261014-012059, the eight deepseek cells were cancelled,
+  their partial logs moved to `$WORK/runs/<RUN_ID>/invalid_fa_cpu_fallback/`, and the cells rerun with
+  `submit.py --only devbench --cells 3,9,15,21,27,33,39,45` (job 5521050).
+- **MAST judge = model under test.** The annotator's output-format example is `{"modes_present": ["1.4", "2.1"]}`.
+  llama3.1:8b and deepseek-coder-v2:16b returned exactly that on 47 of 48 traces, and devstral on half, so the
+  six-model MAST counts measure format-following and are not reported in the paper.
 - **Subjects.** 8 of the 10 Python repositories are used. TextCNN and Hybrid_Images fail their own reference tests
   in this environment, which is the paper's selection criterion.
 - **ArXiv_digest acceptance tests need live internet** (`export.arxiv.org`). They cannot pass on Narval's GPU nodes,
@@ -214,5 +229,5 @@ python3 hpc/slurm/submit.py --run-id <RUN_ID> --only collect            # refres
   The setup gate checks only its unit tests (`NETWORK_REPOS`). Its canary, MAST, RQ2 and RQ3 metrics are unaffected.
 - **Ollama version.** Ollama 0.40.0 replaces 0.30.6, because qwen3.8 needs a newer server.
 - **No statistics.** The RQ1 bootstrap rule is not computed (see §4). The energy estimate is still pending.
-- **Storage.** About 24 GB of model weights on scratch; scratch is purged, so re-stage the weights if they disappear.
+- **Storage.** About 74 GB of model weights on scratch (seven models, including qwen3.8:27b from the earlier run); scratch is purged, so re-stage the weights if they disappear.
   Results are copied to `/project`.

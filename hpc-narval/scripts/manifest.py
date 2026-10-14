@@ -53,7 +53,7 @@ def main() -> int:
         "git": {"commit": git("rev-parse", "HEAD"), "branch": git("rev-parse", "--abbrev-ref", "HEAD"),
                 "dirty": git("status", "--porcelain").splitlines()[:200],
                 "diff_sha256": hashlib.sha256(git("diff", "HEAD").encode()).hexdigest()[:16]},
-        "content_sha256": {d: tree_hash(H.REPO / d) for d in dirs + ["hpc/config"]},
+        "content_sha256": {d: tree_hash(H.REPO / d) for d in dirs + [str(H.HPC.relative_to(H.REPO) / "config")]},
         "cluster_env": {k: v for k, v in c.items() if "TOKEN" not in k and "KEY" not in k and "PASS" not in k},
         "experiments_sha256": hashlib.sha256(exp_path.read_bytes()).hexdigest()[:16] if exp_path.exists() else "",
     }

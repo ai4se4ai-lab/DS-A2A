@@ -11,7 +11,14 @@ if [ ! -x "$_oll/bin/ollama" ]; then
         || { log_error "could not copy ollama to $_oll"; return 1; }
 fi
 _port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
-export OLLAMA_HOST="127.0.0.1:$_port" OLLAMA_MODELS OLLAMA_KEEP_ALIVE=24h OLLAMA_FLASH_ATTENTION=1 OLLAMA_VULKAN=0
+# Flash attention is on except for the cell's model when it is listed in OLLAMA_NO_FLASH_MODELS (matrix tags):
+# with it on, deepseek-coder-v2's MLA attention (K 192 / V 128 heads) runs on the CPU at 0.2-0.3 tok/s instead of
+# 40-60 tok/s on the GPU (fa_test job 5520691, 2026-10-14). Speed only; generated tokens are unaffected.
+_cell_model=$(python3 -c "import json,sys; e=json.load(open(sys.argv[1])); s=[s for s in e['stages'] if s['name']==sys.argv[2]][0]; print(s['cells'][int(sys.argv[3])].get('model',''))" \
+    "$LOG_ROOT/config/experiments.resolved.json" "${STAGE:-}" "${CELL_ID:-0}" 2>/dev/null)
+_fa=1
+for _m in ${OLLAMA_NO_FLASH_MODELS:-deepseek-coder-v2-16b}; do [ "$_m" = "$_cell_model" ] && _fa=0; done
+export OLLAMA_HOST="127.0.0.1:$_port" OLLAMA_MODELS OLLAMA_KEEP_ALIVE=24h OLLAMA_FLASH_ATTENTION=$_fa OLLAMA_VULKAN=0
 export OLLAMA_NUM_PARALLEL OLLAMA_MAX_LOADED_MODELS
 export OLLAMA_BASE_URL="http://$OLLAMA_HOST" PATH="$_oll/bin:$PATH"
 # Start the server and require that it discovered the CUDA GPU (one restart, then fail: never run on the CPU).
@@ -29,4 +36,4 @@ for _try in 1 2; do
     kill "$_opid" 2>/dev/null; wait "$_opid" 2>/dev/null
     [ "$_try" = 2 ] && return 1
 done
-log_info "ollama ready on GPU at $OLLAMA_BASE_URL (models: $OLLAMA_MODELS; binary: $_oll)"
+log_info "ollama ready on GPU at $OLLAMA_BASE_URL (models: $OLLAMA_MODELS; binary: $_oll; cell model: ${_cell_model:-none}; flash attention: $_fa)"

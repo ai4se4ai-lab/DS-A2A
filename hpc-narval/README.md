@@ -7,11 +7,11 @@ The design, the coverage of the paper's experiments, and the reasoning behind it
 ## Quick start
 
 ```bash
-bash hpc/scripts/selftest.sh                    # static checks (seconds; nothing is submitted)
-python3 hpc/slurm/submit.py --dry-run           # show the job graph and sbatch commands
-python3 hpc/slurm/submit.py --smoke --watch 60  # tiny end-to-end run of EVERY stage on GPU nodes, live audit
-python3 hpc/slurm/submit.py                     # the full study (prints RUN_ID and job IDs)
-bash hpc/status.sh                              # live audit of the newest run (add --watch 120 to refresh)
+bash hpc-narval/scripts/selftest.sh                    # static checks (seconds; nothing is submitted)
+python3 hpc-narval/slurm/submit.py --dry-run           # show the job graph and sbatch commands
+python3 hpc-narval/slurm/submit.py --smoke --watch 60  # tiny end-to-end run of EVERY stage on GPU nodes, live audit
+python3 hpc-narval/slurm/submit.py                     # the full study (prints RUN_ID and job IDs)
+bash hpc-narval/status.sh                              # live audit of the newest run (add --watch 120 to refresh)
 ```
 
 ## Layout
@@ -34,10 +34,10 @@ bash hpc/status.sh                              # live audit of the newest run (
 ## Common operations
 
 ```bash
-python3 hpc/slurm/submit.py --run-id <RUN_ID> --only main,collect   # resubmit stages; finished work is skipped
-python3 hpc/slurm/submit.py --run-id <RUN_ID> --only collect        # refresh the collected results at any time
-python3 hpc/scripts/run_stage.py --stage main --list                # show every cell's commands
-bash hpc/status.sh <RUN_ID> --only failed                           # just the problems, with log excerpts
+python3 hpc-narval/slurm/submit.py --run-id <RUN_ID> --only main,collect   # resubmit stages; finished work is skipped
+python3 hpc-narval/slurm/submit.py --run-id <RUN_ID> --only collect        # refresh the collected results at any time
+python3 hpc-narval/scripts/run_stage.py --stage main --list                # show every cell's commands
+bash hpc-narval/status.sh <RUN_ID> --only failed                           # just the problems, with log excerpts
 srun --jobid <JOBID> --overlap --pty watch -n 30 nvidia-smi         # look at a running job's GPU
 ```
 

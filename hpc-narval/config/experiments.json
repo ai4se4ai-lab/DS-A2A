@@ -4,7 +4,7 @@
  "vars": {
   "SEED": "0",
   "TEMP": "0.2",
-  "MODELS_TO_PULL": "qwen2.5-coder:7b qwen3.8:27b",
+  "MODELS_TO_PULL": "qwen2.5-coder:7b llama3.1:8b phi4:14b deepseek-coder-v2:16b devstral:24b gemma3:27b",
   "REQUIRE_REPOS": "chakin geotext particle-swarm-optimization readtime stocktrends ArXiv_digest hone lice",
   "NETWORK_REPOS": "ArXiv_digest"
  },
@@ -17,7 +17,7 @@
  "stages": [
   {
    "name": "setup",
-   "description": "Gate: check the two open-weight models (staged offline into $OLLAMA_MODELS from the login node; Narval GPU nodes have no internet), verify the 8 DevBench repos' reference implementations pass their own tests (paper Sec. Eval Setup), pre-flight the whole pipeline with the mock backend and ping both models on the GPU.",
+   "description": "Gate: check the six open-weight models (staged offline into $OLLAMA_MODELS from the login node; Narval GPU nodes have no internet), verify the 8 DevBench repos' reference implementations pass their own tests (paper Sec. Eval Setup), pre-flight the whole pipeline with the mock backend and ping all six models on the GPU.",
    "internet": false,
    "resources": {
     "gpus": "a100:1",
@@ -42,7 +42,7 @@
     },
     {
      "name": "verify_reference",
-     "cmd": "python hpc/scripts/verify_devbench.py --require {REQUIRE_REPOS} --network-repos {NETWORK_REPOS} --out {RESULTS}/setup/devbench_reference.json",
+     "cmd": "python hpc-narval/scripts/verify_devbench.py --require {REQUIRE_REPOS} --network-repos {NETWORK_REPOS} --out {RESULTS}/setup/devbench_reference.json",
      "produces": [
       "setup/devbench_reference.json"
      ],
@@ -51,7 +51,7 @@
     },
     {
      "name": "ping_models",
-     "cmd": "python hpc/scripts/llm_ping.py --models {MODELS_TO_PULL} --out {RESULTS}/setup/llm_ping.json",
+     "cmd": "python hpc-narval/scripts/llm_ping.py --models {MODELS_TO_PULL} --out {RESULTS}/setup/llm_ping.json",
      "produces": [
       "setup/llm_ping.json"
      ],
@@ -92,10 +92,14 @@
     ],
     "model": [
      "qwen2.5-coder-7b",
-     "qwen3.8-27b"
+     "llama3.1-8b",
+     "phi4-14b",
+     "deepseek-coder-v2-16b",
+     "devstral-24b",
+     "gemma3-27b"
     ]
    },
-   "array_throttle": 8,
+   "array_throttle": 12,
    "resources": {
     "gpus": "a100:1",
     "cpus": 6,
@@ -172,7 +176,7 @@
    "steps": [
     {
      "name": "paper_table",
-     "cmd": "python hpc/scripts/paper_table.py --logs {RESULTS}/devbench_logs --out {RESULTS}/analysis",
+     "cmd": "python hpc-narval/scripts/paper_table.py --logs {RESULTS}/devbench_logs --out {RESULTS}/analysis --models {MODELS_TO_PULL}",
      "needs": [
       "devbench_logs/devbench_rq1_*.jsonl"
      ],
@@ -188,7 +192,7 @@
     },
     {
      "name": "figures",
-     "cmd": "EVAL_OUT_DIR={RESULTS}/analysis DEVBENCH_LOGS_DIR={RESULTS}/devbench_logs python -m evaluation.analysis.make_two_model_figures",
+     "cmd": "EVAL_OUT_DIR={RESULTS}/analysis DEVBENCH_LOGS_DIR={RESULTS}/devbench_logs python -m evaluation.analysis.make_two_model_figures --models {MODELS_TO_PULL}",
      "always": true
     },
     {

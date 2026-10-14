@@ -108,16 +108,17 @@ the cost of a change is bounded by its obligations, not by model size.
 Persisted trace models drive change propagation, and evolving the team at
 runtime is a higher-order transformation. The design targets 11 of the 14
 MAST failure modes (5 directly, 6 partially). In a pilot on 8 DevBench
-repositories with two open-weight models, change impact was exact
-(precision and recall 1.00) where baselines over-regenerated, propagating a
-change cost 19--36$\times$ fewer tokens than re-running free-text
-hand-offs, all 40 injected canary criteria reached the code (5 of 40 with
-free text on either model), and a new agent joined at runtime with 7 lines of glue.
+repositories with six open-weight models from six families, change impact
+was exact (precision and recall 1.00 on all 144 changes) where baselines
+over-regenerated, propagating a change cost 18--28$\times$ fewer tokens
+than re-running free-text hand-offs, all 240 injected canary criteria
+reached the code (66 with free text, 5 with a shared schema), and a new
+agent joined at runtime with 7 lines of glue.
 \end{abstract}
 
 \begin{IEEEkeywords}
 LLM-based multi-agent systems, model-to-model transformation, ATL,
-traceability, bidirectional transformations, higher-order transformations
+traceability
 \end{IEEEkeywords}
 
 \section{Introduction}\label{sec:introduction}
@@ -416,8 +417,8 @@ and criteria.
           \Comment{no LLM call}
       \Else
         \State \textsc{Bind}: sample $\le k$ values from $\fp_b$ until
-          $\mathit{chk}_b$, else $E\gets E\cup\{(t,b)\}$, failed stamp
-          $\gets\#\fp_b$ \label{alg:bind}
+          $\mathit{chk}_b$
+          % , else $E\gets E\cup\{(t,b)\}$, failed stamp $\gets\#\fp_b$ \label{alg:bind}
       \EndIf
     \EndFor
     \State \textbf{if} $M_j$ changed \textbf{then} $D\gets D\cup\mathit{readers}(M_j)$
@@ -438,7 +439,7 @@ Line~\ref{alg:struct} of Algorithm~\ref{alg:runtime} is ATL's two-phase
 execution, made incremental~\cite{jouault2010incremental}: it creates or
 deletes targets and trace links as matches appear or vanish and evaluates
 structural bindings.
-Lines~\ref{alg:obl}--\ref{alg:bind} re-bind every stochastic binding whose
+Line~\ref{alg:obl} re-bind every stochastic binding whose
 \emph{version stamp} (a digest of its footprint at acceptance) is missing
 or stale, prompting with the footprint only and escalating after $k$
 rejections. Accepted bindings are then checked jointly against $\MM_j$'s
@@ -538,14 +539,17 @@ and a PatchBoard-style \emph{shared schema}~\cite{zhang2026patchboard}
 under identical roles and LLM. Subjects are the 8 Python repositories of
 DevBench~\cite{li2024devbench} whose reference implementations pass their
 own tests in our environment. Each operation's criterion carries its UML
-signature hint; module-wide criteria are given once. We use two local
-open-weight models, \texttt{qwen2.5-coder:7b} and \texttt{qwen3.8:27b}.
-They differ in size, specialization, generation, and verbosity; if
-\tool{}'s guarantees follow from its rules, they should hold on both.
-Ollama reports exact per-call token counts. All configurations use
-temperature 0.2, one seed, $k{=}2$, a 4096-token output cap, a one-line
-system prompt, and thinking disabled. With eight repositories, one model family, and one seed, the pilot is a
-feasibility signal, not a powered comparison.
+signature hint; module-wide criteria are given once.
+
+\smallskip\noindent\textbf{Models.} Six open-weight models from six
+families vary size (7--27B), architecture, and specialization: the code
+models \texttt{qwen2.5-coder:7b}~\cite{hui2024qwen25coder} and
+\texttt{deepseek-coder-v2:16b}~\cite{deepseek2024coderv2} (MoE); the
+general models \texttt{llama3.1:8b}~\cite{grattafiori2024llama3},
+\texttt{phi4:14b}~\cite{abdin2024phi4}, and \texttt{gemma3:27b}~\cite{team2025gemma3};
+and \texttt{devstral:24b}~\cite{rastogi2025devstral}, tuned for agentic
+software engineering. If \tool{}'s guarantees follow from its rules, they
+should hold on all six. %Runs used one A100 each (4-bit weights), temperature 0.2, one seed, $k{=}2$, a 4096-token output cap, a one-line system prompt, and thinking disabled.
 
 \smallskip\noindent\textbf{Research questions.}
 \textbf{RQ1 (fidelity):} Does \tool{} reduce P1 failure modes, and at what
@@ -553,77 +557,69 @@ build cost? Besides MAST-judged modes, we inject five \emph{canary}
 criteria per repository, each pinned to an unguessable constant (the role
 \code{S2.1} plays in P1), and count those reaching the code.
 \textbf{RQ2 (change):} How precise, complete, and costly is change
-propagation? We inject three PRD changes per repository (tighten, add, and
-remove a criterion), the first mirroring the P2 episode. Baselines, lacking an impact set, re-run on the changed PRD.
+propagation? We inject three PRD changes per repository, i.e., tighten, add, and
+remove a criterion, the first mirroring the P2 episode.
 \textbf{RQ3 (evolution):} Can a HOT alone add an agent mid-run, as in the
 P3 episode?
 
 \begin{table}[t]
 \centering
-\caption{Pilot results on 8 DevBench repositories: free text (F), shared
-schema (S), \tool{} (A). Tokens in thousands; means per repository (build)
-or change (RQ2, 24 per model).}
+\caption{Results on 8 DevBench repositories (columns: models): free text (F), shared schema (S), \tool{} (A).
+Tokens in thousands (k) per repository (build) or per change.}
 \label{tab:results}
 \footnotesize
-\setlength{\tabcolsep}{2.6pt}
-\begin{tabular}{@{}l ccc ccc@{}}
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{@{}l rrrrrr@{}}
 \toprule
-& \multicolumn{3}{c}{\texttt{qwen2.5-coder:7b}} & \multicolumn{3}{c@{}}{\texttt{qwen3.8:27b}} \\
-\cmidrule(lr){2-4}\cmidrule(l){5-7}
-Metric & F & S & A & F & S & A \\
+& Qwen-C & Llama & Phi-4 & DS-C2 & Devstral & Gemma \\
+Metric & 7B & 8B & 14B & 16B & 24B & 27B \\
 \midrule
-\multicolumn{7}{@{}l}{\emph{RQ1: build once}} \\
-Canaries in code (/40) & 5 & 0 & \textbf{40} & 5 & 0 & \textbf{40} \\
-DevBench accept.\ (/8) & 0 & 0 & 0 & 0 & 0 & 0 \\
-MAST P1\,/\,P2 per trace & 0\,/\,0 & 0\,/\,0 & 0\,/\,.12 & .12\,/\,.50 & .50\,/\,.50 & 0\,/\,1.0 \\
-Build tokens (k) & 9.0 & \textbf{4.1} & 11.6 & 16.0 & \textbf{6.6} & 13.0 \\
+RQ1 canaries, F & 4 & 18 & 7 & 0 & 24 & 13 \\
+RQ1 canaries, S & 0 & 0 & 0 & 0 & 0 & 5 \\
+RQ1 build (k), F & 8.5 & 10.2 & 8.7 & 9.7 & 9.0 & 12.1 \\
+RQ1 build (k), S & 4.1 & 5.5 & 5.2 & 5.3 & 4.1 & 6.5 \\
+RQ1 build (k), A & 11.4 & 11.8 & 12.8 & 15.5 & 11.0 & 12.9 \\
 \midrule
-\multicolumn{7}{@{}l}{\emph{RQ2: propagate a change}} \\
-Impact precision & .62 & .14 & \textbf{1.00} & .83 & .14 & \textbf{1.00} \\
-Impact recall & .75 & 1.00 & \textbf{1.00} & .83 & 1.00 & \textbf{1.00} \\
-Tokens per change (k) & 8.87 & 4.21 & \textbf{0.46} & 15.23 & 6.62 & \textbf{0.42} \\
-\midrule
-\multicolumn{7}{@{}l}{\emph{RQ3: add a reviewer at runtime}} \\
-Operations covered & -- & -- & 118/118 & -- & -- & 118/118 \\
-Glue lines & 22 & 22 & \textbf{7} & 22 & 22 & \textbf{7} \\
+RQ2 precision, F & .65 & .25 & .62 & .37 & .80 & .57 \\
+RQ2 recall, F & .75 & .79 & .92 & .71 & .96 & .67 \\
+RQ2 change (k), F & 8.7 & 10.5 & 9.0 & 9.7 & 9.4 & 12.4 \\
+RQ2 change (k), S & 4.1 & 5.3 & 5.2 & 5.3 & 3.9 & 6.8 \\
+RQ2 change (k), A & \textbf{0.45} & \textbf{0.46} & \textbf{0.48} & \textbf{0.53} & \textbf{0.41} & \textbf{0.44} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \smallskip\noindent\textbf{Results} (Table~\ref{tab:results}).
-\emph{RQ1:} On both models, all 40 canary constants reached \tool{}'s code.
-Free text kept 5 on each model, all from one repository
-(\texttt{particle-swarm-optimization}); shared schema kept none. The larger
-model did not help free text, so the loss lies in the hand-off, not in model
-capacity. Canaries show that
-stated constants survive a hand-off, not that the code is correct: no
-configuration passed DevBench's acceptance tests, because per-operation
-requirements carry the signature, not the PRD's detailed behavior. The MAST
-judge, an LLM proxy for an unreleased annotator, flagged few modes and may
-be miscalibrated for per-binding transcripts (\tool{}'s P2 count). It
-flagged no P1 mode for \tool{} on either model, against .50 per trace for
-shared schema with the 27B model. Building cost \tool{} 11.6k and 13.0k tokens, as
-prompts bound each answer, while free text nearly doubled (9.0k to 16.0k) and \tool{} grew by 12\%. \tool{} was
-cheaper to build than free text on 4 of 8 repositories with the 7B model
-and on 7 of 8 with the 27B model. Shared schema, with 3 calls and no
-executable oracles, was cheapest. The Step~4 cost controls matter: an
-earlier prototype without them cost 2--3.4$\times$ free text to build.
+\emph{RQ1:} On all six models, all 40 canaries reached \tool{}'s code.
+Free text kept 66 of 240, varying with the model but not with its size or
+specialization: the two code models kept 0 and 4, Devstral 24. It loses
+them at the Architect, whose prose design keeps signatures but drops
+constants; shared schema, with no slot for them, kept 5. Canaries show that
+constants survive a hand-off, not that code is correct: no configuration
+passed DevBench's acceptance tests, as per-operation requirements carry
+signatures, not the PRD's behavior. We omit the MAST proxy: judged by the
+model under test, two models echoed its output-format example on 47 of 48
+traces. Building cost \tool{} 1.07--1.61$\times$ free text, driven by verbosity:
+\texttt{deepseek-coder-v2} wrote 2.4$\times$ \texttt{devstral}'s output for
+the same bindings. Shared schema, with 3 calls and no oracles, was cheapest.
 
-\emph{RQ2} gave the clearest result. \tool{} reached precision and recall
-1.00 on all 48 changes, as the obligation operator predicts. Shared schema
-had recall 1.00 but precision 0.14, since it regenerates everything; free
-text both missed and over-reported impacts (0.62--0.83). A change cost
-\tool{} 0.42--0.46k tokens (0 for a removal, which is purely structural),
-19--36$\times$ less than free text and 9--16$\times$ less than shared
-schema. With the 7B model, \tool{}'s extra build cost over free text is
-recovered by the first change, and the advantage grows with every change a
-team absorbs.
+\emph{RQ2}: \tool{} had precision and recall 1.00
+on all 144 changes, as the obligation operator predicts. Shared schema
+regenerates everything (recall 1.00, precision .14); free text missed and
+over-reported impacts by a model-dependent amount (precision .25--.80,
+recall .67--.96). A change cost \tool{} 0.41--0.53k tokens on every model
+(0 for a removal), 18--28$\times$ less than free text and 9--15$\times$
+less than shared schema, so its extra build cost is recovered within the
+first change. \emph{RQ3:} On all six models, the HOT-added reviewer covered
+all 118 operations with 7 lines of glue (22 per baseline).
 
-\emph{RQ3:} On both models, the reviewer added by a HOT covered all 118
-existing operations, with 7 lines of glue against 22 per baseline; like
-RQ2's exactness, this follows from the rules, not the model. One limit holds throughout: \textsc{Lift}
-remains a free-text boundary, and content it omits is invisible to every
-check.
+\smallskip\noindent\textbf{Discussion and threats.} \tool{}'s guarantees
+held on all six families, while every baseline metric moved with the model
+in ways neither scale nor specialization predicted, in line with MAST's
+view that failures stem from system design~\cite{cemri2025mast}. With one
+seed, re-running \texttt{qwen2.5-coder} from an earlier pilot moved its
+free-text canaries from 5 to 4; \tool{}'s results did not change.  \textsc{Lift} remains a free-text boundary: content it omits is
+invisible to every check.
 
 \section{Future Plans}\label{sec:future}
 
@@ -634,13 +630,15 @@ when a developer finds a criterion infeasible, intent must flow back; we
 will lift hand-offs to bx and characterize
 correctness and hippocraticness~\cite{stevens2010qvt} when the backward
 direction is stochastic. \RC{3}~\emph{Evidence at scale:} all Python
-DevBench repositories, paired tests, more model families, and MetaGPT- and ChatDev-style
+DevBench repositories, paired tests, more seeds and larger models,
+and MetaGPT- and ChatDev-style
 teams~\cite{hong2024metagpt,qian2024chatdev} ported to \tool{}; failing to
 reduce P1 modes against a shared schema would refute our central claim.
-Two independent coders will re-code the MAST mapping (Cohen's $\kappa$).
+Two independent coders will re-code the MAST mapping (Cohen's $\kappa$)
+and calibrate an independent MAST judge.
 
 \smallskip\noindent\textbf{Data availability.}\label{sec:data} Mapping, metamodels, rules,
-prototype, and pilot data are available at \url{https://anonymous.4open.science/r/REPLACE-ME}.
+prototype, and pilot data are available at \url{https://github.com/ai4se4ai-lab/DS-A2A}.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

@@ -8,13 +8,14 @@ from statistics import mean
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--logs", required=True); ap.add_argument("--out", required=True)
+ap.add_argument("--models", nargs="+", default=["qwen2.5-coder:7b", "qwen3.8:27b"])
 a = ap.parse_args()
 os.environ["DEVBENCH_LOGS_DIR"] = a.logs
 from evaluation.analysis.aggregate_devbench import _load_jsonl, canary_bootstrap, compute_rq1, compute_rq2, compute_rq3, discover
 from evaluation.harness.hot_reviewer_rq3 import glue_line_counts
 
 logs = Path(a.logs); out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
-MODELS = ["qwen2.5-coder:7b", "qwen3.8:27b"]; CFG = [("free_text", "F"), ("shared_schema", "S"), ("agentm2m", "A")]
+MODELS = a.models; CFG = [("free_text", "F"), ("shared_schema", "S"), ("agentm2m", "A")]
 rows, decision = [], {}
 def add(metric, model, vals): rows.append({"metric": metric, "model": model, **{k: vals.get(c) for c, k in CFG}})
 for m in MODELS:

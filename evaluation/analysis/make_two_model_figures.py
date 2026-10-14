@@ -10,7 +10,7 @@ and writes:
   evaluation/results/csv/devbench_two_model_per_repo.csv             the plotted data
 
 Usage:
-    python -m evaluation.analysis.make_two_model_figures
+    python -m evaluation.analysis.make_two_model_figures [--models qwen2.5-coder:7b llama3.1:8b ...]
 """
 from __future__ import annotations
 
@@ -433,6 +433,14 @@ def line_scaling(repos, bundle, key: str, ylabel: str, log: bool, head: str) -> 
 
 
 def main() -> int:
+    global MODELS, FIG_WIDTH
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--models", nargs="+", help="Ollama tags, one figure column each (default: the two-model pilot)")
+    a = ap.parse_args()
+    if a.models:
+        MODELS = [(m.replace(":", "-"), m) for m in a.models]
+        FIG_WIDTH *= max(1.0, len(MODELS) / 2)  # keep each column at the two-model print width
     repos, bundle = collect()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     outputs = [write_csv(repos, bundle)]

@@ -9,6 +9,7 @@ write the run manifest, and call sbatch (one call per stage). All computation ha
     python3 hpc/slurm/submit.py                        # full study (new RUN_ID)
     python3 hpc/slurm/submit.py --run-id R --only main,collect   # resubmit stages of run R (finished work is skipped)
     python3 hpc/slurm/submit.py --run-id R --only collect        # intermediate results at any time
+    python3 hpc/slurm/submit.py --run-id R --only devbench --cells 3,9   # rerun chosen array cells only
     python3 hpc/slurm/submit.py ... --watch 120        # then stay in the live audit table (refresh >= 60 s)
 
 Graph semantics (per stage in experiments.json):
@@ -59,7 +60,7 @@ def sbatch_cmd(st: dict, exp: dict, c: dict, run_id: str, deps: list[str], args)
         cmd.append(f"--mail-type={c.get('MAIL_TYPE', 'FAIL')}")
     if n > 1:
         thr = st.get("array_throttle")
-        cmd.append(f"--array=0-{n - 1}" + (f"%{thr}" if thr else ""))
+        cmd.append(f"--array={args.cells or f'0-{n - 1}'}" + (f"%{thr}" if thr else ""))
         cmd += [f"--output={lr}/slurm/%x_%A_%a.out", f"--error={lr}/slurm/%x_%A_%a.err"]
     else:
         cmd += [f"--output={lr}/slurm/%x_%j.out", f"--error={lr}/slurm/%x_%j.err"]
@@ -74,6 +75,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--run-id", default="")
     ap.add_argument("--only", default="", help="comma list of stages to submit (default: all)")
+    ap.add_argument("--cells", default="", help="Slurm array indices of the submitted array stage(s), e.g. 3,9,15 (default: all)")
     ap.add_argument("--smoke", action="store_true", help="tiny end-to-end test of every stage")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--account", default="")
