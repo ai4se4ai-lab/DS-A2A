@@ -1,0 +1,19 @@
+# Wheelhouse packages (installed with --no-index). Harness: AgentM2M engine + evaluation; DevBench repos' tests.
+pyecore
+lark
+python-dotenv
+requests
+pydantic
+numpy
+pandas
+matplotlib
+# test tooling used by the DevBench repos' own test scripts
+pytest
+pytest-cov
+pytest-json-report
+# dependencies of the 8 pilot repositories (docs/requirements.txt of each)
+beautifulsoup4
+cssselect   # wheelhouse has 1.2.0; pyquery (staged, installed --no-deps) asks for >=1.5 but runs fine on it
+markdown2
+lxml
+progressbar2
