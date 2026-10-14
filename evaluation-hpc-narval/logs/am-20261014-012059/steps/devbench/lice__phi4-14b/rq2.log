@@ -1,0 +1,7 @@
+
+===== 2026-10-14 04:02:02 job 5521383 task 44 restart 0 host ng31006 =====
+$ M=$(echo phi4-14b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos lice --seed 0 --temperature 0.2 --stamp lice --skip-rq1 --skip-rq3
+Using LLM backend: ollama (phi4:14b)
+=== RQ2: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_phi4-14b_lice.jsonl ===
+[RQ2] phi4:14b / lice ...
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_phi4-14b_lice.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_phi4-14b_lice.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_phi4-14b_lice.jsonl

@@ -1,0 +1,21 @@
+
+===== 2026-10-14 04:54:23 job 5517227 task - restart 0 host ng20304 =====
+$ EVAL_OUT_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.analysis.make_two_model_figures --models qwen2.5-coder:7b llama3.1:8b phi4:14b deepseek-coder-v2:16b devstral:24b gemma3:27b
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/csv/devbench_two_model_per_repo.csv
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_overview.pdf
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_overview.png
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_canary.pdf
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_canary.png
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_build.pdf
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_build.png
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_change.pdf
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_change.png
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_precision.pdf
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_precision.png
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_line_cumulative.pdf
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_line_cumulative.png
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_line_build_vs_size.pdf
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_line_build_vs_size.png
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_line_change_vs_size.pdf
+/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/analysis/figures/devbench_two_model_line_change_vs_size.png
+text-overlap check: all figures clean

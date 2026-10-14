@@ -1,0 +1,1 @@
+{"repo": "stocktrends", "model": "gemma3:27b", "n_ops_before": 18, "n_reviews_after": 18, "retroactive_coverage": 1.0, "tokens": 26164}

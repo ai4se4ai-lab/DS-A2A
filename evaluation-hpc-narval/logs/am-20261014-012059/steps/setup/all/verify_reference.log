@@ -1,0 +1,13 @@
+
+===== 2026-10-14 01:25:12 job 5517224 task - restart 0 host ng31305 =====
+$ python hpc-narval/scripts/verify_devbench.py --require chakin geotext particle-swarm-optimization readtime stocktrends ArXiv_digest hone lice --network-repos ArXiv_digest --out /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/devbench_reference.json
+TextCNN                        unit=False acceptance=False ops=12
+ArXiv_digest                   unit=True acceptance=False ops=7
+chakin                         unit=True acceptance=True ops=4
+readtime                       unit=True acceptance=True ops=11
+hone                           unit=True acceptance=True ops=17
+stocktrends                    unit=True acceptance=True ops=13
+geotext                        unit=True acceptance=True ops=4
+lice                           unit=True acceptance=True ops=17
+particle-swarm-optimization    unit=True acceptance=True ops=5
+Hybrid_Images                  unit=False acceptance=False ops=6

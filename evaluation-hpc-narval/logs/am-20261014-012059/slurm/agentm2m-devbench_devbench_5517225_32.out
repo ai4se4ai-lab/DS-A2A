@@ -1,0 +1,18 @@
+[2026-10-14 03:22:20] [INFO]  ================================================================
+[2026-10-14 03:22:20] [INFO]  run am-20261014-012059   stage devbench   cell 32   job 5520987   restart 0
+[2026-10-14 03:22:20] [INFO]  nodes ng10609 (1)   cpus 6   gpus 0
+[2026-10-14 03:22:20] [INFO]  repo /lustre06/project/6108124/mbabaei/DS-A2A @ c732302
+[2026-10-14 03:22:20] [INFO]  results /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results   logs /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059
+[2026-10-14 03:22:20] [INFO]  ================================================================
+[gpu] 0, NVIDIA A100-SXM4-40GB, 40960 MiB, 580.178.04
+[2026-10-14 03:22:36] [INFO]  hook /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/slurm/hooks/all.sh
+[2026-10-14 03:22:50] [INFO]  ollama ready on GPU at http://127.0.0.1:34601 (models: /scratch/mbabaei/agentm2m_devbench/ollama_models; binary: /localscratch/mbabaei.5520987.0/ollama)
+=== stage devbench cell 32 [repo=ArXiv_digest,model=phi4-14b]: 3 steps
+--- 2026-10-14 03:22:50 step rq1   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__phi4-14b/rq1.log
+    rc=0  318s
+--- 2026-10-14 03:28:08 step rq2   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__phi4-14b/rq2.log
+    rc=0  830s
+--- 2026-10-14 03:41:58 step rq3   log: /lustre06/project/6108124/mbabaei/DS-A2A/hpc-narval/logs/am-20261014-012059/steps/devbench/ArXiv_digest__phi4-14b/rq3.log
+    rc=0  370s
+=== stage devbench cell 32 finished; failed: none
+[2026-10-14 03:48:08] [INFO]  job devbench_5517225_32 end

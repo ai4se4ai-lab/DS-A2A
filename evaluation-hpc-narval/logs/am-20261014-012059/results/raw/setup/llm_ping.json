@@ -1,0 +1,38 @@
+{
+ "qwen2.5-coder:7b": {
+  "seconds": 28.3,
+  "response": "ready",
+  "eval_count": 2,
+  "prompt_eval_count": 36
+ },
+ "llama3.1:8b": {
+  "seconds": 30.8,
+  "response": "Ready",
+  "eval_count": 2,
+  "prompt_eval_count": 17
+ },
+ "phi4:14b": {
+  "seconds": 33.7,
+  "response": "Ready.",
+  "eval_count": 3,
+  "prompt_eval_count": 17
+ },
+ "deepseek-coder-v2:16b": {
+  "seconds": 155.5,
+  "response": " To determine if I am ready, I would need to assess my current state,",
+  "eval_count": 16,
+  "prompt_eval_count": 15
+ },
+ "devstral:24b": {
+  "seconds": 27.1,
+  "response": "Ready",
+  "eval_count": 2,
+  "prompt_eval_count": 1232
+ },
+ "gemma3:27b": {
+  "seconds": 73.8,
+  "response": "ready\n",
+  "eval_count": 3,
+  "prompt_eval_count": 17
+ }
+}

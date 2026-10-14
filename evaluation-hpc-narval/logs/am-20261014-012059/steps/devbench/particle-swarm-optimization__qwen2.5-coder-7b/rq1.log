@@ -1,0 +1,12 @@
+
+===== 2026-10-14 02:56:03 job 5520011 task 12 restart 0 host ng10609 =====
+$ M=$(echo qwen2.5-coder-7b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos particle-swarm-optimization --seed 0 --temperature 0.2 --stamp particle-swarm-optimization --skip-rq2 --skip-rq3
+Using LLM backend: ollama (qwen2.5-coder:7b)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_qwen2.5-coder-7b_particle-swarm-optimization.jsonl ===
+[2026-10-14T02:56:04] qwen2.5-coder:7b / particle-swarm-optimization / free_text ...
+    -> success=False p1=0 tokens=6853 elapsed=87.2s error=None
+[2026-10-14T02:57:33] qwen2.5-coder:7b / particle-swarm-optimization / shared_schema ...
+    -> success=False p1=0 tokens=2513 elapsed=27.9s error=None
+[2026-10-14T02:58:01] qwen2.5-coder:7b / particle-swarm-optimization / agentm2m ...
+    -> success=False p1=0 tokens=7250 elapsed=45.5s error=None
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_qwen2.5-coder-7b_particle-swarm-optimization.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_qwen2.5-coder-7b_particle-swarm-optimization.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_qwen2.5-coder-7b_particle-swarm-optimization.jsonl

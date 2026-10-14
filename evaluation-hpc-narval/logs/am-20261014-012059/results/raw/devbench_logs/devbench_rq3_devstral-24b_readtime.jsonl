@@ -1,0 +1,1 @@
+{"repo": "readtime", "model": "devstral:24b", "n_ops_before": 16, "n_reviews_after": 16, "retroactive_coverage": 1.0, "tokens": 18268}

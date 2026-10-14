@@ -1,0 +1,12 @@
+
+===== 2026-10-14 02:36:13 job 5519124 task 0 restart 0 host ng31204 =====
+$ M=$(echo qwen2.5-coder-7b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos chakin --seed 0 --temperature 0.2 --stamp chakin --skip-rq2 --skip-rq3
+Using LLM backend: ollama (qwen2.5-coder:7b)
+=== RQ1: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_qwen2.5-coder-7b_chakin.jsonl ===
+[2026-10-14T02:36:14] qwen2.5-coder:7b / chakin / free_text ...
+    -> success=False p1=0 tokens=7076 elapsed=122.9s error=None
+[2026-10-14T02:38:18] qwen2.5-coder:7b / chakin / shared_schema ...
+    -> success=False p1=0 tokens=2903 elapsed=65.6s error=None
+[2026-10-14T02:39:25] qwen2.5-coder:7b / chakin / agentm2m ...
+    -> success=False p1=0 tokens=5976 elapsed=53.6s error=None
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_qwen2.5-coder-7b_chakin.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_qwen2.5-coder-7b_chakin.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_qwen2.5-coder-7b_chakin.jsonl

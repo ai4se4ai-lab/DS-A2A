@@ -1,0 +1,7 @@
+
+===== 2026-10-14 03:17:50 job 5520363 task 16 restart 0 host ng10808 =====
+$ M=$(echo devstral-24b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos particle-swarm-optimization --seed 0 --temperature 0.2 --stamp particle-swarm-optimization --skip-rq1 --skip-rq2
+Using LLM backend: ollama (devstral:24b)
+=== RQ3: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_devstral-24b_particle-swarm-optimization.jsonl ===
+[RQ3] devstral:24b / particle-swarm-optimization ...
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_devstral-24b_particle-swarm-optimization.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_devstral-24b_particle-swarm-optimization.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_devstral-24b_particle-swarm-optimization.jsonl

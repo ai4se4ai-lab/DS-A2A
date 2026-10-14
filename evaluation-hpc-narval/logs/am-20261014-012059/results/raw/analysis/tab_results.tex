@@ -1,0 +1,84 @@
+\begin{tabular}{llrrr}
+\toprule
+Metric & Model & F & S & A \\
+\midrule
+RQ1 canaries in code & \texttt{qwen2.5-coder:7b} & 4 & 0 & 40 \\
+RQ1 canaries total & \texttt{qwen2.5-coder:7b} & 40 & 40 & 40 \\
+RQ1 acceptance passed & \texttt{qwen2.5-coder:7b} & 0 & 0 & 0 \\
+RQ1 repos run & \texttt{qwen2.5-coder:7b} & 8 & 8 & 8 \\
+RQ1 MAST P1 per trace & \texttt{qwen2.5-coder:7b} & 0 & 0 & 0 \\
+RQ1 MAST P2 per trace & \texttt{qwen2.5-coder:7b} & 0 & 0 & 0.12 \\
+RQ1 build tokens (k) & \texttt{qwen2.5-coder:7b} & 8.48 & 4.1 & 11.44 \\
+RQ2 impact precision & \texttt{qwen2.5-coder:7b} & 0.65 & 0.14 & 1.0 \\
+RQ2 impact recall & \texttt{qwen2.5-coder:7b} & 0.75 & 1.0 & 1.0 \\
+RQ2 tokens per change (k) & \texttt{qwen2.5-coder:7b} & 8.7 & 4.07 & 0.45 \\
+RQ2 changes & \texttt{qwen2.5-coder:7b} & 24 & 24 & 24 \\
+RQ3 retroactive coverage (%) & \texttt{qwen2.5-coder:7b} & - & - & 100.0 \\
+RQ3 glue lines & \texttt{qwen2.5-coder:7b} & 22 & 22 & 7 \\
+RQ1 canaries in code & \texttt{llama3.1:8b} & 18 & 0 & 40 \\
+RQ1 canaries total & \texttt{llama3.1:8b} & 40 & 40 & 40 \\
+RQ1 acceptance passed & \texttt{llama3.1:8b} & 0 & 0 & 0 \\
+RQ1 repos run & \texttt{llama3.1:8b} & 8 & 8 & 8 \\
+RQ1 MAST P1 per trace & \texttt{llama3.1:8b} & 2 & 2 & 1.88 \\
+RQ1 MAST P2 per trace & \texttt{llama3.1:8b} & 0 & 0 & 0 \\
+RQ1 build tokens (k) & \texttt{llama3.1:8b} & 10.15 & 5.5 & 11.82 \\
+RQ2 impact precision & \texttt{llama3.1:8b} & 0.25 & 0.14 & 1.0 \\
+RQ2 impact recall & \texttt{llama3.1:8b} & 0.79 & 1.0 & 1.0 \\
+RQ2 tokens per change (k) & \texttt{llama3.1:8b} & 10.47 & 5.31 & 0.46 \\
+RQ2 changes & \texttt{llama3.1:8b} & 24 & 24 & 24 \\
+RQ3 retroactive coverage (%) & \texttt{llama3.1:8b} & - & - & 100.0 \\
+RQ3 glue lines & \texttt{llama3.1:8b} & 22 & 22 & 7 \\
+RQ1 canaries in code & \texttt{phi4:14b} & 7 & 0 & 40 \\
+RQ1 canaries total & \texttt{phi4:14b} & 40 & 40 & 40 \\
+RQ1 acceptance passed & \texttt{phi4:14b} & 0 & 0 & 0 \\
+RQ1 repos run & \texttt{phi4:14b} & 8 & 8 & 8 \\
+RQ1 MAST P1 per trace & \texttt{phi4:14b} & 0.5 & 1 & 0.38 \\
+RQ1 MAST P2 per trace & \texttt{phi4:14b} & 0 & 0 & 0.25 \\
+RQ1 build tokens (k) & \texttt{phi4:14b} & 8.68 & 5.23 & 12.81 \\
+RQ2 impact precision & \texttt{phi4:14b} & 0.62 & 0.14 & 1.0 \\
+RQ2 impact recall & \texttt{phi4:14b} & 0.92 & 1.0 & 1.0 \\
+RQ2 tokens per change (k) & \texttt{phi4:14b} & 9.02 & 5.18 & 0.48 \\
+RQ2 changes & \texttt{phi4:14b} & 24 & 24 & 24 \\
+RQ3 retroactive coverage (%) & \texttt{phi4:14b} & - & - & 100.0 \\
+RQ3 glue lines & \texttt{phi4:14b} & 22 & 22 & 7 \\
+RQ1 canaries in code & \texttt{deepseek-coder-v2:16b} & 0 & 0 & 40 \\
+RQ1 canaries total & \texttt{deepseek-coder-v2:16b} & 40 & 40 & 40 \\
+RQ1 acceptance passed & \texttt{deepseek-coder-v2:16b} & 0 & 0 & 0 \\
+RQ1 repos run & \texttt{deepseek-coder-v2:16b} & 8 & 8 & 8 \\
+RQ1 MAST P1 per trace & \texttt{deepseek-coder-v2:16b} & 2 & 2 & 2 \\
+RQ1 MAST P2 per trace & \texttt{deepseek-coder-v2:16b} & 0 & 0 & 0 \\
+RQ1 build tokens (k) & \texttt{deepseek-coder-v2:16b} & 9.65 & 5.34 & 15.54 \\
+RQ2 impact precision & \texttt{deepseek-coder-v2:16b} & 0.37 & 0.14 & 1.0 \\
+RQ2 impact recall & \texttt{deepseek-coder-v2:16b} & 0.71 & 1.0 & 1.0 \\
+RQ2 tokens per change (k) & \texttt{deepseek-coder-v2:16b} & 9.69 & 5.27 & 0.53 \\
+RQ2 changes & \texttt{deepseek-coder-v2:16b} & 24 & 24 & 24 \\
+RQ3 retroactive coverage (%) & \texttt{deepseek-coder-v2:16b} & - & - & 100.0 \\
+RQ3 glue lines & \texttt{deepseek-coder-v2:16b} & 22 & 22 & 7 \\
+RQ1 canaries in code & \texttt{devstral:24b} & 24 & 0 & 40 \\
+RQ1 canaries total & \texttt{devstral:24b} & 40 & 40 & 40 \\
+RQ1 acceptance passed & \texttt{devstral:24b} & 0 & 0 & 0 \\
+RQ1 repos run & \texttt{devstral:24b} & 8 & 8 & 8 \\
+RQ1 MAST P1 per trace & \texttt{devstral:24b} & 2 & 1.12 & 1 \\
+RQ1 MAST P2 per trace & \texttt{devstral:24b} & 0 & 0.12 & 0 \\
+RQ1 build tokens (k) & \texttt{devstral:24b} & 8.96 & 4.06 & 11.02 \\
+RQ2 impact precision & \texttt{devstral:24b} & 0.8 & 0.14 & 1.0 \\
+RQ2 impact recall & \texttt{devstral:24b} & 0.96 & 1.0 & 1.0 \\
+RQ2 tokens per change (k) & \texttt{devstral:24b} & 9.36 & 3.85 & 0.41 \\
+RQ2 changes & \texttt{devstral:24b} & 24 & 24 & 24 \\
+RQ3 retroactive coverage (%) & \texttt{devstral:24b} & - & - & 100.0 \\
+RQ3 glue lines & \texttt{devstral:24b} & 22 & 22 & 7 \\
+RQ1 canaries in code & \texttt{gemma3:27b} & 13 & 5 & 40 \\
+RQ1 canaries total & \texttt{gemma3:27b} & 40 & 40 & 40 \\
+RQ1 acceptance passed & \texttt{gemma3:27b} & 0 & 0 & 0 \\
+RQ1 repos run & \texttt{gemma3:27b} & 8 & 8 & 8 \\
+RQ1 MAST P1 per trace & \texttt{gemma3:27b} & 0.25 & 1 & 0.25 \\
+RQ1 MAST P2 per trace & \texttt{gemma3:27b} & 0 & 0 & 0 \\
+RQ1 build tokens (k) & \texttt{gemma3:27b} & 12.06 & 6.53 & 12.9 \\
+RQ2 impact precision & \texttt{gemma3:27b} & 0.57 & 0.14 & 1.0 \\
+RQ2 impact recall & \texttt{gemma3:27b} & 0.67 & 1.0 & 1.0 \\
+RQ2 tokens per change (k) & \texttt{gemma3:27b} & 12.37 & 6.75 & 0.44 \\
+RQ2 changes & \texttt{gemma3:27b} & 24 & 24 & 24 \\
+RQ3 retroactive coverage (%) & \texttt{gemma3:27b} & - & - & 100.0 \\
+RQ3 glue lines & \texttt{gemma3:27b} & 22 & 22 & 7 \\
+\bottomrule
+\end{tabular}

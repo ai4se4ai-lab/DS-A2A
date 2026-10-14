@@ -1,0 +1,511 @@
+{
+ "project": "agentm2m-devbench",
+ "require_gpu": true,
+ "vars": {
+  "SEED": "0",
+  "TEMP": "0.2",
+  "MODELS_TO_PULL": "qwen2.5-coder:7b llama3.1:8b phi4:14b deepseek-coder-v2:16b devstral:24b gemma3:27b",
+  "REQUIRE_REPOS": "chakin geotext particle-swarm-optimization readtime stocktrends ArXiv_digest hone lice",
+  "NETWORK_REPOS": "ArXiv_digest"
+ },
+ "smoke": {
+  "vars": {},
+  "time": "01:00:00",
+  "matrix_limit": 2,
+  "array_throttle": 2
+ },
+ "stages": [
+  {
+   "name": "setup",
+   "description": "Gate: check the six open-weight models (staged offline into $OLLAMA_MODELS from the login node; Narval GPU nodes have no internet), verify the 8 DevBench repos' reference implementations pass their own tests (paper Sec. Eval Setup), pre-flight the whole pipeline with the mock backend and ping all six models on the GPU.",
+   "internet": false,
+   "resources": {
+    "gpus": "a100:1",
+    "cpus": 6,
+    "mem": "48G",
+    "time": "03:00:00"
+   },
+   "steps": [
+    {
+     "name": "check_gpu",
+     "builtin": "check_gpu",
+     "always": true
+    },
+    {
+     "name": "pull_models",
+     "cmd": "mkdir -p {RESULTS}/setup && for m in {MODELS_TO_PULL}; do ollama show $m >/dev/null || { echo \"model $m missing from $OLLAMA_MODELS: stage it from the login node\" >&2; exit 1; }; done && curl -sf $OLLAMA_BASE_URL/api/tags > {RESULTS}/setup/models.json",
+     "produces": [
+      "setup/models.json"
+     ],
+     "critical": true,
+     "retries": 0
+    },
+    {
+     "name": "verify_reference",
+     "cmd": "python hpc-narval/scripts/verify_devbench.py --require {REQUIRE_REPOS} --network-repos {NETWORK_REPOS} --out {RESULTS}/setup/devbench_reference.json",
+     "produces": [
+      "setup/devbench_reference.json"
+     ],
+     "critical": true,
+     "always": true
+    },
+    {
+     "name": "ping_models",
+     "cmd": "python hpc-narval/scripts/llm_ping.py --models {MODELS_TO_PULL} --out {RESULTS}/setup/llm_ping.json",
+     "produces": [
+      "setup/llm_ping.json"
+     ],
+     "critical": true,
+     "always": true
+    },
+    {
+     "name": "preflight_mock",
+     "cmd": "DEVBENCH_LOGS_DIR={RESULTS}/setup/preflight python -m evaluation.harness.devbench_run_all --llm mock --model mock --repos chakin --stamp preflight",
+     "produces": [
+      "setup/preflight/devbench_rq1_mock_preflight.jsonl",
+      "setup/preflight/devbench_rq3_mock_preflight.jsonl"
+     ],
+     "critical": true,
+     "always": true
+    }
+   ],
+   "cells": [
+    {}
+   ]
+  },
+  {
+   "name": "devbench",
+   "description": "RQ1 (fidelity: canaries, MAST, DevBench tests), RQ2 (change propagation: 3 injected changes x 3 configs) and RQ3 (HOT-added Security Reviewer) for one model x repository cell; free text, shared schema and AgentM2M each run inside the cell.",
+   "depends": [
+    {
+     "stage": "setup",
+     "type": "afterok"
+    }
+   ],
+   "matrix": {
+    "repo": [
+     "chakin",
+     "geotext",
+     "particle-swarm-optimization",
+     "readtime",
+     "stocktrends",
+     "ArXiv_digest",
+     "hone",
+     "lice"
+    ],
+    "model": [
+     "qwen2.5-coder-7b",
+     "llama3.1-8b",
+     "phi4-14b",
+     "deepseek-coder-v2-16b",
+     "devstral-24b",
+     "gemma3-27b"
+    ]
+   },
+   "array_throttle": 12,
+   "resources": {
+    "gpus": "a100:1",
+    "cpus": 6,
+    "mem": "48G",
+    "time": "08:00:00",
+    "requeue": true
+   },
+   "steps": [
+    {
+     "name": "rq1",
+     "cmd": "M=$(echo {model} | sed -E \"s/-([0-9.]+b)$/:\\1/\"); DEVBENCH_LOGS_DIR={RESULTS}/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos {repo} --seed {SEED} --temperature {TEMP} --stamp {repo} --skip-rq2 --skip-rq3",
+     "needs": [
+      "setup/devbench_reference.json",
+      "setup/models.json"
+     ],
+     "produces": [
+      "devbench_logs/devbench_rq1_{model}_{repo}.jsonl"
+     ],
+     "progress": {
+      "file": "devbench_logs/devbench_rq1_{model}_{repo}.jsonl",
+      "expected": "3"
+     },
+     "retries": 1
+    },
+    {
+     "name": "rq2",
+     "cmd": "M=$(echo {model} | sed -E \"s/-([0-9.]+b)$/:\\1/\"); DEVBENCH_LOGS_DIR={RESULTS}/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos {repo} --seed {SEED} --temperature {TEMP} --stamp {repo} --skip-rq1 --skip-rq3",
+     "needs": [
+      "setup/devbench_reference.json",
+      "setup/models.json"
+     ],
+     "produces": [
+      "devbench_logs/devbench_rq2_{model}_{repo}.jsonl"
+     ],
+     "progress": {
+      "file": "devbench_logs/devbench_rq2_{model}_{repo}.jsonl",
+      "expected": "9"
+     },
+     "retries": 1
+    },
+    {
+     "name": "rq3",
+     "cmd": "M=$(echo {model} | sed -E \"s/-([0-9.]+b)$/:\\1/\"); DEVBENCH_LOGS_DIR={RESULTS}/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos {repo} --seed {SEED} --temperature {TEMP} --stamp {repo} --skip-rq1 --skip-rq2",
+     "needs": [
+      "setup/devbench_reference.json",
+      "setup/models.json"
+     ],
+     "produces": [
+      "devbench_logs/devbench_rq3_{model}_{repo}.jsonl"
+     ],
+     "progress": {
+      "file": "devbench_logs/devbench_rq3_{model}_{repo}.jsonl",
+      "expected": "1"
+     },
+     "retries": 1
+    }
+   ],
+   "cells": [
+    {
+     "repo": "chakin",
+     "model": "qwen2.5-coder-7b"
+    },
+    {
+     "repo": "chakin",
+     "model": "llama3.1-8b"
+    },
+    {
+     "repo": "chakin",
+     "model": "phi4-14b"
+    },
+    {
+     "repo": "chakin",
+     "model": "deepseek-coder-v2-16b"
+    },
+    {
+     "repo": "chakin",
+     "model": "devstral-24b"
+    },
+    {
+     "repo": "chakin",
+     "model": "gemma3-27b"
+    },
+    {
+     "repo": "geotext",
+     "model": "qwen2.5-coder-7b"
+    },
+    {
+     "repo": "geotext",
+     "model": "llama3.1-8b"
+    },
+    {
+     "repo": "geotext",
+     "model": "phi4-14b"
+    },
+    {
+     "repo": "geotext",
+     "model": "deepseek-coder-v2-16b"
+    },
+    {
+     "repo": "geotext",
+     "model": "devstral-24b"
+    },
+    {
+     "repo": "geotext",
+     "model": "gemma3-27b"
+    },
+    {
+     "repo": "particle-swarm-optimization",
+     "model": "qwen2.5-coder-7b"
+    },
+    {
+     "repo": "particle-swarm-optimization",
+     "model": "llama3.1-8b"
+    },
+    {
+     "repo": "particle-swarm-optimization",
+     "model": "phi4-14b"
+    },
+    {
+     "repo": "particle-swarm-optimization",
+     "model": "deepseek-coder-v2-16b"
+    },
+    {
+     "repo": "particle-swarm-optimization",
+     "model": "devstral-24b"
+    },
+    {
+     "repo": "particle-swarm-optimization",
+     "model": "gemma3-27b"
+    },
+    {
+     "repo": "readtime",
+     "model": "qwen2.5-coder-7b"
+    },
+    {
+     "repo": "readtime",
+     "model": "llama3.1-8b"
+    },
+    {
+     "repo": "readtime",
+     "model": "phi4-14b"
+    },
+    {
+     "repo": "readtime",
+     "model": "deepseek-coder-v2-16b"
+    },
+    {
+     "repo": "readtime",
+     "model": "devstral-24b"
+    },
+    {
+     "repo": "readtime",
+     "model": "gemma3-27b"
+    },
+    {
+     "repo": "stocktrends",
+     "model": "qwen2.5-coder-7b"
+    },
+    {
+     "repo": "stocktrends",
+     "model": "llama3.1-8b"
+    },
+    {
+     "repo": "stocktrends",
+     "model": "phi4-14b"
+    },
+    {
+     "repo": "stocktrends",
+     "model": "deepseek-coder-v2-16b"
+    },
+    {
+     "repo": "stocktrends",
+     "model": "devstral-24b"
+    },
+    {
+     "repo": "stocktrends",
+     "model": "gemma3-27b"
+    },
+    {
+     "repo": "ArXiv_digest",
+     "model": "qwen2.5-coder-7b"
+    },
+    {
+     "repo": "ArXiv_digest",
+     "model": "llama3.1-8b"
+    },
+    {
+     "repo": "ArXiv_digest",
+     "model": "phi4-14b"
+    },
+    {
+     "repo": "ArXiv_digest",
+     "model": "deepseek-coder-v2-16b"
+    },
+    {
+     "repo": "ArXiv_digest",
+     "model": "devstral-24b"
+    },
+    {
+     "repo": "ArXiv_digest",
+     "model": "gemma3-27b"
+    },
+    {
+     "repo": "hone",
+     "model": "qwen2.5-coder-7b"
+    },
+    {
+     "repo": "hone",
+     "model": "llama3.1-8b"
+    },
+    {
+     "repo": "hone",
+     "model": "phi4-14b"
+    },
+    {
+     "repo": "hone",
+     "model": "deepseek-coder-v2-16b"
+    },
+    {
+     "repo": "hone",
+     "model": "devstral-24b"
+    },
+    {
+     "repo": "hone",
+     "model": "gemma3-27b"
+    },
+    {
+     "repo": "lice",
+     "model": "qwen2.5-coder-7b"
+    },
+    {
+     "repo": "lice",
+     "model": "llama3.1-8b"
+    },
+    {
+     "repo": "lice",
+     "model": "phi4-14b"
+    },
+    {
+     "repo": "lice",
+     "model": "deepseek-coder-v2-16b"
+    },
+    {
+     "repo": "lice",
+     "model": "devstral-24b"
+    },
+    {
+     "repo": "lice",
+     "model": "gemma3-27b"
+    }
+   ]
+  },
+  {
+   "name": "collect",
+   "description": "Aggregate all cells: the paper's results table, RQ1 decision rule, per-model figures, generic CSV/MD/LaTeX tables, ledger and manifest.",
+   "depends": [
+    {
+     "stage": "devbench",
+     "type": "afterany"
+    }
+   ],
+   "resources": {
+    "gpus": "a100_1g.5gb:1",
+    "cpus": 2,
+    "mem": "16G",
+    "time": "01:00:00"
+   },
+   "steps": [
+    {
+     "name": "paper_table",
+     "cmd": "python hpc-narval/scripts/paper_table.py --logs {RESULTS}/devbench_logs --out {RESULTS}/analysis --models {MODELS_TO_PULL}",
+     "needs": [
+      "devbench_logs/devbench_rq1_*.jsonl"
+     ],
+     "produces": [
+      "analysis/tab_results.csv"
+     ],
+     "always": true
+    },
+    {
+     "name": "aggregate",
+     "cmd": "mkdir -p {RESULTS}/analysis && EVAL_OUT_DIR={RESULTS}/analysis DEVBENCH_LOGS_DIR={RESULTS}/devbench_logs python -m evaluation.analysis.aggregate_devbench > {RESULTS}/analysis/aggregate_devbench.txt",
+     "always": true
+    },
+    {
+     "name": "figures",
+     "cmd": "EVAL_OUT_DIR={RESULTS}/analysis DEVBENCH_LOGS_DIR={RESULTS}/devbench_logs python -m evaluation.analysis.make_two_model_figures --models {MODELS_TO_PULL}",
+     "always": true
+    },
+    {
+     "name": "collect",
+     "builtin": "collect",
+     "always": true
+    }
+   ],
+   "cells": [
+    {}
+   ]
+  }
+ ],
+ "results": {
+  "tables": [
+   {
+    "name": "rq2_changes",
+    "glob": "devbench_logs/devbench_rq2_*.jsonl",
+    "description": "every injected change (RQ2)"
+   },
+   {
+    "name": "rq3_reviewer",
+    "glob": "devbench_logs/devbench_rq3_*.jsonl",
+    "description": "HOT-added reviewer coverage (RQ3)"
+   },
+   {
+    "name": "rq1_runs",
+    "glob": "analysis/csv/devbench_raw_metrics_pooled.csv",
+    "description": "every build run (RQ1), without transcripts"
+   }
+  ],
+  "summaries": [
+   {
+    "name": "rq1_by_model_config",
+    "table": "rq1_runs",
+    "group_by": [
+     "model",
+     "config"
+    ],
+    "metrics": {
+     "canary_pass": "sum",
+     "canary_total": "sum",
+     "acceptance_pass": [
+      "mean",
+      "rate"
+     ],
+     "mast_p1_count": "mean",
+     "total_tokens": "mean",
+     "repo": "count"
+    },
+    "caption": "RQ1 by model and configuration"
+   },
+   {
+    "name": "rq2_by_model_config",
+    "table": "rq2_changes",
+    "group_by": [
+     "model",
+     "config"
+    ],
+    "metrics": {
+     "precision": "mean",
+     "recall": "mean",
+     "tokens": "mean",
+     "repo": "count"
+    },
+    "caption": "RQ2 change impact and cost"
+   },
+   {
+    "name": "rq3_by_model",
+    "table": "rq3_reviewer",
+    "group_by": [
+     "model"
+    ],
+    "metrics": {
+     "retroactive_coverage": "mean",
+     "tokens": "mean",
+     "repo": "count"
+    },
+    "caption": "RQ3 reviewer coverage"
+   }
+  ],
+  "plots": [
+   {
+    "name": "fig_rq2_precision",
+    "summary": "rq2_by_model_config",
+    "kind": "bar",
+    "x": "model",
+    "y": "precision_mean",
+    "hue": "config",
+    "title": "RQ2: impact precision"
+   },
+   {
+    "name": "fig_rq2_tokens",
+    "summary": "rq2_by_model_config",
+    "kind": "bar",
+    "x": "model",
+    "y": "tokens_mean",
+    "hue": "config",
+    "title": "RQ2: tokens per change"
+   },
+   {
+    "name": "fig_rq1_canaries",
+    "summary": "rq1_by_model_config",
+    "kind": "bar",
+    "x": "model",
+    "y": "canary_pass_sum",
+    "hue": "config",
+    "title": "RQ1: canaries in code"
+   }
+  ],
+  "copy": [
+   "analysis/**",
+   "setup/*.json",
+   "devbench_logs/*.jsonl"
+  ],
+  "archive": []
+ },
+ "is_smoke": false
+}

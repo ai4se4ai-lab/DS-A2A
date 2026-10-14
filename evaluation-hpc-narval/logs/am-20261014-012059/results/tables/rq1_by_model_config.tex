@@ -1,0 +1,28 @@
+\begin{table}[t]
+\centering\small
+\caption{RQ1 by model and configuration}\label{tab:rq1_by_model_config}
+\begin{tabular}{llllllllll}
+\toprule
+model & config & n & canary\_pass\_sum & canary\_total\_sum & acceptance\_pass\_mean & acceptance\_pass\_rate & mast\_p1\_count\_mean & total\_tokens\_mean & repo\_count \\
+\midrule
+deepseek-coder-v2:16b & agentm2m & 8 & 40.000 & 40.000 & 0.000 & 0.000 & 2.000 & 15535.500 & 8 \\
+deepseek-coder-v2:16b & free\_text & 8 & 0.000 & 40.000 & 0.000 & 0.000 & 2.000 & 9654.625 & 8 \\
+deepseek-coder-v2:16b & shared\_schema & 8 & 0.000 & 40.000 & 0.000 & 0.000 & 2.000 & 5335.500 & 8 \\
+devstral:24b & agentm2m & 8 & 40.000 & 40.000 & 0.000 & 0.000 & 1.000 & 11022.250 & 8 \\
+devstral:24b & free\_text & 8 & 24.000 & 40.000 & 0.000 & 0.000 & 2.000 & 8957.500 & 8 \\
+devstral:24b & shared\_schema & 8 & 0.000 & 40.000 & 0.000 & 0.000 & 1.125 & 4058.375 & 8 \\
+gemma3:27b & agentm2m & 8 & 40.000 & 40.000 & 0.000 & 0.000 & 0.250 & 12898.875 & 8 \\
+gemma3:27b & free\_text & 8 & 13.000 & 40.000 & 0.000 & 0.000 & 0.250 & 12057.625 & 8 \\
+gemma3:27b & shared\_schema & 8 & 5.000 & 40.000 & 0.000 & 0.000 & 1.000 & 6533.750 & 8 \\
+llama3.1:8b & agentm2m & 8 & 40.000 & 40.000 & 0.000 & 0.000 & 1.875 & 11821.750 & 8 \\
+llama3.1:8b & free\_text & 8 & 18.000 & 40.000 & 0.000 & 0.000 & 2.000 & 10149.000 & 8 \\
+llama3.1:8b & shared\_schema & 8 & 0.000 & 40.000 & 0.000 & 0.000 & 2.000 & 5505.000 & 8 \\
+phi4:14b & agentm2m & 8 & 40.000 & 40.000 & 0.000 & 0.000 & 0.375 & 12805.500 & 8 \\
+phi4:14b & free\_text & 8 & 7.000 & 40.000 & 0.000 & 0.000 & 0.500 & 8682.500 & 8 \\
+phi4:14b & shared\_schema & 8 & 0.000 & 40.000 & 0.000 & 0.000 & 1.000 & 5233.250 & 8 \\
+qwen2.5-coder:7b & agentm2m & 8 & 40.000 & 40.000 & 0.000 & 0.000 & 0.000 & 11442.875 & 8 \\
+qwen2.5-coder:7b & free\_text & 8 & 4.000 & 40.000 & 0.000 & 0.000 & 0.000 & 8484.750 & 8 \\
+qwen2.5-coder:7b & shared\_schema & 8 & 0.000 & 40.000 & 0.000 & 0.000 & 0.000 & 4104.500 & 8 \\
+\bottomrule
+\end{tabular}
+\end{table}

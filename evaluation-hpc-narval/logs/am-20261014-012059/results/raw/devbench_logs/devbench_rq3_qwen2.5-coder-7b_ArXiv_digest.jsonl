@@ -1,0 +1,1 @@
+{"repo": "ArXiv_digest", "model": "qwen2.5-coder:7b", "n_ops_before": 12, "n_reviews_after": 12, "retroactive_coverage": 1.0, "tokens": 11399}

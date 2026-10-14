@@ -1,0 +1,9 @@
+
+===== 2026-10-14 01:31:03 job 5517224 task - restart 0 host ng31305 =====
+$ python hpc-narval/scripts/llm_ping.py --models qwen2.5-coder:7b llama3.1:8b phi4:14b deepseek-coder-v2:16b devstral:24b gemma3:27b --out /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/setup/llm_ping.json
+qwen2.5-coder:7b {'seconds': 28.3, 'response': 'ready', 'eval_count': 2, 'prompt_eval_count': 36}
+llama3.1:8b {'seconds': 30.8, 'response': 'Ready', 'eval_count': 2, 'prompt_eval_count': 17}
+phi4:14b {'seconds': 33.7, 'response': 'Ready.', 'eval_count': 3, 'prompt_eval_count': 17}
+deepseek-coder-v2:16b {'seconds': 155.5, 'response': ' To determine if I am ready, I would need to assess my current state,', 'eval_count': 16, 'prompt_eval_count': 15}
+devstral:24b {'seconds': 27.1, 'response': 'Ready', 'eval_count': 2, 'prompt_eval_count': 1232}
+gemma3:27b {'seconds': 73.8, 'response': 'ready\n', 'eval_count': 3, 'prompt_eval_count': 17}

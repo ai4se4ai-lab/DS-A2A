@@ -1,0 +1,7 @@
+
+===== 2026-10-14 03:42:30 job 5521122 task 37 restart 0 host ng10504 =====
+$ M=$(echo llama3.1-8b | sed -E "s/-([0-9.]+b)$/:\1/"); DEVBENCH_LOGS_DIR=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs python -m evaluation.harness.devbench_run_all --llm ollama --model $M --repos hone --seed 0 --temperature 0.2 --stamp hone --skip-rq1 --skip-rq3
+Using LLM backend: ollama (llama3.1:8b)
+=== RQ2: writing to /scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_llama3.1-8b_hone.jsonl ===
+[RQ2] llama3.1:8b / hone ...
+Done. RQ1=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq1_llama3.1-8b_hone.jsonl RQ2=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq2_llama3.1-8b_hone.jsonl RQ3=/scratch/mbabaei/agentm2m_devbench/runs/am-20261014-012059/results/devbench_logs/devbench_rq3_llama3.1-8b_hone.jsonl

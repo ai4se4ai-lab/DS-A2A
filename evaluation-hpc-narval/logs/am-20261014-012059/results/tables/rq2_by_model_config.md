@@ -1,0 +1,20 @@
+| model | config | n | precision_mean | recall_mean | tokens_mean | repo_count |
+|---|---|---|---|---|---|---|
+| deepseek-coder-v2:16b | agentm2m | 24 | 1.000 | 1.000 | 529.292 | 24 |
+| deepseek-coder-v2:16b | free_text | 24 | 0.375 | 0.708 | 9689.792 | 24 |
+| deepseek-coder-v2:16b | shared_schema | 24 | 0.136 | 1.000 | 5271.292 | 24 |
+| devstral:24b | agentm2m | 24 | 1.000 | 1.000 | 413.292 | 24 |
+| devstral:24b | free_text | 24 | 0.797 | 0.958 | 9364.875 | 24 |
+| devstral:24b | shared_schema | 24 | 0.136 | 1.000 | 3845.250 | 24 |
+| gemma3:27b | agentm2m | 24 | 1.000 | 1.000 | 439.250 | 24 |
+| gemma3:27b | free_text | 24 | 0.566 | 0.667 | 12368.958 | 24 |
+| gemma3:27b | shared_schema | 24 | 0.136 | 1.000 | 6748.292 | 24 |
+| llama3.1:8b | agentm2m | 24 | 1.000 | 1.000 | 458.583 | 24 |
+| llama3.1:8b | free_text | 24 | 0.250 | 0.792 | 10472.083 | 24 |
+| llama3.1:8b | shared_schema | 24 | 0.136 | 1.000 | 5307.125 | 24 |
+| phi4:14b | agentm2m | 24 | 1.000 | 1.000 | 478.167 | 24 |
+| phi4:14b | free_text | 24 | 0.623 | 0.917 | 9022.500 | 24 |
+| phi4:14b | shared_schema | 24 | 0.136 | 1.000 | 5182.167 | 24 |
+| qwen2.5-coder:7b | agentm2m | 24 | 1.000 | 1.000 | 446.917 | 24 |
+| qwen2.5-coder:7b | free_text | 24 | 0.646 | 0.750 | 8703.958 | 24 |
+| qwen2.5-coder:7b | shared_schema | 24 | 0.136 | 1.000 | 4067.250 | 24 |
