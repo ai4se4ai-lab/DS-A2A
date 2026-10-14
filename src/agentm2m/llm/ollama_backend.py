@@ -69,7 +69,9 @@ class OllamaBackend(LLMBackend):
 
     def _ensure_model_available(self) -> None:
         try:
-            resp = requests.get(f"{self.base_url}/api/tags", timeout=5)
+            # generous: a busy server (e.g. loading a 17 GB model from a shared
+            # filesystem) can take well over 5 s to list its models
+            resp = requests.get(f"{self.base_url}/api/tags", timeout=60)
             resp.raise_for_status()
         except requests.RequestException as exc:
             raise LLMError(

@@ -262,8 +262,10 @@ def _summary(key: str, model: str, repos: list[str], bundle: dict) -> str:
 
     a, f, s = mean("agentm2m"), mean("free_text"), mean("shared_schema")
     if key == "canary":
-        tot = lambda c: sum(per[c][r]["canary"] for r in repos)  # noqa: E731
-        return f"total of 40:  A {tot('agentm2m')} · F {tot('free_text')} · S {tot('shared_schema')}"
+        tot = lambda c: sum(per[c][r]["canary"] for r in repos if "canary" in per[c].get(r, {}))  # noqa: E731
+        missing = sum(1 for r in repos if any("canary" not in per[c].get(r, {}) for c in per))
+        gap = f"  ({missing} repo(s) without data)" if missing else ""
+        return f"total of 40:  A {tot('agentm2m')} · F {tot('free_text')} · S {tot('shared_schema')}{gap}"
     if key == "build_k":
         return f"mean:  A {a:.1f}k · F {f:.1f}k · S {s:.1f}k"
     if key == "change_k":
@@ -308,7 +310,7 @@ def bar_figure(aspects, repos, bundle, *, height_per_row: float, note: str | Non
 
 def _mean_over(repos, per, c, key):
     vals = [per[c][r][key] for r in repos if key in per[c].get(r, {})]
-    return st.mean(vals)
+    return st.mean(vals) if vals else float("nan")  # a model with no finished cell plots as a gap
 
 
 def _direct_labels(ax, ends: list[tuple[str, float, str]], *, log: bool) -> None:
@@ -389,6 +391,8 @@ def line_scaling(repos, bundle, key: str, ylabel: str, log: bool, head: str) -> 
     of equal size are averaged, so the x values are distinct and ordered."""
     _base_style()
     fig, axes = plt.subplots(1, len(MODELS), figsize=(FIG_WIDTH, 3.0), facecolor=SURFACE)
+    repos = [r for r in repos if r in bundle["n_ops"]]  # a repo whose RQ3 runs all failed has no size
+    repos = [r for r in repos if r in bundle["n_ops"]]  # a repo whose RQ3 runs all failed has no size
     sizes = sorted({bundle["n_ops"][r] for r in repos})
     by_size = {n: [r for r in repos if bundle["n_ops"][r] == n] for n in sizes}
     all_ys: list[float] = []
@@ -418,6 +422,7 @@ def line_scaling(repos, bundle, key: str, ylabel: str, log: bool, head: str) -> 
         ax._ends = ends  # labelled after limits are final
     axes[0].set_ylabel(ylabel, fontsize=FS_LABEL, color=INK_2)
     # one common scale from both models' data, set before labels are placed
+    all_ys = [y for y in all_ys if y == y] or [1.0]  # drop NaN gaps (cells without data)
     lo, hi = (min(all_ys) / 1.5, max(all_ys) * 1.5) if log else (0.0, max(all_ys) * 1.08)
     for a in axes:
         a.set_ylim(lo, hi)
@@ -455,6 +460,12 @@ def main() -> int:
         print(f"  {k}: {len(v)} problem(s)")
         for msg in v[:12]:
             print("    -", msg)
+    # empty panels (a model x repo cell without data) cannot lay out cleanly: warn, but only fail on complete data
+    incomplete = [(m, r) for _t, m in MODELS for r in repos
+                  if any(r not in bundle["data"].get(m, {}).get(c, {}) for c, *_ in CONFIGS)]
+    if bad and incomplete:
+        print(f"layout problems are warnings only: {len(incomplete)} model x repo cell(s) without data: {incomplete}")
+        return 0
     return 1 if bad else 0
 
 

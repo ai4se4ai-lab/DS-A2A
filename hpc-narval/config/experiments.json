@@ -5,7 +5,8 @@
   "SEED": "0",
   "TEMP": "0.2",
   "MODELS_TO_PULL": "qwen2.5-coder:7b qwen3.8:27b",
-  "REQUIRE_REPOS": "chakin geotext particle-swarm-optimization readtime stocktrends ArXiv_digest hone lice"
+  "REQUIRE_REPOS": "chakin geotext particle-swarm-optimization readtime stocktrends ArXiv_digest hone lice",
+  "NETWORK_REPOS": "ArXiv_digest"
  },
  "smoke": {
   "vars": {},
@@ -16,10 +17,10 @@
  "stages": [
   {
    "name": "setup",
-   "description": "Gate: pull the two open-weight models, verify the 8 DevBench repos' reference implementations pass their own tests (paper Sec. Eval Setup), pre-flight the whole pipeline with the mock backend and ping both models on the GPU.",
-   "internet": true,
+   "description": "Gate: check the two open-weight models (staged offline into $OLLAMA_MODELS from the login node; Narval GPU nodes have no internet), verify the 8 DevBench repos' reference implementations pass their own tests (paper Sec. Eval Setup), pre-flight the whole pipeline with the mock backend and ping both models on the GPU.",
+   "internet": false,
    "resources": {
-    "gpus": "h100_3g.40gb:1",
+    "gpus": "a100:1",
     "cpus": 6,
     "mem": "48G",
     "time": "03:00:00"
@@ -32,16 +33,16 @@
     },
     {
      "name": "pull_models",
-     "cmd": "mkdir -p {RESULTS}/setup && for m in {MODELS_TO_PULL}; do ollama pull $m || exit 1; done && curl -sf $OLLAMA_BASE_URL/api/tags > {RESULTS}/setup/models.json",
+     "cmd": "mkdir -p {RESULTS}/setup && for m in {MODELS_TO_PULL}; do ollama show $m >/dev/null || { echo \"model $m missing from $OLLAMA_MODELS: stage it from the login node\" >&2; exit 1; }; done && curl -sf $OLLAMA_BASE_URL/api/tags > {RESULTS}/setup/models.json",
      "produces": [
       "setup/models.json"
      ],
      "critical": true,
-     "retries": 2
+     "retries": 0
     },
     {
      "name": "verify_reference",
-     "cmd": "python hpc/scripts/verify_devbench.py --require {REQUIRE_REPOS} --out {RESULTS}/setup/devbench_reference.json",
+     "cmd": "python hpc/scripts/verify_devbench.py --require {REQUIRE_REPOS} --network-repos {NETWORK_REPOS} --out {RESULTS}/setup/devbench_reference.json",
      "produces": [
       "setup/devbench_reference.json"
      ],
@@ -96,7 +97,7 @@
    },
    "array_throttle": 8,
    "resources": {
-    "gpus": "h100_3g.40gb:1",
+    "gpus": "a100:1",
     "cpus": 6,
     "mem": "48G",
     "time": "08:00:00",
@@ -163,7 +164,7 @@
     }
    ],
    "resources": {
-    "gpus": "h100_1g.10gb:1",
+    "gpus": "a100_1g.5gb:1",
     "cpus": 2,
     "mem": "16G",
     "time": "01:00:00"

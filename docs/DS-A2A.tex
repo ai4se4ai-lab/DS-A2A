@@ -110,9 +110,9 @@ runtime is a higher-order transformation. The design targets 11 of the 14
 MAST failure modes (5 directly, 6 partially). In a pilot on 8 DevBench
 repositories with two open-weight models, change impact was exact
 (precision and recall 1.00) where baselines over-regenerated, propagating a
-change cost 19--38$\times$ fewer tokens than re-running free-text
-hand-offs, all 40 injected canary criteria reached the code (7 and 25 of 40
-with free text), and a new agent joined at runtime with 7 lines of glue.
+change cost 19--36$\times$ fewer tokens than re-running free-text
+hand-offs, all 40 injected canary criteria reached the code (5 of 40 with
+free text on either model), and a new agent joined at runtime with 7 lines of glue.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -562,8 +562,7 @@ P3 episode?
 \centering
 \caption{Pilot results on 8 DevBench repositories: free text (F), shared
 schema (S), \tool{} (A). Tokens in thousands; means per repository (build)
-or change (RQ2, 24 per model). $^\dagger$One module hit the output cap
-(F: \texttt{stocktrends}; S: \texttt{lice}); its canaries count as lost.}
+or change (RQ2, 24 per model).}
 \label{tab:results}
 \footnotesize
 \setlength{\tabcolsep}{2.6pt}
@@ -574,33 +573,38 @@ or change (RQ2, 24 per model). $^\dagger$One module hit the output cap
 Metric & F & S & A & F & S & A \\
 \midrule
 \multicolumn{7}{@{}l}{\emph{RQ1: build once}} \\
-Canaries in code (/40) & 7 & 0 & \textbf{40} & 25$^\dagger$ & 5$^\dagger$ & \textbf{40} \\
+Canaries in code (/40) & 5 & 0 & \textbf{40} & 5 & 0 & \textbf{40} \\
 DevBench accept.\ (/8) & 0 & 0 & 0 & 0 & 0 & 0 \\
-MAST P1\,/\,P2 per trace & 0\,/\,0 & 0\,/\,0 & 0\,/\,.12 & .12\,/\,.62 & .12\,/\,.75 & 0\,/\,1.1 \\
-Build tokens (k) & 8.3 & \textbf{3.9} & 11.7 & 16.5 & \textbf{6.8} & 12.5 \\
+MAST P1\,/\,P2 per trace & 0\,/\,0 & 0\,/\,0 & 0\,/\,.12 & .12\,/\,.50 & .50\,/\,.50 & 0\,/\,1.0 \\
+Build tokens (k) & 9.0 & \textbf{4.1} & 11.6 & 16.0 & \textbf{6.6} & 13.0 \\
 \midrule
 \multicolumn{7}{@{}l}{\emph{RQ2: propagate a change}} \\
-Impact precision & .65 & .14 & \textbf{1.00} & .79 & .14 & \textbf{1.00} \\
-Impact recall & .75 & 1.00 & \textbf{1.00} & .79 & 1.00 & \textbf{1.00} \\
-Tokens per change (k) & 8.57 & 4.10 & \textbf{0.45} & 15.85 & 7.10 & \textbf{0.42} \\
+Impact precision & .62 & .14 & \textbf{1.00} & .83 & .14 & \textbf{1.00} \\
+Impact recall & .75 & 1.00 & \textbf{1.00} & .83 & 1.00 & \textbf{1.00} \\
+Tokens per change (k) & 8.87 & 4.21 & \textbf{0.46} & 15.23 & 6.62 & \textbf{0.42} \\
 \midrule
 \multicolumn{7}{@{}l}{\emph{RQ3: add a reviewer at runtime}} \\
 Operations covered & -- & -- & 118/118 & -- & -- & 118/118 \\
-Glue lines & 11 & 11 & \textbf{7} & 11 & 11 & \textbf{7} \\
+Glue lines & 22 & 22 & \textbf{7} & 22 & 22 & \textbf{7} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \smallskip\noindent\textbf{Results} (Table~\ref{tab:results}).
 \emph{RQ1:} On both models, all 40 canary constants reached \tool{}'s code.
-Free text kept 7 (7B) and 25 (27B), shared schema 0 and 5. Canaries show that
+Free text kept 5 on each model, all from one repository
+(\texttt{particle-swarm-optimization}); shared schema kept none. The larger
+model did not help free text, so the loss lies in the hand-off, not in model
+capacity. Canaries show that
 stated constants survive a hand-off, not that the code is correct: no
 configuration passed DevBench's acceptance tests, because per-operation
 requirements carry the signature, not the PRD's detailed behavior. The MAST
 judge, an LLM proxy for an unreleased annotator, flagged few modes and may
-be miscalibrated for per-binding transcripts (\tool{}'s P2 count). Building cost \tool{} 11.7k and 12.5k tokens, as
-prompts bound each answer, while free text doubled (8.3k to 16.5k). \tool{} was
-cheaper to build than free text on 2 of 8 repositories with the 7B model
+be miscalibrated for per-binding transcripts (\tool{}'s P2 count). It
+flagged no P1 mode for \tool{} on either model, against .50 per trace for
+shared schema with the 27B model. Building cost \tool{} 11.6k and 13.0k tokens, as
+prompts bound each answer, while free text nearly doubled (9.0k to 16.0k) and \tool{} grew by 12\%. \tool{} was
+cheaper to build than free text on 4 of 8 repositories with the 7B model
 and on 7 of 8 with the 27B model. Shared schema, with 3 calls and no
 executable oracles, was cheapest. The Step~4 cost controls matter: an
 earlier prototype without them cost 2--3.4$\times$ free text to build.
@@ -608,15 +612,15 @@ earlier prototype without them cost 2--3.4$\times$ free text to build.
 \emph{RQ2} gave the clearest result. \tool{} reached precision and recall
 1.00 on all 48 changes, as the obligation operator predicts. Shared schema
 had recall 1.00 but precision 0.14, since it regenerates everything; free
-text both missed and over-reported impacts (0.65--0.79). A change cost
-\tool{} 0.42--0.45k tokens (0 for a removal, which is purely structural),
-19--38$\times$ less than free text and 9--17$\times$ less than shared
+text both missed and over-reported impacts (0.62--0.83). A change cost
+\tool{} 0.42--0.46k tokens (0 for a removal, which is purely structural),
+19--36$\times$ less than free text and 9--16$\times$ less than shared
 schema. With the 7B model, \tool{}'s extra build cost over free text is
 recovered by the first change, and the advantage grows with every change a
 team absorbs.
 
 \emph{RQ3:} On both models, the reviewer added by a HOT covered all 118
-existing operations, with 7 lines of glue against 11 per baseline; like
+existing operations, with 7 lines of glue against 22 per baseline; like
 RQ2's exactness, this follows from the rules, not the model. One limit holds throughout: \textsc{Lift}
 remains a free-text boundary, and content it omits is invisible to every
 check.

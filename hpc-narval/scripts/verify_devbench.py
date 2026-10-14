@@ -10,6 +10,8 @@ from evaluation.harness.devbench_loader import ALL_REPOS, load_devbench_task
 ap = argparse.ArgumentParser()
 ap.add_argument("--require", nargs="+", required=True)
 ap.add_argument("--out", required=True)
+ap.add_argument("--network-repos", nargs="*", default=[],
+                help="repos whose acceptance tests need live internet (absent on GPU nodes): only unit tests gate them")
 a = ap.parse_args()
 report, bad = {}, []
 for repo in ALL_REPOS:
@@ -22,10 +24,10 @@ for repo in ALL_REPOS:
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     report[repo] = {"unit_pass": u, "acceptance_pass": c, "n_operations": len(t.operations),
-                    "n_criteria": len(t.acceptance_criteria), "required": repo in a.require,
+                    "n_criteria": len(t.acceptance_criteria), "required": repo in a.require, "network_bound": repo in a.network_repos,
                     "unit_tail": ud[-300:], "acceptance_tail": cd[-300:]}
     print(f"{repo:30s} unit={u} acceptance={c} ops={len(t.operations)}", flush=True)
-    if repo in a.require and not (u and c):
+    if repo in a.require and not (u and (c or repo in a.network_repos)):
         bad.append(repo)
 Path(a.out).parent.mkdir(parents=True, exist_ok=True)
 Path(a.out).write_text(json.dumps(report, indent=1))

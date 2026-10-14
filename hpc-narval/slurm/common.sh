@@ -102,8 +102,11 @@ setup_python() {
         virtualenv --no-download -q "$venv" || return 1
         # shellcheck disable=SC1091
         source "$venv/bin/activate"
+        # PIP_FIND_LINKS (exported by cluster.env) is also pip's own env var and would REPLACE the wheelhouse
+        # find-links of the site pip.conf; take it out of pip's environment and pass wheelhouse + extra dir explicitly.
+        local extra="${PIP_FIND_LINKS:-}"; unset PIP_FIND_LINKS
         pip install --no-index -q --upgrade pip
-        local fl=(); [ -n "${PIP_FIND_LINKS:-}" ] && fl=(--find-links "$PIP_FIND_LINKS")
+        local fl=() d; for d in $(pip config list 2>/dev/null | sed -n "s/^install.find-links='\(.*\)'$/\1/p") $extra; do fl+=(--find-links "$d"); done
         if [ -f "$req" ] && ! pip install --no-index -q "${fl[@]}" -r "$req"; then
             log_error "pip install failed: a package is missing from the wheelhouse (put its wheel in PIP_FIND_LINKS)"; return 1
         fi
